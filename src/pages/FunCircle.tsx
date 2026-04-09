@@ -374,7 +374,6 @@ function StoriesBar({ stories }: { stories: Story[] }) {
     </Card>
   );
 }
-}
 
 function SidebarLink({
   icon: Icon,
