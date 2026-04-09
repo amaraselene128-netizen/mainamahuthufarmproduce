@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -136,6 +151,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      featured_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          duration_days: number | null
+          id: string
+          listing_id: string
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          duration_days?: number | null
+          id?: string
+          listing_id: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          duration_days?: number | null
+          id?: string
+          listing_id?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       fun_circle_comments: {
         Row: {
@@ -291,6 +345,7 @@ export type Database = {
           expires_at: string
           id: string
           images: Json | null
+          reactions_count: Json | null
           user_id: string
         }
         Insert: {
@@ -299,6 +354,7 @@ export type Database = {
           expires_at?: string
           id?: string
           images?: Json | null
+          reactions_count?: Json | null
           user_id: string
         }
         Update: {
@@ -307,6 +363,7 @@ export type Database = {
           expires_at?: string
           id?: string
           images?: Json | null
+          reactions_count?: Json | null
           user_id?: string
         }
         Relationships: []
@@ -525,6 +582,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           username: string | null
+          whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -538,6 +596,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           username?: string | null
+          whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -551,6 +610,132 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           username?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      shop_ads: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          link_url: string | null
+          position: string | null
+          shop_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          position?: string | null
+          shop_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          position?: string | null
+          shop_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_ads_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_creation_requests: {
+        Row: {
+          admin_notes: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          facebook: string | null
+          id: string
+          instagram: string | null
+          linkedin: string | null
+          location: string | null
+          phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shop_name: string
+          shop_slug: string
+          status: string | null
+          telegram: string | null
+          tiktok: string | null
+          twitter: string | null
+          updated_at: string | null
+          use_account_details: boolean | null
+          user_id: string
+          whatsapp: string | null
+          youtube: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          linkedin?: string | null
+          location?: string | null
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_name: string
+          shop_slug: string
+          status?: string | null
+          telegram?: string | null
+          tiktok?: string | null
+          twitter?: string | null
+          updated_at?: string | null
+          use_account_details?: boolean | null
+          user_id: string
+          whatsapp?: string | null
+          youtube?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          linkedin?: string | null
+          location?: string | null
+          phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shop_name?: string
+          shop_slug?: string
+          status?: string | null
+          telegram?: string | null
+          tiktok?: string | null
+          twitter?: string | null
+          updated_at?: string | null
+          use_account_details?: boolean | null
+          user_id?: string
+          whatsapp?: string | null
+          youtube?: string | null
         }
         Relationships: []
       }
@@ -670,64 +855,97 @@ export type Database = {
       }
       shops: {
         Row: {
+          category: string | null
           cover_image_url: string | null
           created_at: string | null
           description: string | null
           email: string | null
+          facebook: string | null
           followers_count: number | null
           id: string
+          instagram: string | null
           is_active: boolean | null
+          is_promoted: boolean | null
           is_verified: boolean | null
+          linkedin: string | null
           location: string | null
           logo_url: string | null
           name: string
           phone: string | null
+          promoted_until: string | null
           rating: number | null
           slug: string | null
+          telegram: string | null
           theme: string | null
+          tiktok: string | null
+          twitter: string | null
           updated_at: string | null
           user_id: string
           views_count: number | null
+          whatsapp: string | null
+          youtube: string | null
         }
         Insert: {
+          category?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
           email?: string | null
+          facebook?: string | null
           followers_count?: number | null
           id?: string
+          instagram?: string | null
           is_active?: boolean | null
+          is_promoted?: boolean | null
           is_verified?: boolean | null
+          linkedin?: string | null
           location?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
+          promoted_until?: string | null
           rating?: number | null
           slug?: string | null
+          telegram?: string | null
           theme?: string | null
+          tiktok?: string | null
+          twitter?: string | null
           updated_at?: string | null
           user_id: string
           views_count?: number | null
+          whatsapp?: string | null
+          youtube?: string | null
         }
         Update: {
+          category?: string | null
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
           email?: string | null
+          facebook?: string | null
           followers_count?: number | null
           id?: string
+          instagram?: string | null
           is_active?: boolean | null
+          is_promoted?: boolean | null
           is_verified?: boolean | null
+          linkedin?: string | null
           location?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
+          promoted_until?: string | null
           rating?: number | null
           slug?: string | null
+          telegram?: string | null
           theme?: string | null
+          tiktok?: string | null
+          twitter?: string | null
           updated_at?: string | null
           user_id?: string
           views_count?: number | null
+          whatsapp?: string | null
+          youtube?: string | null
         }
         Relationships: []
       }
@@ -916,8 +1134,10 @@ export type Database = {
           created_at: string | null
           is_verified: boolean | null
           location: string | null
+          phone: string | null
           user_id: string | null
           username: string | null
+          whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -925,8 +1145,10 @@ export type Database = {
           created_at?: string | null
           is_verified?: boolean | null
           location?: string | null
+          phone?: string | null
           user_id?: string | null
           username?: string | null
+          whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -934,8 +1156,10 @@ export type Database = {
           created_at?: string | null
           is_verified?: boolean | null
           location?: string | null
+          phone?: string | null
           user_id?: string | null
           username?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -945,13 +1169,16 @@ export type Database = {
         Args: { _user_one: string; _user_two: string }
         Returns: boolean
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      has_role:
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
