@@ -4,7 +4,7 @@ import { useShopBySlug, useShopFollow } from "@/hooks/useShops";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { ListingCard } from "@/components/listings/ListingCard";
-import { ListingForm } from "@/components/dashboard/ListingForm";
+
 import { ShopProfileEditor } from "@/components/shops/ShopProfileEditor";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +62,7 @@ export default function ShopDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [tab, setTab] = useState("products");
-  const [showListingForm, setShowListingForm] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const isOwner = user?.id === shop?.user_id;
