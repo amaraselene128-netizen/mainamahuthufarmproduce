@@ -382,7 +382,7 @@ export default function ShopDetail() {
                   {isOwner ? (
                     <div>
                       <p className="mb-3">No {t} in your shop yet</p>
-                      <Button onClick={() => setShowListingForm(true)} className="gap-1">
+                      <Button onClick={() => navigate("/dashboard?tab=shop&manageAds=1")} className="gap-1">
                         <Plus className="h-4 w-4" />Add Your First Listing
                       </Button>
                     </div>
