@@ -218,7 +218,7 @@ export default function ShopDetail() {
           <div className="flex items-center gap-2">
             {isOwner && (
               <>
-                <Button size="sm" onClick={() => setShowListingForm(true)} className="gap-1">
+                <Button size="sm" onClick={() => navigate("/dashboard?tab=shop&manageAds=1")} className="gap-1">
                   <Plus className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Add Listing</span>
                 </Button>
