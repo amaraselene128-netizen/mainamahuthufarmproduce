@@ -53,7 +53,7 @@ export default function ShopDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isFollowing, toggleFollow, isLoading: followLoading } = useShopFollow(shop?.id);
+  const { isFollowing, toggleFollow, isLoading: followLoading, followersCount } = useShopFollow(shop?.id);
 
   const [listings, setListings] = useState<ShopListing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -62,8 +62,7 @@ export default function ShopDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [tab, setTab] = useState("products");
-  const [followersCount, setFollowersCount] = useState(0);
-  const [showListingForm, setShowListingForm] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const isOwner = user?.id === shop?.user_id;
@@ -82,7 +81,6 @@ export default function ShopDetail() {
 
   useEffect(() => {
     if (!shop) return;
-    setFollowersCount(shop.followers_count || 0);
     fetchListings();
     const fetchReviews = async () => {
       const { data } = await supabase
@@ -112,7 +110,6 @@ export default function ShopDetail() {
 
   const handleFollow = async () => {
     await toggleFollow();
-    setFollowersCount((prev) => (isFollowing ? prev - 1 : prev + 1));
   };
 
   const handleSubmitReview = async () => {
