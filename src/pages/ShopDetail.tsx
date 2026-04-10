@@ -452,22 +452,6 @@ export default function ShopDetail() {
         </Tabs>
       </div>
 
-      {/* Add Listing Dialog */}
-      <Dialog open={showListingForm} onOpenChange={setShowListingForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Listing to {shop.name}</DialogTitle>
-          </DialogHeader>
-          <ListingForm
-            shopId={shop.id}
-            onSuccess={() => {
-              setShowListingForm(false);
-              fetchListings();
-            }}
-            onCancel={() => setShowListingForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Shop Profile Dialog */}
       <Dialog open={showProfileEditor} onOpenChange={setShowProfileEditor}>
