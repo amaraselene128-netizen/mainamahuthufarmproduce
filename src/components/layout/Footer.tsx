@@ -28,8 +28,7 @@ const socialLinks = [
   { icon: Instagram, href: "https://www.instagram.com/sokoniarena?igsh=YzljYTk1ODg3Zg==", label: "Instagram" },
   { icon: FaTiktok, href: "https://tiktok.com/@sokoniarena", label: "TikTok" },
   { icon: Youtube, href: "https://youtube.com/@sokoniarena", label: "YouTube" },
-  { icon: FaWhatsapp, href: "https://wa.me/254700000000", label: "WhatsApp" },
-  { icon: FaLinkedin, href: "https://linkedin.com/company/sokoniarena", label: "LinkedIn" },
+  { icon: FaWhatsapp, href: "https://wa.me/254746423274", label: "WhatsApp" },
 ];
 
 export function Footer() {
