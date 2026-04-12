@@ -96,9 +96,8 @@ Deno.serve(async (req) => {
     xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     
-    const fnUrl = `${supabaseUrl}/functions/v1/dynamic-sitemap`;
     for (const t of ["shops", "products", "services", "events"]) {
-      xml += `  <sitemap>\n    <loc>${fnUrl}?type=${t}</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
+      xml += `  <sitemap>\n    <loc>${siteUrl}/sitemap-dynamic-${t}.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
     }
     // Also include static pages sitemap
     xml += `  <sitemap>\n    <loc>${siteUrl}/sitemap-pages.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
