@@ -199,6 +199,10 @@ export function useShopFollow(shopId: string | undefined) {
       return false;
     }
 
+    // Sync followers_count on the shops table so it stays consistent everywhere
+    const newCount = Math.max(0, previousFollowersCount + (previousFollowing ? -1 : 1));
+    await supabase.from("shops").update({ followers_count: newCount }).eq("id", shopId);
+
     toast({
       title: previousFollowing ? "Shop unfollowed" : "Shop followed",
       description: previousFollowing

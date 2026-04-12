@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 import { ShopCard } from "@/components/shops/ShopCard";
 import { useShops } from "@/hooks/useShops";
@@ -20,6 +21,11 @@ export default function Shops() {
 
   return (
     <Layout>
+      <Helmet>
+        <title>Shops | SokoniArena Kenya - Browse Trusted Sellers</title>
+        <meta name="description" content="Browse all shops on SokoniArena Kenya. Discover trusted sellers with branded storefronts offering products, services & events." />
+        <link rel="canonical" href="https://sokoniarena.co.ke/shops" />
+      </Helmet>
       <div className="container py-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
@@ -34,9 +40,9 @@ export default function Shops() {
         </div>
 
         {/* Marquee ad banner */}
-        <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-orange-200/30 to-primary/10 border border-orange-300/30 py-2.5 px-4">
+        <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 py-2.5 px-4">
           <div className="flex items-center gap-3">
-            <span className="featured-shops-blink shrink-0 inline-flex items-center gap-1 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="featured-shops-blink shrink-0 inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               <Sparkles className="h-3 w-3" />
               New
             </span>
@@ -84,7 +90,19 @@ export default function Shops() {
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {filtered.map((shop) => (
-              <ShopCard key={shop.id} shop={shop} />
+              <div key={shop.id} className="featured-shop-card">
+                {/* Scrolling welcome banner at top of each card */}
+                <div className="overflow-hidden bg-foreground/5 rounded-t-xl">
+                  <div className="featured-shops-welcome whitespace-nowrap text-[10px] sm:text-xs font-medium text-primary py-1 px-2">
+                    <span>
+                      ✨ Welcome to {shop.name}! {shop.description ? `— ${shop.description}` : "Explore amazing products & services"} ✨
+                      &nbsp;&nbsp;&nbsp;&nbsp;
+                      ✨ Welcome to {shop.name}! {shop.description ? `— ${shop.description}` : "Explore amazing products & services"} ✨
+                    </span>
+                  </div>
+                </div>
+                <ShopCard shop={shop} />
+              </div>
             ))}
           </div>
         ) : (

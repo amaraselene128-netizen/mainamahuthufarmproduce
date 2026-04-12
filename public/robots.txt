@@ -50,6 +50,7 @@ Allow: /robots.txt
 Sitemap: https://sokoniarena.co.ke/sitemap.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-index.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-pages.xml
+Sitemap: https://sokoniarena.co.ke/sitemap-shops.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-products.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-services.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-events.xml

@@ -34,6 +34,11 @@
   status = 200
 
 [[redirects]]
+  from = "/sitemap-shops.xml"
+  to = "/sitemap-shops.xml"
+  status = 200
+
+[[redirects]]
   from = "/sitemap.txt"
   to = "/sitemap.txt"
   status = 200

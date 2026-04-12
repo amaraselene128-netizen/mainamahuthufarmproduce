@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ListingCard } from "@/components/listings/ListingCard";
 
 import { ShopProfileEditor } from "@/components/shops/ShopProfileEditor";
+import { ShopJsonLd } from "@/components/seo/ShopJsonLd";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -198,6 +199,7 @@ export default function ShopDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ShopJsonLd shop={shop} listingsCount={listings.length} />
       {/* Standalone shop header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b">
         <div className="container flex items-center justify-between h-14">
