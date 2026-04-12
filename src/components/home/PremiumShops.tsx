@@ -36,6 +36,34 @@ export const PremiumShops = memo(function PremiumShops() {
           </Button>
         </div>
 
+        {/* Marquee ad banner */}
+        <div className="relative mb-6 overflow-hidden rounded-xl bg-gradient-to-r from-gold/10 via-accent/10 to-gold/10 border border-gold/20 py-2.5 px-4">
+          <div className="flex items-center gap-3">
+            <span className="featured-shops-blink shrink-0 inline-flex items-center gap-1 bg-gold text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              <Sparkles className="h-3 w-3" />
+              New
+            </span>
+            <div className="overflow-hidden flex-1">
+              <div className="featured-shops-marquee whitespace-nowrap text-sm font-medium text-foreground/80">
+                {"🏪 Open your own Premium Shop on SokoniArena — Stand out from the crowd! " +
+                  "⭐ Get a verified badge & priority placement in search results " +
+                  "⭐ Reach thousands of buyers with promoted visibility " +
+                  "⭐ Build your brand with a custom storefront & unique URL " +
+                  "⭐ Grow your followers & customer loyalty " +
+                  "🚀 Go to Dashboard → My Shop → Request Promotion to go Premium! " +
+                  "💎 Premium sellers earn 3× more views — upgrade today! " +
+                  "🏪 Open your own Premium Shop on SokoniArena — Stand out from the crowd! " +
+                  "⭐ Get a verified badge & priority placement in search results " +
+                  "⭐ Reach thousands of buyers with promoted visibility " +
+                  "⭐ Build your brand with a custom storefront & unique URL " +
+                  "⭐ Grow your followers & customer loyalty " +
+                  "🚀 Go to Dashboard → My Shop → Request Promotion to go Premium! " +
+                  "💎 Premium sellers earn 3× more views — upgrade today! "}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {Array.from({ length: 5 }).map((_, i) => (
