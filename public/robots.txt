@@ -54,12 +54,12 @@ Sitemap: https://sokoniarena.co.ke/sitemap-products.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-services.xml
 Sitemap: https://sokoniarena.co.ke/sitemap-events.xml
 
-# Dynamic Sitemaps (auto-generated from database)
-Sitemap: https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=index
-Sitemap: https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=shops
-Sitemap: https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=products
-Sitemap: https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=services
-Sitemap: https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=events
+# Dynamic Sitemaps (proxied through main domain)
+Sitemap: https://sokoniarena.co.ke/sitemap-dynamic-index.xml
+Sitemap: https://sokoniarena.co.ke/sitemap-dynamic-shops.xml
+Sitemap: https://sokoniarena.co.ke/sitemap-dynamic-products.xml
+Sitemap: https://sokoniarena.co.ke/sitemap-dynamic-services.xml
+Sitemap: https://sokoniarena.co.ke/sitemap-dynamic-events.xml
 
 # TXT Sitemap
 Sitemap: https://sokoniarena.co.ke/sitemap.txt

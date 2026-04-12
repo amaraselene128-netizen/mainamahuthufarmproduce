@@ -2,6 +2,44 @@
   command = "npm run build"
   publish = "dist"
 
+# Proxy dynamic sitemaps through your domain (must come BEFORE static sitemap rules)
+[[redirects]]
+  from = "/dynamic-sitemap"
+  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap"
+  status = 200
+  force = true
+  query = { type = ":type" }
+
+[[redirects]]
+  from = "/sitemap-dynamic-index.xml"
+  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=index"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap-dynamic-shops.xml"
+  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=shops"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap-dynamic-products.xml"
+  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=products"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap-dynamic-services.xml"
+  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=services"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap-dynamic-events.xml"
+  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=events"
+  status = 200
+  force = true
+
 # Serve sitemap files directly (must come BEFORE catch-all redirect)
 [[redirects]]
   from = "/sitemap.xml"
@@ -91,6 +129,14 @@
 
 [[headers]]
   for = "/sitemap-events.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=utf-8"
+    X-Robots-Tag = "noindex"
+    Cache-Control = "public, max-age=3600"
+
+# Dynamic sitemap proxy headers
+[[headers]]
+  for = "/sitemap-dynamic-*"
   [headers.values]
     Content-Type = "application/xml; charset=utf-8"
     X-Robots-Tag = "noindex"
