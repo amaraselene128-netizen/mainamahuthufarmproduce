@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Twitter, Youtube, Mail, MapPin, Phone } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube, Mail, MapPin, Phone, Headphones } from "lucide-react";
 import { FaTiktok, FaWhatsapp, FaLinkedin } from "react-icons/fa";
 
 const footerLinks = {
@@ -120,17 +120,29 @@ export function Footer() {
 
           {/* Contact */}
           <div className="col-span-2 md:col-span-1">
-            <h4 className="font-display font-semibold mb-4">Contact Us</h4>
-            <ul className="space-y-3">
+            <h4 className="font-display font-semibold mb-4 text-primary">NEED HELP?</h4>
+            <ul className="space-y-4">
               <li className="flex items-start gap-3 text-sm text-background/70">
                 <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
                 <span>Nairobi, Kenya</span>
               </li>
-              <li className="flex items-center gap-3 text-sm text-background/70">
-                <Mail className="h-4 w-4 shrink-0" />
-                <a href="mailto:sokoniarena@gmail.com" className="hover:text-primary transition-colors">
-                  sokoniarena@gmail.com
-                </a>
+              <li className="flex items-start gap-3 text-sm">
+                <Mail className="h-4 w-4 mt-0.5 shrink-0 text-background/70" />
+                <div>
+                  <p className="text-background/50 text-xs mb-0.5">General & Enquiries</p>
+                  <a href="mailto:info@sokoniarena.co.ke" className="text-background/70 hover:text-primary transition-colors">
+                    info@sokoniarena.co.ke
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 text-sm">
+                <Headphones className="h-4 w-4 mt-0.5 shrink-0 text-background/70" />
+                <div>
+                  <p className="text-background/50 text-xs mb-0.5">User Support</p>
+                  <a href="mailto:support@sokoniarena.co.ke" className="text-background/70 hover:text-primary transition-colors">
+                    support@sokoniarena.co.ke
+                  </a>
+                </div>
               </li>
             </ul>
           </div>

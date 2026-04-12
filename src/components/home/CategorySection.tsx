@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingBag, Sparkles, Calendar, ArrowRight, Smartphone, Car, Home, Shirt, Dumbbell, Briefcase, Music, Utensils } from "lucide-react";
+import { ShoppingBag, Sparkles, Calendar, ArrowRight, Store, Smartphone, Car, Home, Shirt, Dumbbell, Briefcase, Music, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainCategories = [
@@ -30,6 +30,15 @@ const mainCategories = [
     gradient: "from-accent to-rose-600",
     count: "5K+ events",
   },
+  {
+    id: "shops",
+    title: "Shops",
+    description: "Browse trusted sellers & branded stores",
+    icon: Store,
+    href: "/shops",
+    gradient: "from-orange-400 to-orange-600",
+    count: "1K+ shops",
+  },
 ];
 
 const subCategories = [
@@ -57,15 +66,15 @@ export function CategorySection() {
           </p>
         </div>
 
-        {/* Main Category Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
+        {/* Main Category Cards - 2x2 on mobile, 4 cols on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
           {mainCategories.map((category) => {
             const Icon = category.icon;
             return (
               <Link
                 key={category.id}
                 to={category.href}
-                className="group relative overflow-hidden rounded-2xl p-6 md:p-8 transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-2xl p-4 md:p-6 lg:p-8 transition-all duration-300 hover:-translate-y-1"
               >
                 {/* Background Gradient */}
                 <div className={cn(
@@ -74,29 +83,29 @@ export function CategorySection() {
                 )} />
                 
                 {/* Decorative Circle */}
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full" />
+                <div className="absolute -right-8 -bottom-8 w-28 md:w-40 h-28 md:h-40 bg-white/10 rounded-full" />
                 
                 {/* Content */}
                 <div className="relative z-10 text-white">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
-                      <Icon className="h-6 w-6" />
+                  <div className="flex items-center justify-between mb-4 md:mb-6">
+                    <div className="p-2 md:p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                      <Icon className="h-5 w-5 md:h-6 md:w-6" />
                     </div>
-                    <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
+                    <span className="text-[10px] md:text-sm font-medium bg-white/20 px-2 md:px-3 py-0.5 md:py-1 rounded-full">
                       {category.count}
                     </span>
                   </div>
                   
-                  <h3 className="font-display text-2xl font-bold mb-2">
+                  <h3 className="font-display text-lg md:text-2xl font-bold mb-1 md:mb-2">
                     {category.title}
                   </h3>
-                  <p className="text-white/80 mb-6">
+                  <p className="text-white/80 text-xs md:text-base mb-3 md:mb-6 line-clamp-2">
                     {category.description}
                   </p>
                   
-                  <div className="flex items-center gap-2 text-sm font-semibold group-hover:gap-3 transition-all">
+                  <div className="flex items-center gap-2 text-xs md:text-sm font-semibold group-hover:gap-3 transition-all">
                     Explore Now
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   </div>
                 </div>
               </Link>

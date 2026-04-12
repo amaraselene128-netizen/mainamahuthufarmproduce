@@ -1,0 +1,77 @@
+/* RGB rotating border for featured shop cards */
+.featured-shop-card {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.featured-shop-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--rgb-angle, 0deg),
+    hsl(0, 85%, 60%),
+    hsl(60, 85%, 55%),
+    hsl(120, 85%, 45%),
+    hsl(180, 85%, 50%),
+    hsl(240, 85%, 60%),
+    hsl(300, 85%, 55%),
+    hsl(360, 85%, 60%)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: rgb-rotate 4s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@property --rgb-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rgb-rotate {
+  to {
+    --rgb-angle: 360deg;
+  }
+}
+
+/* Marquee animation for ad banner */
+.featured-shops-marquee {
+  display: inline-block;
+  animation: marquee-scroll 40s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Slower scroll for welcome text on each card */
+.featured-shops-welcome > span {
+  display: inline-block;
+  animation: marquee-scroll 20s linear infinite;
+}
+
+/* Blinking NEW badge */
+.featured-shops-blink {
+  animation: blink-badge 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-badge {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
