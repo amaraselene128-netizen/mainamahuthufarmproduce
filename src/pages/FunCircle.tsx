@@ -91,9 +91,7 @@ function FunCircleContent() {
       <Layout>
         <div className="container py-12">
           <div className="max-w-md mx-auto text-center">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="h-10 w-10 text-primary" />
-            </div>
+            <img src="/images/fun-circle-logo.png" alt="SokoniArena Fun Circle" className="w-24 h-24 mx-auto mb-6 rounded-full object-cover" />
             <h1 className="text-3xl font-bold mb-4">Sokoni Fun Circle</h1>
             <p className="text-muted-foreground mb-6">
               Connect with friends, share stories, and have fun! Sign in to join the community.
@@ -119,9 +117,7 @@ function FunCircleContent() {
         <div className="container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <img src="/images/fun-circle-logo.png" alt="Fun Circle" className="w-8 h-8 rounded-full object-cover" />
               <h1 className="text-lg font-bold hidden sm:block">Fun Circle</h1>
             </div>
 
