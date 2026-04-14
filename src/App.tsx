@@ -35,6 +35,7 @@ const FunCircleNotifications = lazy(() => import("./pages/FunCircleNotifications
 const Shops = lazy(() => import("./pages/Shops"));
 const ShopDetail = lazy(() => import("./pages/ShopDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 
 // Optimized QueryClient with better caching
 const queryClient = new QueryClient({
@@ -101,6 +102,7 @@ const App = () => (
                   }
                 />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/products/:id" element={<ListingDetail />} />
                 <Route path="/services/:id" element={<ListingDetail />} />
