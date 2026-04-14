@@ -7,6 +7,7 @@ import { Menu, Search, ShoppingBag, Sparkles, Calendar, User, X, LogOut, LayoutD
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import logoImg from "@/assets/sokoni-arena-logo.png";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { Badge } from "@/components/ui/badge";
@@ -69,9 +70,7 @@ export function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-            <span className="font-display text-lg font-bold text-primary-foreground">S</span>
-          </div>
+          <img src={logoImg} alt="SokoniArena Marketplace" className="h-10 w-10 rounded-xl object-contain" />
           <span className="hidden font-display text-xl font-bold text-foreground sm:inline-block">
             Sokoni<span className="text-primary">Arena</span>
           </span>

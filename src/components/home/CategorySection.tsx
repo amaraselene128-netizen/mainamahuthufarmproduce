@@ -11,7 +11,7 @@ const mainCategories = [
     icon: ShoppingBag,
     href: "/products",
     gradient: "from-primary to-green-brand-dark",
-    count: "25K+ items",
+    count: "1K+ items",
   },
   {
     id: "services",
@@ -20,7 +20,7 @@ const mainCategories = [
     icon: Sparkles,
     href: "/services",
     gradient: "from-lavender to-purple-600",
-    count: "15K+ services",
+    count: "500+ services",
   },
   {
     id: "events",
@@ -29,7 +29,7 @@ const mainCategories = [
     icon: Calendar,
     href: "/events",
     gradient: "from-accent to-rose-600",
-    count: "5K+ events",
+    count: "200+ events",
   },
   {
     id: "shops",
@@ -38,7 +38,7 @@ const mainCategories = [
     icon: Store,
     href: "/shops",
     gradient: "from-orange-400 to-orange-600",
-    count: "1K+ shops",
+    count: "100+ shops",
   },
 ];
 

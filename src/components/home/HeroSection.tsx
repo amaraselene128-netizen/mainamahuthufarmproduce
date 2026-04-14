@@ -99,9 +99,9 @@ export function HeroSection() {
         {/* Stats */}
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: "400ms" }}>
           {[
-            { value: "50K+", label: "Active Listings" },
-            { value: "25K+", label: "Trusted Sellers" },
-            { value: "100K+", label: "Happy Buyers" },
+          { value: "2K+", label: "Active Listings" },
+            { value: "500+", label: "Trusted Sellers" },
+            { value: "5K+", label: "Happy Buyers" },
             { value: "47", label: "Counties Covered" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
