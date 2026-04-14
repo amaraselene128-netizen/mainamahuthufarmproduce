@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ListingJsonLd } from "@/components/seo/ListingJsonLd";
 import { useParams, Link } from "react-router-dom";
 import { parseImages } from "@/lib/utils";
 import { Layout } from "@/components/layout/Layout";
@@ -221,6 +222,20 @@ export default function ListingDetail() {
 
   return (
     <Layout>
+      <ListingJsonLd
+        id={listing.id}
+        title={listing.title}
+        description={listing.description}
+        listingType={listing.listing_type}
+        price={listing.price}
+        originalPrice={listing.original_price}
+        isFree={listing.is_free}
+        images={listing.images}
+        location={listing.location}
+        category={listing.category}
+        sellerName={seller?.username}
+        createdAt={listing.created_at}
+      />
       <div className="container py-6 md:py-10 px-4">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6 overflow-x-auto">
