@@ -14,974 +14,770 @@ export type Database = {
   }
   public: {
     Tables: {
-      audit_logs: {
+      admin_signal_details: {
         Row: {
-          action: string
-          created_at: string | null
+          created_at: string
+          exact_entry: number | null
+          exact_exit: number | null
+          hedge_fund_responders: string[] | null
           id: string
-          ip_address: string | null
-          new_data: Json | null
-          old_data: Json | null
-          record_id: string | null
-          table_name: string | null
-          user_id: string | null
+          intervention_end: string | null
+          intervention_start: string | null
+          retracement_start: number | null
+          retracement_target: number | null
+          signal_id: string | null
         }
         Insert: {
-          action: string
-          created_at?: string | null
+          created_at?: string
+          exact_entry?: number | null
+          exact_exit?: number | null
+          hedge_fund_responders?: string[] | null
           id?: string
-          ip_address?: string | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name?: string | null
-          user_id?: string | null
+          intervention_end?: string | null
+          intervention_start?: string | null
+          retracement_start?: number | null
+          retracement_target?: number | null
+          signal_id?: string | null
         }
         Update: {
-          action?: string
+          created_at?: string
+          exact_entry?: number | null
+          exact_exit?: number | null
+          hedge_fund_responders?: string[] | null
+          id?: string
+          intervention_end?: string | null
+          intervention_start?: string | null
+          retracement_start?: number | null
+          retracement_target?: number | null
+          signal_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_signal_details_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "trade_signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aviator_rounds: {
+        Row: {
+          bet_amount: number
+          cashout_multiplier: number | null
+          crash_point: number
+          created_at: string | null
+          id: string
+          payout: number
+          user_id: string
+          won: boolean
+        }
+        Insert: {
+          bet_amount: number
+          cashout_multiplier?: number | null
+          crash_point: number
           created_at?: string | null
           id?: string
-          ip_address?: string | null
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id?: string | null
-          table_name?: string | null
-          user_id?: string | null
+          payout?: number
+          user_id: string
+          won?: boolean
+        }
+        Update: {
+          bet_amount?: number
+          cashout_multiplier?: number | null
+          crash_point?: number
+          created_at?: string | null
+          id?: string
+          payout?: number
+          user_id?: string
+          won?: boolean
         }
         Relationships: []
       }
-      conversations: {
+      candle_templates: {
         Row: {
-          created_at: string | null
+          close: number
+          day_number: number
+          high: number
           id: string
-          last_message_at: string | null
-          listing_id: string | null
-          participant_one: string
-          participant_two: string
+          low: number
+          minute_offset: number
+          open: number
         }
         Insert: {
-          created_at?: string | null
+          close: number
+          day_number: number
+          high: number
           id?: string
-          last_message_at?: string | null
-          listing_id?: string | null
-          participant_one: string
-          participant_two: string
+          low: number
+          minute_offset: number
+          open: number
         }
         Update: {
-          created_at?: string | null
+          close?: number
+          day_number?: number
+          high?: number
           id?: string
-          last_message_at?: string | null
-          listing_id?: string | null
-          participant_one?: string
-          participant_two?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      favorites: {
-        Row: {
-          created_at: string | null
-          id: string
-          listing_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          listing_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          listing_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "favorites_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      featured_requests: {
-        Row: {
-          admin_notes: string | null
-          created_at: string | null
-          id: string
-          listing_id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string | null
-          user_id: string
-        }
-        Insert: {
-          admin_notes?: string | null
-          created_at?: string | null
-          id?: string
-          listing_id: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string | null
-          user_id: string
-        }
-        Update: {
-          admin_notes?: string | null
-          created_at?: string | null
-          id?: string
-          listing_id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "featured_requests_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fun_circle_comments: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          parent_id: string | null
-          story_id: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          parent_id?: string | null
-          story_id: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          parent_id?: string | null
-          story_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fun_circle_comments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "fun_circle_comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fun_circle_comments_story_id_fkey"
-            columns: ["story_id"]
-            isOneToOne: false
-            referencedRelation: "fun_circle_stories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fun_circle_conversations: {
-        Row: {
-          created_at: string | null
-          id: string
-          last_message_at: string | null
-          participant_one: string
-          participant_two: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          last_message_at?: string | null
-          participant_one: string
-          participant_two: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          last_message_at?: string | null
-          participant_one?: string
-          participant_two?: string
+          low?: number
+          minute_offset?: number
+          open?: number
         }
         Relationships: []
       }
-      fun_circle_friends: {
+      candles: {
         Row: {
+          close: number
           created_at: string | null
-          friend_id: string
+          high: number
           id: string
-          status: string | null
+          low: number
+          open: number
+          pair: string
+          time: number
+          timeframe: number
+        }
+        Insert: {
+          close: number
+          created_at?: string | null
+          high: number
+          id?: string
+          low: number
+          open: number
+          pair: string
+          time: number
+          timeframe: number
+        }
+        Update: {
+          close?: number
+          created_at?: string | null
+          high?: number
+          id?: string
+          low?: number
+          open?: number
+          pair?: string
+          time?: number
+          timeframe?: number
+        }
+        Relationships: []
+      }
+      casino_rounds: {
+        Row: {
+          bet_amount: number
+          created_at: string | null
+          game: string
+          id: string
+          payout: number
+          result: Json | null
           user_id: string
         }
         Insert: {
+          bet_amount: number
           created_at?: string | null
-          friend_id: string
+          game?: string
           id?: string
-          status?: string | null
+          payout?: number
+          result?: Json | null
           user_id: string
         }
         Update: {
+          bet_amount?: number
           created_at?: string | null
-          friend_id?: string
+          game?: string
           id?: string
-          status?: string | null
+          payout?: number
+          result?: Json | null
           user_id?: string
         }
         Relationships: []
       }
-      fun_circle_mentions: {
+      exchange_rates: {
         Row: {
-          comment_id: string | null
-          created_at: string | null
-          id: string
-          mentioned_user_id: string
-          mentioner_user_id: string
-          story_id: string | null
+          currency: string
+          rate_from_kes: number
+          updated_at: string
         }
         Insert: {
-          comment_id?: string | null
-          created_at?: string | null
-          id?: string
-          mentioned_user_id: string
-          mentioner_user_id: string
-          story_id?: string | null
+          currency: string
+          rate_from_kes: number
+          updated_at?: string
         }
         Update: {
-          comment_id?: string | null
-          created_at?: string | null
-          id?: string
-          mentioned_user_id?: string
-          mentioner_user_id?: string
-          story_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fun_circle_mentions_comment_id_fkey"
-            columns: ["comment_id"]
-            isOneToOne: false
-            referencedRelation: "fun_circle_comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fun_circle_mentions_story_id_fkey"
-            columns: ["story_id"]
-            isOneToOne: false
-            referencedRelation: "fun_circle_stories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fun_circle_messages: {
-        Row: {
-          content: string
-          conversation_id: string
-          created_at: string | null
-          id: string
-          is_read: boolean | null
-          sender_id: string
-        }
-        Insert: {
-          content: string
-          conversation_id: string
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          sender_id: string
-        }
-        Update: {
-          content?: string
-          conversation_id?: string
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fun_circle_messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "fun_circle_conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fun_circle_stories: {
-        Row: {
-          comments_count: number | null
-          content: string | null
-          created_at: string | null
-          expires_at: string | null
-          id: string
-          image_url: string | null
-          likes_count: number | null
-          shares_count: number | null
-          story_type: string | null
-          user_id: string
-          video_url: string | null
-          visibility: string | null
-        }
-        Insert: {
-          comments_count?: number | null
-          content?: string | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          image_url?: string | null
-          likes_count?: number | null
-          shares_count?: number | null
-          story_type?: string | null
-          user_id: string
-          video_url?: string | null
-          visibility?: string | null
-        }
-        Update: {
-          comments_count?: number | null
-          content?: string | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          image_url?: string | null
-          likes_count?: number | null
-          shares_count?: number | null
-          story_type?: string | null
-          user_id?: string
-          video_url?: string | null
-          visibility?: string | null
+          currency?: string
+          rate_from_kes?: number
+          updated_at?: string
         }
         Relationships: []
       }
-      fun_circle_story_reactions: {
+      hedge_fund_interventions: {
         Row: {
-          created_at: string | null
+          bias: number
+          created_at: string
+          creates_fvg: boolean
+          direction: string
+          fund_id: string
+          fund_name: string
           id: string
-          reaction_type: string
-          story_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          reaction_type?: string
-          story_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          reaction_type?: string
-          story_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fun_circle_story_reactions_story_id_fkey"
-            columns: ["story_id"]
-            isOneToOne: false
-            referencedRelation: "fun_circle_stories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      listings: {
-        Row: {
-          category: string | null
-          created_at: string | null
-          currency: string | null
-          description: string | null
-          event_date: string | null
-          event_location: string | null
-          favorites_count: number | null
-          featured_until: string | null
-          id: string
-          images: string[] | null
-          is_featured: boolean | null
-          is_sponsored: boolean | null
-          listing_type: string
-          location: string | null
-          price: number | null
-          shop_id: string | null
-          sponsored_until: string | null
-          status: string | null
-          tags: string[] | null
-          title: string
-          updated_at: string | null
-          user_id: string
-          views_count: number | null
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string | null
-          currency?: string | null
-          description?: string | null
-          event_date?: string | null
-          event_location?: string | null
-          favorites_count?: number | null
-          featured_until?: string | null
-          id?: string
-          images?: string[] | null
-          is_featured?: boolean | null
-          is_sponsored?: boolean | null
-          listing_type?: string
-          location?: string | null
-          price?: number | null
-          shop_id?: string | null
-          sponsored_until?: string | null
-          status?: string | null
-          tags?: string[] | null
-          title: string
-          updated_at?: string | null
-          user_id: string
-          views_count?: number | null
-        }
-        Update: {
-          category?: string | null
-          created_at?: string | null
-          currency?: string | null
-          description?: string | null
-          event_date?: string | null
-          event_location?: string | null
-          favorites_count?: number | null
-          featured_until?: string | null
-          id?: string
-          images?: string[] | null
-          is_featured?: boolean | null
-          is_sponsored?: boolean | null
-          listing_type?: string
-          location?: string | null
-          price?: number | null
-          shop_id?: string | null
-          sponsored_until?: string | null
-          status?: string | null
-          tags?: string[] | null
-          title?: string
-          updated_at?: string | null
-          user_id?: string
-          views_count?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "listings_shop_id_fkey"
-            columns: ["shop_id"]
-            isOneToOne: false
-            referencedRelation: "shops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          content: string
-          conversation_id: string
-          created_at: string | null
-          id: string
-          is_read: boolean | null
-          sender_id: string
-        }
-        Insert: {
-          content: string
-          conversation_id: string
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          sender_id: string
-        }
-        Update: {
-          content?: string
-          conversation_id?: string
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          created_at: string | null
-          data: Json | null
-          id: string
-          is_read: boolean | null
+          impact_duration_ms: number
+          intervention_type: string
           message: string | null
-          title: string
-          type: string
+          pair: string
+        }
+        Insert: {
+          bias: number
+          created_at?: string
+          creates_fvg?: boolean
+          direction: string
+          fund_id: string
+          fund_name: string
+          id?: string
+          impact_duration_ms?: number
+          intervention_type: string
+          message?: string | null
+          pair: string
+        }
+        Update: {
+          bias?: number
+          created_at?: string
+          creates_fvg?: boolean
+          direction?: string
+          fund_id?: string
+          fund_name?: string
+          id?: string
+          impact_duration_ms?: number
+          intervention_type?: string
+          message?: string | null
+          pair?: string
+        }
+        Relationships: []
+      }
+      hedge_fund_news: {
+        Row: {
+          created_at: string
+          fund_id: string
+          fund_name: string
+          headline: string
+          id: string
+          impact: string
+          is_surprise: boolean
+          published: boolean
+          scheduled_at: string
+        }
+        Insert: {
+          created_at?: string
+          fund_id: string
+          fund_name: string
+          headline: string
+          id?: string
+          impact: string
+          is_surprise?: boolean
+          published?: boolean
+          scheduled_at: string
+        }
+        Update: {
+          created_at?: string
+          fund_id?: string
+          fund_name?: string
+          headline?: string
+          id?: string
+          impact?: string
+          is_surprise?: boolean
+          published?: boolean
+          scheduled_at?: string
+        }
+        Relationships: []
+      }
+      live_prices: {
+        Row: {
+          base_price: number
+          max_price: number
+          min_price: number
+          pip_size: number
+          prev_price: number
+          price: number
+          symbol: string
+          updated_at: string
+          volatility: number
+        }
+        Insert: {
+          base_price: number
+          max_price?: number
+          min_price?: number
+          pip_size?: number
+          prev_price: number
+          price: number
+          symbol: string
+          updated_at?: string
+          volatility?: number
+        }
+        Update: {
+          base_price?: number
+          max_price?: number
+          min_price?: number
+          pip_size?: number
+          prev_price?: number
+          price?: number
+          symbol?: string
+          updated_at?: string
+          volatility?: number
+        }
+        Relationships: []
+      }
+      mining_servers: {
+        Row: {
+          class: string
+          created_at: string
+          description: string | null
+          hash_rate: number
+          id: string
+          is_active: boolean
+          is_minute_based: boolean | null
+          name: string
+          price_1h: number
+          price_24h: number
+          price_6h: number
+          price_7d: number
+          zrc_per_minute: number
+        }
+        Insert: {
+          class: string
+          created_at?: string
+          description?: string | null
+          hash_rate: number
+          id?: string
+          is_active?: boolean
+          is_minute_based?: boolean | null
+          name: string
+          price_1h: number
+          price_24h: number
+          price_6h: number
+          price_7d: number
+          zrc_per_minute: number
+        }
+        Update: {
+          class?: string
+          created_at?: string
+          description?: string | null
+          hash_rate?: number
+          id?: string
+          is_active?: boolean
+          is_minute_based?: boolean | null
+          name?: string
+          price_1h?: number
+          price_24h?: number
+          price_6h?: number
+          price_7d?: number
+          zrc_per_minute?: number
+        }
+        Relationships: []
+      }
+      mining_sessions: {
+        Row: {
+          created_at: string
+          duration_hours: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          last_ping_at: string | null
+          price_paid: number
+          server_id: string
+          started_at: string
+          total_mined: number
           user_id: string
         }
         Insert: {
-          created_at?: string | null
-          data?: Json | null
+          created_at?: string
+          duration_hours: number
+          expires_at: string
           id?: string
-          is_read?: boolean | null
-          message?: string | null
-          title: string
-          type: string
+          is_active?: boolean
+          last_ping_at?: string | null
+          price_paid: number
+          server_id: string
+          started_at?: string
+          total_mined?: number
           user_id: string
         }
         Update: {
-          created_at?: string | null
-          data?: Json | null
+          created_at?: string
+          duration_hours?: number
+          expires_at?: string
           id?: string
-          is_read?: boolean | null
-          message?: string | null
-          title?: string
-          type?: string
+          is_active?: boolean
+          last_ping_at?: string | null
+          price_paid?: number
+          server_id?: string
+          started_at?: string
+          total_mined?: number
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mining_sessions_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "mining_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      p2p_escrow: {
+        Row: {
+          buyer_confirmed: boolean
+          buyer_id: string | null
+          completed_at: string | null
+          created_at: string
+          fiat_amount: number
+          fiat_currency: string
+          id: string
+          listing_id: string
+          seller_confirmed: boolean
+          seller_id: string
+          status: string
+          zrc_amount: number
+        }
+        Insert: {
+          buyer_confirmed?: boolean
+          buyer_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          fiat_amount: number
+          fiat_currency?: string
+          id?: string
+          listing_id: string
+          seller_confirmed?: boolean
+          seller_id: string
+          status?: string
+          zrc_amount: number
+        }
+        Update: {
+          buyer_confirmed?: boolean
+          buyer_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          fiat_amount?: number
+          fiat_currency?: string
+          id?: string
+          listing_id?: string
+          seller_confirmed?: boolean
+          seller_id?: string
+          status?: string
+          zrc_amount?: number
+        }
+        Relationships: []
+      }
+      p2p_messages: {
+        Row: {
+          created_at: string
+          encrypted: boolean
+          id: string
+          message: string
+          order_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted?: boolean
+          id?: string
+          message: string
+          order_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted?: boolean
+          id?: string
+          message?: string
+          order_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "p2p_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "p2p_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      p2p_orders: {
+        Row: {
+          buyer_code: string | null
+          buyer_confirmed: boolean | null
+          buyer_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          payment_method: string
+          price_per_zrc: number
+          seller_code: string | null
+          seller_confirmed: boolean | null
+          seller_id: string
+          status: string
+          total_fiat: number
+          updated_at: string
+          zrc_amount: number
+        }
+        Insert: {
+          buyer_code?: string | null
+          buyer_confirmed?: boolean | null
+          buyer_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_method?: string
+          price_per_zrc: number
+          seller_code?: string | null
+          seller_confirmed?: boolean | null
+          seller_id: string
+          status?: string
+          total_fiat: number
+          updated_at?: string
+          zrc_amount: number
+        }
+        Update: {
+          buyer_code?: string | null
+          buyer_confirmed?: boolean | null
+          buyer_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_method?: string
+          price_per_zrc?: number
+          seller_code?: string | null
+          seller_confirmed?: boolean | null
+          seller_id?: string
+          status?: string
+          total_fiat?: number
+          updated_at?: string
+          zrc_amount?: number
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
+          balance: number
           created_at: string | null
-          date_of_birth: string | null
+          display_name: string
           email: string | null
-          full_name: string | null
-          gender: string | null
           id: string
-          is_online: boolean | null
-          is_verified: boolean | null
-          last_seen: string | null
-          location: string | null
-          phone: string | null
+          phone_number: string | null
           updated_at: string | null
           user_id: string
-          username: string | null
-          website: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
+          balance?: number
           created_at?: string | null
-          date_of_birth?: string | null
+          display_name?: string
           email?: string | null
-          full_name?: string | null
-          gender?: string | null
           id?: string
-          is_online?: boolean | null
-          is_verified?: boolean | null
-          last_seen?: string | null
-          location?: string | null
-          phone?: string | null
+          phone_number?: string | null
           updated_at?: string | null
           user_id: string
-          username?: string | null
-          website?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
+          balance?: number
           created_at?: string | null
-          date_of_birth?: string | null
+          display_name?: string
           email?: string | null
-          full_name?: string | null
-          gender?: string | null
           id?: string
-          is_online?: boolean | null
-          is_verified?: boolean | null
-          last_seen?: string | null
-          location?: string | null
-          phone?: string | null
+          phone_number?: string | null
           updated_at?: string | null
           user_id?: string
-          username?: string | null
-          website?: string | null
         }
         Relationships: []
       }
-      shop_ads: {
+      trade_positions: {
         Row: {
-          clicks_count: number | null
-          created_at: string | null
-          description: string | null
+          amount: number
+          closed_at: string | null
+          direction: string
+          entry_price: number
+          exit_price: number | null
           id: string
-          image_url: string | null
-          is_active: boolean | null
-          link_url: string | null
-          shop_id: string
-          title: string
-          updated_at: string | null
+          opened_at: string | null
+          pair: string
+          profit: number | null
+          status: string
           user_id: string
-          views_count: number | null
         }
         Insert: {
-          clicks_count?: number | null
-          created_at?: string | null
-          description?: string | null
+          amount: number
+          closed_at?: string | null
+          direction: string
+          entry_price: number
+          exit_price?: number | null
           id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          link_url?: string | null
-          shop_id: string
-          title: string
-          updated_at?: string | null
+          opened_at?: string | null
+          pair: string
+          profit?: number | null
+          status?: string
           user_id: string
-          views_count?: number | null
         }
         Update: {
-          clicks_count?: number | null
-          created_at?: string | null
-          description?: string | null
+          amount?: number
+          closed_at?: string | null
+          direction?: string
+          entry_price?: number
+          exit_price?: number | null
           id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          link_url?: string | null
-          shop_id?: string
-          title?: string
-          updated_at?: string | null
+          opened_at?: string | null
+          pair?: string
+          profit?: number | null
+          status?: string
           user_id?: string
-          views_count?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shop_ads_shop_id_fkey"
-            columns: ["shop_id"]
-            isOneToOne: false
-            referencedRelation: "shops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shop_creation_requests: {
-        Row: {
-          admin_notes: string | null
-          category: string | null
-          created_at: string | null
-          description: string | null
-          facebook: string | null
-          id: string
-          instagram: string | null
-          linkedin: string | null
-          location: string | null
-          phone: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          shop_name: string
-          shop_slug: string
-          status: string | null
-          telegram: string | null
-          tiktok: string | null
-          twitter: string | null
-          use_account_details: boolean | null
-          user_id: string
-          whatsapp: string | null
-          youtube: string | null
-        }
-        Insert: {
-          admin_notes?: string | null
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          facebook?: string | null
-          id?: string
-          instagram?: string | null
-          linkedin?: string | null
-          location?: string | null
-          phone?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          shop_name: string
-          shop_slug: string
-          status?: string | null
-          telegram?: string | null
-          tiktok?: string | null
-          twitter?: string | null
-          use_account_details?: boolean | null
-          user_id: string
-          whatsapp?: string | null
-          youtube?: string | null
-        }
-        Update: {
-          admin_notes?: string | null
-          category?: string | null
-          created_at?: string | null
-          description?: string | null
-          facebook?: string | null
-          id?: string
-          instagram?: string | null
-          linkedin?: string | null
-          location?: string | null
-          phone?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          shop_name?: string
-          shop_slug?: string
-          status?: string | null
-          telegram?: string | null
-          tiktok?: string | null
-          twitter?: string | null
-          use_account_details?: boolean | null
-          user_id?: string
-          whatsapp?: string | null
-          youtube?: string | null
         }
         Relationships: []
       }
-      shop_followers: {
+      trade_signals: {
         Row: {
-          created_at: string | null
+          confidence: number
+          created_at: string
+          direction: string
+          entry_price: number
+          expires_at: string | null
+          hedge_fund_activity: string | null
           id: string
-          shop_id: string
-          user_id: string
+          is_active: boolean
+          liquidation_zone: Json | null
+          pair: string
+          reason: string | null
+          risk_reward: number
+          smc_context: string | null
+          stop_loss: number
+          take_profit: number
+          timeframe: string
         }
         Insert: {
-          created_at?: string | null
+          confidence: number
+          created_at?: string
+          direction: string
+          entry_price: number
+          expires_at?: string | null
+          hedge_fund_activity?: string | null
           id?: string
-          shop_id: string
-          user_id: string
+          is_active?: boolean
+          liquidation_zone?: Json | null
+          pair: string
+          reason?: string | null
+          risk_reward: number
+          smc_context?: string | null
+          stop_loss: number
+          take_profit: number
+          timeframe: string
         }
         Update: {
-          created_at?: string | null
+          confidence?: number
+          created_at?: string
+          direction?: string
+          entry_price?: number
+          expires_at?: string | null
+          hedge_fund_activity?: string | null
           id?: string
-          shop_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shop_followers_shop_id_fkey"
-            columns: ["shop_id"]
-            isOneToOne: false
-            referencedRelation: "shops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shop_promotion_requests: {
-        Row: {
-          admin_notes: string | null
-          created_at: string | null
-          id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          shop_id: string
-          status: string | null
-          user_id: string
-        }
-        Insert: {
-          admin_notes?: string | null
-          created_at?: string | null
-          id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          shop_id: string
-          status?: string | null
-          user_id: string
-        }
-        Update: {
-          admin_notes?: string | null
-          created_at?: string | null
-          id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          shop_id?: string
-          status?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shop_promotion_requests_shop_id_fkey"
-            columns: ["shop_id"]
-            isOneToOne: false
-            referencedRelation: "shops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shop_reviews: {
-        Row: {
-          comment: string | null
-          created_at: string | null
-          id: string
-          rating: number
-          shop_id: string
-          user_id: string
-        }
-        Insert: {
-          comment?: string | null
-          created_at?: string | null
-          id?: string
-          rating: number
-          shop_id: string
-          user_id: string
-        }
-        Update: {
-          comment?: string | null
-          created_at?: string | null
-          id?: string
-          rating?: number
-          shop_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shop_reviews_shop_id_fkey"
-            columns: ["shop_id"]
-            isOneToOne: false
-            referencedRelation: "shops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      shops: {
-        Row: {
-          category: string | null
-          cover_image_url: string | null
-          created_at: string | null
-          description: string | null
-          email: string | null
-          facebook: string | null
-          followers_count: number | null
-          id: string
-          instagram: string | null
-          is_active: boolean | null
-          is_promoted: boolean | null
-          is_verified: boolean | null
-          linkedin: string | null
-          location: string | null
-          logo_url: string | null
-          name: string
-          phone: string | null
-          promoted_until: string | null
-          rating: number | null
-          slug: string
-          telegram: string | null
-          theme: string | null
-          tiktok: string | null
-          twitter: string | null
-          updated_at: string | null
-          user_id: string
-          views_count: number | null
-          whatsapp: string | null
-          youtube: string | null
-        }
-        Insert: {
-          category?: string | null
-          cover_image_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          email?: string | null
-          facebook?: string | null
-          followers_count?: number | null
-          id?: string
-          instagram?: string | null
-          is_active?: boolean | null
-          is_promoted?: boolean | null
-          is_verified?: boolean | null
-          linkedin?: string | null
-          location?: string | null
-          logo_url?: string | null
-          name: string
-          phone?: string | null
-          promoted_until?: string | null
-          rating?: number | null
-          slug: string
-          telegram?: string | null
-          theme?: string | null
-          tiktok?: string | null
-          twitter?: string | null
-          updated_at?: string | null
-          user_id: string
-          views_count?: number | null
-          whatsapp?: string | null
-          youtube?: string | null
-        }
-        Update: {
-          category?: string | null
-          cover_image_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          email?: string | null
-          facebook?: string | null
-          followers_count?: number | null
-          id?: string
-          instagram?: string | null
-          is_active?: boolean | null
-          is_promoted?: boolean | null
-          is_verified?: boolean | null
-          linkedin?: string | null
-          location?: string | null
-          logo_url?: string | null
-          name?: string
-          phone?: string | null
-          promoted_until?: string | null
-          rating?: number | null
-          slug?: string
-          telegram?: string | null
-          theme?: string | null
-          tiktok?: string | null
-          twitter?: string | null
-          updated_at?: string | null
-          user_id?: string
-          views_count?: number | null
-          whatsapp?: string | null
-          youtube?: string | null
+          is_active?: boolean
+          liquidation_zone?: Json | null
+          pair?: string
+          reason?: string | null
+          risk_reward?: number
+          smc_context?: string | null
+          stop_loss?: number
+          take_profit?: number
+          timeframe?: string
         }
         Relationships: []
       }
-      sponsor_requests: {
+      transactions: {
         Row: {
-          admin_notes: string | null
+          amount: number
           created_at: string | null
           id: string
-          listing_id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string | null
+          metadata: Json | null
+          reference_id: string | null
+          status: string
+          type: string
           user_id: string
         }
         Insert: {
-          admin_notes?: string | null
+          amount: number
           created_at?: string | null
           id?: string
-          listing_id: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string | null
+          metadata?: Json | null
+          reference_id?: string | null
+          status?: string
+          type: string
           user_id: string
         }
         Update: {
-          admin_notes?: string | null
+          amount?: number
           created_at?: string | null
           id?: string
-          listing_id?: string
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string | null
+          metadata?: Json | null
+          reference_id?: string | null
+          status?: string
+          type?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "sponsor_requests_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      user_drawings: {
+        Row: {
+          created_at: string
+          drawing_type: string
+          id: string
+          label: string | null
+          pair: string
+          points: Json
+          price_points: Json
+          timeframe: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          drawing_type: string
+          id?: string
+          label?: string | null
+          pair: string
+          points?: Json
+          price_points?: Json
+          timeframe: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          drawing_type?: string
+          id?: string
+          label?: string | null
+          pair?: string
+          points?: Json
+          price_points?: Json
+          timeframe?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_favorite_pairs: {
+        Row: {
+          created_at: string | null
+          id: string
+          pair_symbol: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pair_symbol: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pair_symbol?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -993,7 +789,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
@@ -1004,11 +800,131 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          description: string | null
+          fiat_amount: number | null
+          id: string
+          tx_type: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          fiat_amount?: number | null
+          id?: string
+          tx_type: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          fiat_amount?: number | null
+          id?: string
+          tx_type?: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          created_at: string
+          default_currency: string
+          id: string
+          total_mined: number
+          total_purchased: number
+          updated_at: string
+          user_code: string
+          user_id: string
+          zrc_balance: number
+        }
+        Insert: {
+          created_at?: string
+          default_currency?: string
+          id?: string
+          total_mined?: number
+          total_purchased?: number
+          updated_at?: string
+          user_code: string
+          user_id: string
+          zrc_balance?: number
+        }
+        Update: {
+          created_at?: string
+          default_currency?: string
+          id?: string
+          total_mined?: number
+          total_purchased?: number
+          updated_at?: string
+          user_code?: string
+          user_id?: string
+          zrc_balance?: number
+        }
+        Relationships: []
+      }
+      zrc_wallets: {
+        Row: {
+          balance: number
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_aviator: {
+        Row: {
+          display_name: string | null
+          highest_cashout: number | null
+          total_profit: number | null
+          total_rounds: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_casino: {
+        Row: {
+          biggest_win: number | null
+          display_name: string | null
+          total_profit: number | null
+          total_rounds: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_trades: {
+        Row: {
+          biggest_win: number | null
+          display_name: string | null
+          total_profit: number | null
+          total_trades: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      generate_user_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1016,11 +932,19 @@ export type Database = {
         }
         Returns: boolean
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
+      update_balance: {
+        Args: { amount: number; uid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      wallet_tx_type:
+        | "purchase"
+        | "mining"
+        | "transfer_in"
+        | "transfer_out"
+        | "mining_server_payment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1149,6 +1073,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      wallet_tx_type: [
+        "purchase",
+        "mining",
+        "transfer_in",
+        "transfer_out",
+        "mining_server_payment",
+      ],
     },
   },
 } as const
