@@ -528,6 +528,40 @@ export default function Search() {
           )}
         </p>
 
+        {/* Image Gallery Strip - Google-style */}
+        {!isLoading && listings.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">Images</h2>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {listings
+                .flatMap((l) => {
+                  const imgs = parseImages(l.images);
+                  return imgs.length > 0
+                    ? [{ id: l.id, title: l.title, src: imgs[0] }]
+                    : [];
+                })
+                .slice(0, 10)
+                .map((img, i) => (
+                  <a
+                    key={`${img.id}-${i}`}
+                    href={`/listing/${img.id}`}
+                    className="shrink-0 group"
+                  >
+                    <div className="w-28 h-28 rounded-lg overflow-hidden border bg-muted">
+                      <img
+                        src={img.src}
+                        alt={img.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1 truncate w-28">{img.title}</p>
+                  </a>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Grid */}
         {isLoading ? (
           <div className="listing-grid">
