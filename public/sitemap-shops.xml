@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Shops Listing Page -->
+  <!-- Shops Directory Page -->
   <url>
     <loc>https://sokoniarena.co.ke/shops</loc>
-    <lastmod>2026-04-12</lastmod>
+    <lastmod>2026-04-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
-  
-  <!-- 
-    NOTE: Individual shop pages should be dynamically generated.
-    For now, the shops page and each /shop/{slug} route are crawlable.
-    Consider generating this sitemap server-side via an edge function 
-    that queries the database for all active shops.
-  -->
+  <!-- Individual shop pages are served dynamically via the dynamic-sitemap edge function -->
 </urlset>

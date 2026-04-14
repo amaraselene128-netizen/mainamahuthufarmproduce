@@ -3,14 +3,9 @@
   <!-- Events Listing Page -->
   <url>
     <loc>https://sokoniarena.co.ke/events</loc>
-    <lastmod>2026-01-30</lastmod>
+    <lastmod>2026-04-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
-  
-  <!-- 
-    NOTE: For dynamic event listings, consider generating this sitemap 
-    server-side or via an edge function that queries the database.
-    Events should be added here as they are created.
-  -->
+  <!-- Individual event pages are served dynamically via the dynamic-sitemap edge function -->
 </urlset>
