@@ -349,7 +349,7 @@ export default function ShopDetail() {
         </div>
 
         {/* Shop Ads Banner */}
-        <ShopAdsBanner shopId={shop.id} />
+        <ShopAdsBanner shop={shop} />
 
         {/* Listings Tabs */}
         <Tabs value={tab} onValueChange={setTab} className="w-full">
@@ -474,22 +474,32 @@ export default function ShopDetail() {
   );
 }
 
-function ShopAdsBanner({ shopId }: { shopId: string }) {
-  const [ads, setAds] = useState<Array<{ id: string; title: string; description: string | null; image_url: string | null; link_url: string | null }>>([]);
-  const [selectedAd, setSelectedAd] = useState<typeof ads[0] | null>(null);
+interface AdItem {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  link_url: string | null;
+}
+
+function ShopAdsBanner({ shop }: { shop: any }) {
+  const [ads, setAds] = useState<AdItem[]>([]);
+  const [selectedAd, setSelectedAd] = useState<AdItem | null>(null);
 
   useEffect(() => {
     supabase
       .from("shop_ads")
       .select("id, title, description, image_url, link_url")
-      .eq("shop_id", shopId)
+      .eq("shop_id", shop.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(5)
-      .then(({ data }) => { if (data) setAds(data); });
-  }, [shopId]);
+      .then(({ data }) => { if (data) setAds(data as AdItem[]); });
+  }, [shop.id]);
 
   if (ads.length === 0) return null;
+
+  const waNumber = (shop.whatsapp || shop.phone || "").replace(/[^0-9]/g, "");
 
   return (
     <>
@@ -516,27 +526,118 @@ function ShopAdsBanner({ shopId }: { shopId: string }) {
         ))}
       </div>
 
-      {/* Ad Detail Dialog */}
+      {/* Ad Detail Dialog — mirrors a normal listing detail */}
       <Dialog open={!!selectedAd} onOpenChange={() => setSelectedAd(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">Sponsored</Badge>
-              {selectedAd?.title}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedAd?.image_url && (
-            <img src={selectedAd.image_url} alt={selectedAd.title} className="w-full rounded-lg object-cover max-h-80" />
-          )}
-          {selectedAd?.description && (
-            <p className="text-sm text-muted-foreground">{selectedAd.description}</p>
-          )}
-          {selectedAd?.link_url && (
-            <Button asChild className="w-full">
-              <a href={selectedAd.link_url} target="_blank" rel="noopener noreferrer">
-                Visit Link
-              </a>
-            </Button>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          {selectedAd && (
+            <div>
+              {selectedAd.image_url && (
+                <img
+                  src={selectedAd.image_url}
+                  alt={selectedAd.title}
+                  className="w-full max-h-80 object-cover"
+                />
+              )}
+              <div className="p-5 space-y-4">
+                <DialogHeader>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="secondary" className="text-xs">✨ Sponsored</Badge>
+                    <Badge variant="outline" className="text-xs">Shop Ad</Badge>
+                  </div>
+                  <DialogTitle className="text-2xl">{selectedAd.title}</DialogTitle>
+                </DialogHeader>
+
+                {shop.location && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{shop.location}</span>
+                  </div>
+                )}
+
+                {selectedAd.description && (
+                  <div>
+                    <h3 className="font-semibold mb-1 text-sm">Description</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {selectedAd.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Shop info card */}
+                <div className="border rounded-xl p-3 bg-muted/30">
+                  <Link
+                    to={`/shop/${shop.slug}`}
+                    className="flex items-center gap-3 group"
+                    onClick={() => setSelectedAd(null)}
+                  >
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-primary/10 shrink-0">
+                      {shop.logo_url ? (
+                        <img src={shop.logo_url} alt={shop.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-primary font-bold">
+                          {shop.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <p className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
+                          {shop.name}
+                        </p>
+                        {shop.is_verified && <CheckCircle className="h-4 w-4 text-primary shrink-0" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground">View shop profile</p>
+                    </div>
+                  </Link>
+                </div>
+
+                {/* Contact actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  {shop.phone && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`tel:${shop.phone}`}>
+                        <Phone className="h-4 w-4 mr-1" /> Call
+                      </a>
+                    </Button>
+                  )}
+                  {waNumber && (
+                    <Button variant="outline" size="sm" asChild className="text-green-600 hover:text-green-700">
+                      <a
+                        href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I'm interested in: ${selectedAd.title}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FaWhatsapp className="h-4 w-4 mr-1" /> WhatsApp
+                      </a>
+                    </Button>
+                  )}
+                  {shop.email && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`mailto:${shop.email}?subject=${encodeURIComponent(selectedAd.title)}`}>
+                        <Mail className="h-4 w-4 mr-1" /> Email
+                      </a>
+                    </Button>
+                  )}
+                  {selectedAd.link_url && (
+                    <Button size="sm" asChild>
+                      <a href={selectedAd.link_url} target="_blank" rel="noopener noreferrer">
+                        Visit Link
+                      </a>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Safety tips */}
+                <div className="rounded-lg border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-xs space-y-1">
+                  <p className="font-semibold text-amber-700 dark:text-amber-400">Safety Tips</p>
+                  <ul className="text-amber-700/80 dark:text-amber-400/80 space-y-0.5">
+                    <li>• Meet in public places for transactions</li>
+                    <li>• Verify the item before paying</li>
+                    <li>• Never send money in advance</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
