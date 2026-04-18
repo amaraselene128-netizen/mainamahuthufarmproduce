@@ -126,7 +126,7 @@ export function MyShopPanel() {
               <ShopPromotionButton shopId={shop.id} shopName={shop.name} />
               <Button variant="outline" onClick={() => setShowAds(!showAds)}>
                 <Megaphone className="h-4 w-4 mr-1" />
-                {showAds ? "Hide Ads" : "Manage Ads"}
+                {showAds ? "Hide Listings" : "Manage Listings & Ads"}
               </Button>
               <Button variant="outline" onClick={linkOrphanListings} disabled={linking}>
                 {linking ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Link2 className="h-4 w-4 mr-1" />}
