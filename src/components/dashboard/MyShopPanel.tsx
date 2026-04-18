@@ -8,13 +8,37 @@ import { ShopAdsManager } from "@/components/admin/ShopAdsManager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Store, Plus, Eye, Users, Star, MapPin, ExternalLink, Loader2, Crown, Megaphone } from "lucide-react";
+import { Store, Plus, Eye, Users, Star, MapPin, ExternalLink, Loader2, Crown, Megaphone, Link2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/untyped-client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export function MyShopPanel() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const { shop, isLoading, refetch } = useMyShop();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showAds, setShowAds] = useState(false);
+  const [linking, setLinking] = useState(false);
   const [searchParams] = useSearchParams();
+
+  const linkOrphanListings = async () => {
+    if (!user || !shop) return;
+    setLinking(true);
+    const { data, error } = await supabase
+      .from("listings")
+      .update({ shop_id: shop.id })
+      .eq("user_id", user.id)
+      .is("shop_id", null)
+      .select("id");
+    setLinking(false);
+    if (error) {
+      toast({ title: "Failed to link listings", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `${data?.length || 0} listing(s) linked to your shop` });
+      refetch();
+    }
+  };
 
   useEffect(() => {
     if (searchParams.get("manageAds") === "1") {
@@ -103,6 +127,10 @@ export function MyShopPanel() {
               <Button variant="outline" onClick={() => setShowAds(!showAds)}>
                 <Megaphone className="h-4 w-4 mr-1" />
                 {showAds ? "Hide Ads" : "Manage Ads"}
+              </Button>
+              <Button variant="outline" onClick={linkOrphanListings} disabled={linking}>
+                {linking ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Link2 className="h-4 w-4 mr-1" />}
+                Link My Listings to Shop
               </Button>
             </div>
           </div>

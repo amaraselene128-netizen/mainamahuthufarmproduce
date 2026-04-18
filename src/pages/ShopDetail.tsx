@@ -474,173 +474,63 @@ export default function ShopDetail() {
   );
 }
 
-interface AdItem {
+interface AdListing {
   id: string;
   title: string;
-  description: string | null;
-  image_url: string | null;
-  link_url: string | null;
+  price: number | null;
+  original_price: number | null;
+  images: any;
+  location: string | null;
+  listing_type: "product" | "service" | "event";
+  is_sponsored: boolean;
+  is_featured: boolean;
+  is_free: boolean;
+  favorites_count: number | null;
+  event_date: string | null;
 }
 
 function ShopAdsBanner({ shop }: { shop: any }) {
-  const [ads, setAds] = useState<AdItem[]>([]);
-  const [selectedAd, setSelectedAd] = useState<AdItem | null>(null);
+  const [ads, setAds] = useState<AdListing[]>([]);
 
   useEffect(() => {
+    // Featured/sponsored listings from this shop act as ads — full details via /listing/:id
     supabase
-      .from("shop_ads")
-      .select("id, title, description, image_url, link_url")
+      .from("listings_public")
+      .select("id, title, price, original_price, images, location, listing_type, is_sponsored, is_featured, is_free, favorites_count, event_date")
       .eq("shop_id", shop.id)
-      .eq("is_active", true)
+      .eq("status", "available")
+      .or("is_sponsored.eq.true,is_featured.eq.true")
       .order("created_at", { ascending: false })
-      .limit(5)
-      .then(({ data }) => { if (data) setAds(data as AdItem[]); });
+      .limit(8)
+      .then(({ data }) => { if (data) setAds(data as AdListing[]); });
   }, [shop.id]);
 
   if (ads.length === 0) return null;
 
-  const waNumber = (shop.whatsapp || shop.phone || "").replace(/[^0-9]/g, "");
-
   return (
-    <>
-      <div className="mb-6 grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold text-sm">Featured Ads</h2>
+      </div>
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
         {ads.map((ad) => (
-          <button
+          <ListingCard
             key={ad.id}
-            onClick={() => setSelectedAd(ad)}
-            className="block rounded-xl overflow-hidden border hover:shadow-md transition-shadow text-left bg-card"
-          >
-            {ad.image_url && (
-              <img src={ad.image_url} alt={ad.title} className="w-full aspect-[4/3] object-cover" />
-            )}
-            <div className="p-2">
-              <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-[10px] shrink-0">Ad</Badge>
-                <p className="font-medium text-xs line-clamp-1">{ad.title}</p>
-              </div>
-              {ad.description && (
-                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{ad.description}</p>
-              )}
-            </div>
-          </button>
+            id={ad.id}
+            title={ad.title}
+            price={ad.price ?? undefined}
+            originalPrice={ad.original_price ?? undefined}
+            image={parseImages(ad.images)?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&q=80"}
+            location={ad.location || ""}
+            category={ad.listing_type}
+            isSponsored={ad.is_sponsored || false}
+            isFeatured={ad.is_featured || false}
+            isFree={ad.is_free || false}
+            eventDate={ad.event_date ? format(new Date(ad.event_date), "MMM d") : undefined}
+          />
         ))}
       </div>
-
-      {/* Ad Detail Dialog — mirrors a normal listing detail */}
-      <Dialog open={!!selectedAd} onOpenChange={() => setSelectedAd(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          {selectedAd && (
-            <div>
-              {selectedAd.image_url && (
-                <img
-                  src={selectedAd.image_url}
-                  alt={selectedAd.title}
-                  className="w-full max-h-80 object-cover"
-                />
-              )}
-              <div className="p-5 space-y-4">
-                <DialogHeader>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="text-xs">✨ Sponsored</Badge>
-                    <Badge variant="outline" className="text-xs">Shop Ad</Badge>
-                  </div>
-                  <DialogTitle className="text-2xl">{selectedAd.title}</DialogTitle>
-                </DialogHeader>
-
-                {shop.location && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{shop.location}</span>
-                  </div>
-                )}
-
-                {selectedAd.description && (
-                  <div>
-                    <h3 className="font-semibold mb-1 text-sm">Description</h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {selectedAd.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* Shop info card */}
-                <div className="border rounded-xl p-3 bg-muted/30">
-                  <Link
-                    to={`/shop/${shop.slug}`}
-                    className="flex items-center gap-3 group"
-                    onClick={() => setSelectedAd(null)}
-                  >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-primary/10 shrink-0">
-                      {shop.logo_url ? (
-                        <img src={shop.logo_url} alt={shop.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-primary font-bold">
-                          {shop.name.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <p className="font-semibold text-sm group-hover:text-primary transition-colors truncate">
-                          {shop.name}
-                        </p>
-                        {shop.is_verified && <CheckCircle className="h-4 w-4 text-primary shrink-0" />}
-                      </div>
-                      <p className="text-xs text-muted-foreground">View shop profile</p>
-                    </div>
-                  </Link>
-                </div>
-
-                {/* Contact actions */}
-                <div className="grid grid-cols-2 gap-2">
-                  {shop.phone && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`tel:${shop.phone}`}>
-                        <Phone className="h-4 w-4 mr-1" /> Call
-                      </a>
-                    </Button>
-                  )}
-                  {waNumber && (
-                    <Button variant="outline" size="sm" asChild className="text-green-600 hover:text-green-700">
-                      <a
-                        href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I'm interested in: ${selectedAd.title}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FaWhatsapp className="h-4 w-4 mr-1" /> WhatsApp
-                      </a>
-                    </Button>
-                  )}
-                  {shop.email && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`mailto:${shop.email}?subject=${encodeURIComponent(selectedAd.title)}`}>
-                        <Mail className="h-4 w-4 mr-1" /> Email
-                      </a>
-                    </Button>
-                  )}
-                  {selectedAd.link_url && (
-                    <Button size="sm" asChild>
-                      <a href={selectedAd.link_url} target="_blank" rel="noopener noreferrer">
-                        Visit Link
-                      </a>
-                    </Button>
-                  )}
-                </div>
-
-                {/* Safety tips */}
-                <div className="rounded-lg border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-xs space-y-1">
-                  <p className="font-semibold text-amber-700 dark:text-amber-400">Safety Tips</p>
-                  <ul className="text-amber-700/80 dark:text-amber-400/80 space-y-0.5">
-                    <li>• Meet in public places for transactions</li>
-                    <li>• Verify the item before paying</li>
-                    <li>• Never send money in advance</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+    </div>
   );
 }
