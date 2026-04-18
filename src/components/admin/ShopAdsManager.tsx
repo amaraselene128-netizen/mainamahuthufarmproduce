@@ -1,37 +1,28 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { CloudinaryImageUpload } from "@/components/shared/CloudinaryImageUpload";
-import { Megaphone, Plus, Edit, Trash2, Loader2, Search, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Megaphone, Plus, Edit, Trash2, Loader2, Search, ExternalLink, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { ListingForm } from "@/components/dashboard/ListingForm";
+import { parseImages } from "@/lib/utils";
 
-interface ShopAd {
-  id: string;
-  shop_id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  link_url: string | null;
-  is_active: boolean;
-  position: string;
-  created_at: string;
-  shop_name?: string;
-}
-
-interface ShopOption {
-  id: string;
-  name: string;
-}
+/**
+ * ShopAdsManager — admin & per-shop view of shop advertisements.
+ *
+ * IMPORTANT: A "shop ad" is just a regular `listings` row attached to a shop.
+ * This guarantees ads have price, category, location, contacts, images and
+ * appear in shop pages + marketplace exactly like any other listing.
+ *
+ * The legacy `shop_ads` table is no longer used here — all create/edit goes
+ * through the unified `ListingForm`.
+ */
 
 interface ShopAdsManagerProps {
   shopId?: string;
@@ -41,164 +32,96 @@ interface ShopAdsManagerProps {
 
 export function ShopAdsManager({ shopId, shopName, isAdmin = false }: ShopAdsManagerProps) {
   const { toast } = useToast();
-  const [ads, setAds] = useState<ShopAd[]>([]);
-  const [shops, setShops] = useState<ShopOption[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
+  const [shopMap, setShopMap] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
-  const [editingAd, setEditingAd] = useState<ShopAd | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState({
-    shop_id: shopId || "",
-    title: "",
-    description: "",
-    image_url: "",
-    link_url: "",
-    is_active: true,
-    position: "banner",
-  });
+  const [defaultShopId, setDefaultShopId] = useState<string | null>(shopId || null);
 
-  const fetchAds = async () => {
+  const fetchListings = async () => {
     setIsLoading(true);
-    let query = supabase.from("shop_ads").select("*").order("created_at", { ascending: false });
-    if (shopId) query = query.eq("shop_id", shopId);
-    const { data } = await query;
+    let query = supabase
+      .from("listings")
+      .select("*")
+      .not("shop_id", "is", null)
+      .order("created_at", { ascending: false });
 
-    if (data && isAdmin && !shopId) {
-      const shopIds = [...new Set(data.map((a: any) => a.shop_id))];
-      const { data: shopData } = await supabase.from("shops").select("id, name").in("id", shopIds);
-      const shopMap = new Map((shopData || []).map((s: any) => [s.id, s.name]));
-      setAds(data.map((a: any) => ({ ...a, shop_name: shopMap.get(a.shop_id) || "Unknown" })));
-    } else {
-      setAds((data as ShopAd[]) || []);
+    if (shopId) query = query.eq("shop_id", shopId);
+
+    const { data } = await query;
+    const rows = data || [];
+    setListings(rows);
+
+    // Map shop names for admin view
+    if (isAdmin && !shopId && rows.length > 0) {
+      const ids = [...new Set(rows.map((r: any) => r.shop_id).filter(Boolean))];
+      const { data: shopsData } = await supabase.from("shops").select("id, name").in("id", ids);
+      setShopMap(new Map((shopsData || []).map((s: any) => [s.id, s.name])));
     }
+
     setIsLoading(false);
   };
 
-  const fetchShops = async () => {
-    if (!isAdmin) return;
-    const { data } = await supabase.from("shops").select("id, name").eq("is_active", true).order("name");
-    if (data) setShops(data as ShopOption[]);
-  };
+  useEffect(() => { fetchListings(); }, [shopId]);
 
+  // For admin creating a new ad without a preselected shop, pick the first shop
   useEffect(() => {
-    fetchAds();
-    fetchShops();
-  }, [shopId]);
+    if (!isAdmin || shopId) return;
+    supabase.from("shops").select("id").eq("is_active", true).limit(1).maybeSingle()
+      .then(({ data }) => { if (data?.id) setDefaultShopId(data.id); });
+  }, [isAdmin, shopId]);
 
-  const resetForm = () => {
-    setForm({
-      shop_id: shopId || "",
-      title: "",
-      description: "",
-      image_url: "",
-      link_url: "",
-      is_active: true,
-      position: "banner",
-    });
-  };
-
-  const openCreate = () => {
-    resetForm();
-    setEditingAd(null);
-    setIsCreating(true);
-  };
-
-  const openEdit = (ad: ShopAd) => {
-    setEditingAd(ad);
-    setForm({
-      shop_id: ad.shop_id,
-      title: ad.title,
-      description: ad.description || "",
-      image_url: ad.image_url || "",
-      link_url: ad.link_url || "",
-      is_active: ad.is_active,
-      position: ad.position || "banner",
-    });
-    setIsCreating(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.title.trim()) {
-      toast({ title: "Title is required", variant: "destructive" });
-      return;
-    }
-    if (!form.shop_id) {
-      toast({ title: "Please select a shop", variant: "destructive" });
-      return;
-    }
-
-    setIsSaving(true);
-    const payload = {
-      shop_id: form.shop_id,
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      image_url: form.image_url.trim() || null,
-      link_url: form.link_url.trim() || null,
-      is_active: form.is_active,
-      position: form.position,
-    };
-
-    if (editingAd) {
-      const { error } = await supabase.from("shop_ads").update(payload).eq("id", editingAd.id);
-      if (error) {
-        toast({ title: "Error updating ad", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Ad updated ✅" });
-      }
-    } else {
-      const { error } = await supabase.from("shop_ads").insert(payload);
-      if (error) {
-        toast({ title: "Error creating ad", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Ad created ✅" });
-      }
-    }
-    setIsSaving(false);
-    setIsCreating(false);
-    fetchAds();
-  };
+  const openCreate = () => { setEditing(null); setIsFormOpen(true); };
+  const openEdit = (l: any) => { setEditing(l); setIsFormOpen(true); };
+  const handleSuccess = () => { setIsFormOpen(false); setEditing(null); fetchListings(); };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("shop_ads").delete().eq("id", id);
+    if (!confirm("Delete this listing/ad? This cannot be undone.")) return;
+    const { error } = await supabase.from("listings").delete().eq("id", id);
     if (error) {
-      toast({ title: "Error deleting ad", description: error.message, variant: "destructive" });
+      toast({ title: "Error deleting", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Ad deleted" });
-      fetchAds();
+      toast({ title: "Deleted" });
+      fetchListings();
     }
   };
 
-  const toggleActive = async (ad: ShopAd) => {
-    await supabase.from("shop_ads").update({ is_active: !ad.is_active }).eq("id", ad.id);
-    fetchAds();
+  const toggleStatus = async (l: any) => {
+    const newStatus = l.status === "available" ? "draft" : "available";
+    await supabase.from("listings").update({ status: newStatus }).eq("id", l.id);
+    fetchListings();
   };
 
-  const updateField = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }));
+  const filtered = listings.filter((l) => {
+    const q = search.toLowerCase();
+    return (
+      l.title?.toLowerCase().includes(q) ||
+      (shopMap.get(l.shop_id) || "").toLowerCase().includes(q)
+    );
+  });
 
-  const filtered = ads.filter(
-    (a) =>
-      a.title.toLowerCase().includes(search.toLowerCase()) ||
-      (a.shop_name || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const typePath = (t: string) =>
+    t === "service" ? "services" : t === "event" ? "events" : "products";
 
   return (
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Megaphone className="h-5 w-5" />
                 {shopName ? `${shopName} Ads` : "Shop Advertisements"}
               </CardTitle>
               <CardDescription>
-                {isAdmin ? "Manage ads across all shops" : "Create and manage your shop ads"}
+                Every ad is a full listing — price, category, contacts & images included.
+                Visible across the shop page and the entire marketplace.
               </CardDescription>
             </div>
             <Button onClick={openCreate}>
-              <Plus className="h-4 w-4 mr-1" />
-              New Ad
+              <Plus className="h-4 w-4 mr-1" />New Ad
             </Button>
           </div>
         </CardHeader>
@@ -213,128 +136,96 @@ export function ShopAdsManager({ shopId, shopName, isAdmin = false }: ShopAdsMan
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No ads yet. Create your first ad!</p>
+            <p className="text-center text-muted-foreground py-8">No shop ads yet. Create your first one!</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ad</TableHead>
+                  <TableHead>Ad / Listing</TableHead>
                   {isAdmin && !shopId && <TableHead>Shop</TableHead>}
-                  <TableHead>Position</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((ad) => (
-                  <TableRow key={ad.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        {ad.image_url && (
-                          <img src={ad.image_url} alt="" className="w-12 h-12 rounded object-cover" />
-                        )}
-                        <div>
-                          <p className="font-medium">{ad.title}</p>
-                          {ad.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-1">{ad.description}</p>
-                          )}
+                {filtered.map((l) => {
+                  const img = parseImages(l.images)?.[0];
+                  const incomplete = !l.category || (!l.price && !l.is_free);
+                  return (
+                    <TableRow key={l.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded bg-muted overflow-hidden shrink-0">
+                            {img && <img src={img} alt="" className="w-full h-full object-cover" />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{l.title || "Untitled"}</p>
+                              <Badge variant="secondary" className="text-xs">{l.listing_type}</Badge>
+                              {l.is_featured && <Badge className="text-xs">Featured</Badge>}
+                              {l.is_sponsored && <Badge variant="outline" className="text-xs">Sponsored</Badge>}
+                            </div>
+                            {incomplete && (
+                              <p className="text-xs text-destructive mt-0.5 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" /> Missing details — click Edit
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    {isAdmin && !shopId && <TableCell>{ad.shop_name}</TableCell>}
-                    <TableCell>
-                      <Badge variant="secondary">{ad.position}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={ad.is_active ? "default" : "destructive"}>
-                        {ad.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{format(new Date(ad.created_at), "MMM d, yyyy")}</TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(ad)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => toggleActive(ad)}>
-                        {ad.is_active ? "Pause" : "Resume"}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(ad.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      {isAdmin && !shopId && <TableCell className="text-sm">{shopMap.get(l.shop_id) || "—"}</TableCell>}
+                      <TableCell className="text-sm">
+                        {l.is_free ? "FREE" : l.price ? `KES ${Number(l.price).toLocaleString()}` : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm">{l.category || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={l.status === "available" ? "default" : "destructive"}>
+                          {l.status === "available" ? "Active" : l.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{format(new Date(l.created_at), "MMM d, yyyy")}</TableCell>
+                      <TableCell className="text-right space-x-1 whitespace-nowrap">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/${typePath(l.listing_type)}/${l.id}`} target="_blank">
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(l)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => toggleStatus(l)}>
+                          {l.status === "available" ? "Pause" : "Resume"}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(l.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
 
-      <Dialog open={isCreating} onOpenChange={(open) => !open && setIsCreating(false)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <Dialog open={isFormOpen} onOpenChange={(o) => { if (!o) { setIsFormOpen(false); setEditing(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingAd ? "Edit Ad" : "Create New Ad"}</DialogTitle>
+            <DialogTitle>{editing ? "Edit Ad / Listing" : "Create New Ad / Listing"}</DialogTitle>
+            <DialogDescription>
+              Fill in all details — price, category, images, location. Your ad will appear in the shop and across the marketplace.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            {isAdmin && !shopId && (
-              <div>
-                <Label>Shop</Label>
-                <Select value={form.shop_id} onValueChange={(v) => updateField("shop_id", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select a shop" /></SelectTrigger>
-                  <SelectContent>
-                    {shops.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div>
-              <Label>Title *</Label>
-              <Input value={form.title} onChange={(e) => updateField("title", e.target.value)} placeholder="Ad title" />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea value={form.description} onChange={(e) => updateField("description", e.target.value)} placeholder="Ad description..." rows={3} />
-            </div>
-            <div>
-              <Label>Ad Image</Label>
-              <CloudinaryImageUpload
-                value={form.image_url}
-                onChange={(url) => updateField("image_url", url)}
-                label="Upload Ad Image"
-                aspectRatio="aspect-video"
-              />
-            </div>
-            <div>
-              <Label>Link URL (optional)</Label>
-              <Input value={form.link_url} onChange={(e) => updateField("link_url", e.target.value)} placeholder="https://..." />
-            </div>
-            <div>
-              <Label>Position</Label>
-              <Select value={form.position} onValueChange={(v) => updateField("position", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="banner">Banner (top)</SelectItem>
-                  <SelectItem value="sidebar">Sidebar</SelectItem>
-                  <SelectItem value="inline">Inline (between listings)</SelectItem>
-                  <SelectItem value="footer">Footer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.is_active} onCheckedChange={(v) => updateField("is_active", v)} />
-              <Label>Active</Label>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                {editingAd ? "Save Changes" : "Create Ad"}
-              </Button>
-            </div>
-          </div>
+          <ListingForm
+            listing={editing}
+            shopId={shopId || defaultShopId || undefined}
+            onSuccess={handleSuccess}
+            onCancel={() => { setIsFormOpen(false); setEditing(null); }}
+          />
         </DialogContent>
       </Dialog>
     </>
