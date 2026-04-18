@@ -166,7 +166,7 @@ export function ShopAdsManager({ shopId, shopName, isAdmin = false }: ShopAdsMan
                               <p className="font-medium truncate">{l.title || "Untitled"}</p>
                               <Badge variant="secondary" className="text-xs">{l.listing_type}</Badge>
                               {l.is_featured && <Badge className="text-xs">Featured</Badge>}
-                              {l.is_sponsored && <Badge className="text-xs bg-purple-500">Sponsored</Badge>}
+                              {l.is_sponsored && <Badge variant="outline" className="text-xs">Sponsored</Badge>}
                             </div>
                             {incomplete && (
                               <p className="text-xs text-destructive mt-0.5 flex items-center gap-1">
