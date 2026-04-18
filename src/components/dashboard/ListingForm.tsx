@@ -88,7 +88,17 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
       images: images,
       status: "available" as const,
     };
-    if (shopId) listingData.shop_id = shopId;
+    // Always attach to the user's shop so listings appear in their shop page
+    if (shopId) {
+      listingData.shop_id = shopId;
+    } else {
+      const { data: ownShop } = await supabase
+        .from("shops")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (ownShop?.id) listingData.shop_id = ownShop.id;
+    }
 
     let error;
 
