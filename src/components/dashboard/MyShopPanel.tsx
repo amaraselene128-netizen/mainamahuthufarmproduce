@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { useMyShop } from "@/hooks/useShops";
 import { CreateShopForm } from "@/components/shops/CreateShopForm";
 import { ShopPromotionButton } from "@/components/dashboard/ShopPromotionButton";
-import { ShopAdsManager } from "@/components/admin/ShopAdsManager";
+import { ShopListingsManager } from "@/components/dashboard/ShopListingsManager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -138,7 +138,7 @@ export function MyShopPanel() {
 
         {showAds && (
           <div className="mt-6 border-t pt-6">
-            <ShopAdsManager shopId={shop.id} shopName={shop.name} />
+            <ShopListingsManager shopId={shop.id} shopName={shop.name} />
           </div>
         )}
       </CardContent>
