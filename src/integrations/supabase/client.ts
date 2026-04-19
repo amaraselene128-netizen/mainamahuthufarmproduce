@@ -4,11 +4,87 @@ import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SESSION_RETRY_HEADER = 'x-supabase-session-retried';
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const getRequestUrl = (input: RequestInfo | URL) => {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+};
+
+let supabase: ReturnType<typeof createClient<Database>>;
+
+const refreshAccessToken = async () => {
+  if (!supabase) return null;
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const { data, error } = await supabase.auth.refreshSession();
+
+      if (error || !data.session?.access_token) {
+        await supabase.auth.signOut({ scope: 'local' });
+        return null;
+      }
+
+      return data.session.access_token;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+};
+
+const supabaseFetch: typeof fetch = async (input, init) => {
+  const response = await fetch(input, init);
+  const requestUrl = getRequestUrl(input);
+
+  if (response.status !== 401 || !requestUrl.startsWith(`${SUPABASE_URL}/rest/v1/`)) {
+    return response;
+  }
+
+  const requestHeaders = new Headers(
+    init?.headers ?? (input instanceof Request ? input.headers : undefined),
+  );
+  const authHeader = requestHeaders.get('Authorization');
+  const alreadyRetried = requestHeaders.get(SESSION_RETRY_HEADER) === 'true';
+
+  if (!authHeader?.startsWith('Bearer ') || alreadyRetried || !supabase) {
+    return response;
+  }
+
+  const currentToken = authHeader.replace('Bearer ', '');
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token || session.access_token !== currentToken) {
+    return response;
+  }
+
+  const freshToken = await refreshAccessToken();
+
+  if (!freshToken) {
+    return response;
+  }
+
+  const retryHeaders = new Headers(requestHeaders);
+  retryHeaders.set('Authorization', `Bearer ${freshToken}`);
+  retryHeaders.set(SESSION_RETRY_HEADER, 'true');
+
+  return fetch(input, {
+    ...init,
+    headers: retryHeaders,
+  });
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: {
+    fetch: supabaseFetch,
+  },
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -17,3 +93,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     flowType: 'pkce',
   }
 });
+
+export { supabase };
