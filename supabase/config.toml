@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.dynamic-sitemap]
 verify_jwt = false
+
+[functions.sokoni-assistant]
+verify_jwt = false
