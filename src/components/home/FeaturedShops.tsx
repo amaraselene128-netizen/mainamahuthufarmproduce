@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Store, Sparkles } from "lucide-react";
+import { ArrowRight, Crown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShopCard } from "@/components/shops/ShopCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,13 +28,16 @@ export const FeaturedShops = memo(function FeaturedShops() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Store className="h-6 w-6 text-primary" />
-              <h2 className="font-display text-3xl md:text-4xl font-bold">
-                Featured Shops
+              <Crown className="h-6 w-6 text-gold" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold/90 px-2 py-0.5 rounded-full border border-gold/40 bg-gold/5">
+                Premium
+              </span>
+              <h2 className="font-display text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                Elite Storefronts
               </h2>
             </div>
             <p className="text-muted-foreground text-lg">
-              Discover trusted sellers with their own branded shops
+              Hand-picked premium shops trusted by thousands of buyers
             </p>
           </div>
           <Button variant="outline" asChild>
