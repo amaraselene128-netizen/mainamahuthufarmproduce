@@ -10,41 +10,46 @@ import { Search, SlidersHorizontal, Loader2, Sparkles } from "lucide-react";
 import "@/styles/featured-shops.css";
 import { useListings } from "@/hooks/useListings";
 import categoryServices from "@/assets/category-services.png";
-
-const categories = [
-  "All Categories",
-  "Home Services",
-  "Professional Services",
-  "Health & Fitness",
-  "Events & Entertainment",
-  "Education & Tutoring",
-  "Technology",
-  "Beauty & Wellness",
-  "Jobs",
-  "Food",
-];
+import { CategoryFilter, type CategoryFilterValue } from "@/components/listings/CategoryFilter";
+import { findSection } from "@/lib/categories";
 
 export default function Services() {
   const [searchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get("category");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [filter, setFilter] = useState<CategoryFilterValue>(() => {
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    return {
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    };
+  });
   const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
-    if (categoryFromUrl) {
-      const matched = categories.find(
-        (c) => c.toLowerCase() === categoryFromUrl.toLowerCase()
-      );
-      if (matched) setSelectedCategory(matched);
-    }
-  }, [categoryFromUrl]);
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    setFilter({
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    });
+  }, [searchParams]);
 
   const [pageSeed] = useState(() => Math.random());
   const { listings, isLoading, error } = useListings({
     type: "service",
-    category: selectedCategory,
+    section: filter.section,
+    category: filter.category,
+    subcategory: filter.subcategory,
     searchQuery,
     sortBy,
     shuffleSeed: sortBy === "newest" ? pageSeed : undefined,
