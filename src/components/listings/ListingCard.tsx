@@ -147,15 +147,15 @@ export const ListingCard = memo(function ListingCard({
             </Button>
           </div>
 
-          {/* Contact Buttons (bottom overlay) */}
+          {/* Contact Buttons (bottom overlay) — always visible */}
           {(phoneClean || waClean) && (
-            <div className="absolute bottom-1.5 right-1.5 flex gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-1.5 right-1.5 flex gap-1">
               {phoneClean && (
                 <a
                   href={`tel:${phoneClean}`}
                   onClick={stop}
                   aria-label="Call seller"
-                  className="h-7 w-7 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
+                  className="h-7 w-7 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 ring-2 ring-white/70"
                 >
                   <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </a>
@@ -167,7 +167,7 @@ export const ListingCard = memo(function ListingCard({
                   rel="noopener noreferrer"
                   onClick={stop}
                   aria-label="WhatsApp seller"
-                  className="h-7 w-7 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-full bg-[#25D366] text-white shadow-md hover:opacity-90"
+                  className="h-7 w-7 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-full bg-[#25D366] text-white shadow-md hover:opacity-90 ring-2 ring-white/70"
                 >
                   <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </a>
