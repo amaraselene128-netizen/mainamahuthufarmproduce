@@ -209,7 +209,7 @@ export default function Search() {
     }
 
     setIsLoading(false);
-  }, [debouncedQuery, activeTab, sortBy, selectedLocation, selectedCategory, debouncedPriceRange, currentPage]);
+  }, [debouncedQuery, activeTab, sortBy, selectedLocation, filter, debouncedPriceRange, currentPage]);
 
   useEffect(() => {
     fetchListings();
@@ -223,8 +223,9 @@ export default function Search() {
     if (sortBy !== "newest") params.set("sort", sortBy);
     if (selectedLocation !== "All Locations")
       params.set("location", selectedLocation);
-    if (selectedCategory !== "All Categories")
-      params.set("category", selectedCategory);
+    if (filter.section) params.set("section", filter.section);
+    if (filter.category) params.set("category", filter.category);
+    if (filter.subcategory) params.set("subcategory", filter.subcategory);
     if (debouncedPriceRange[0] > 0) params.set("minPrice", debouncedPriceRange[0].toString());
     if (debouncedPriceRange[1] < 1000000)
       params.set("maxPrice", debouncedPriceRange[1].toString());
@@ -236,7 +237,7 @@ export default function Search() {
     activeTab,
     sortBy,
     selectedLocation,
-    selectedCategory,
+    filter,
     debouncedPriceRange,
     currentPage,
     setSearchParams,
@@ -249,7 +250,7 @@ export default function Search() {
 
   const clearFilters = () => {
     setSelectedLocation("All Locations");
-    setSelectedCategory("All Categories");
+    setFilter({ section: "", category: "", subcategory: "" });
     setPriceRange([0, 1000000]);
     setCurrentPage(1);
     setIsFiltersOpen(false);
