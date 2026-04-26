@@ -97,13 +97,12 @@ function MiniBanner({
         </div>
 
         {cur && (
-          <div className="relative shrink-0 w-[72px] h-[72px] sm:w-[84px] sm:h-[84px]">
-            <div className="absolute inset-0 rounded-full bg-white/85 shadow-inner" />
+          <div className="relative shrink-0 w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-full overflow-hidden bg-white/90 shadow-inner ring-2 ring-white/70">
             <img
               src={cur.image}
               alt={cur.title}
               loading="lazy"
-              className="relative w-full h-full object-contain p-1.5 drop-shadow-md group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
           </div>
         )}

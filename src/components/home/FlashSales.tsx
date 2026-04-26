@@ -110,9 +110,9 @@ export const FlashSales = memo(function FlashSales() {
     };
   }, []);
 
-  // Reshuffle every 8s for a lively rotation feel
+  // Reshuffle every 3 minutes to avoid overload
   useEffect(() => {
-    const t = setInterval(() => setShuffleTick((n) => n + 1), 8000);
+    const t = setInterval(() => setShuffleTick((n) => n + 1), 3 * 60 * 1000);
     return () => clearInterval(t);
   }, []);
 
