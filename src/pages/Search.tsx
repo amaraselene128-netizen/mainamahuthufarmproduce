@@ -470,7 +470,9 @@ export default function Search() {
 
         {/* Active Filters */}
         {(selectedLocation !== "All Locations" ||
-          selectedCategory !== "All Categories" ||
+          filter.section ||
+          filter.category ||
+          filter.subcategory ||
           priceRange[0] > 0 ||
           priceRange[1] < 1000000) && (
           <div className="flex flex-wrap gap-2 mb-4">
@@ -485,13 +487,33 @@ export default function Search() {
                 <X className="h-3 w-3 ml-1" />
               </Button>
             )}
-            {selectedCategory !== "All Categories" && (
+            {filter.section && (
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelectedCategory("All Categories")}
+                onClick={() => setFilter({ section: "", category: "", subcategory: "" })}
               >
-                {selectedCategory}
+                {findSection(filter.section)?.label || filter.section}
+                <X className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+            {filter.category && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setFilter({ ...filter, category: "", subcategory: "" })}
+              >
+                {filter.category}
+                <X className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+            {filter.subcategory && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setFilter({ ...filter, subcategory: "" })}
+              >
+                {filter.subcategory}
                 <X className="h-3 w-3 ml-1" />
               </Button>
             )}
