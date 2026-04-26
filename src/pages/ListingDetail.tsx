@@ -103,21 +103,28 @@ export default function ListingDetail() {
     if (!Array.isArray(parsed.images)) parsed.images = [];
     setListing(parsed);
     
-    // Fetch seller profile with phone/whatsapp
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name, created_at, phone_number")
-      .eq("user_id", data.user_id)
-      .maybeSingle();
+    const [{ data: profile }, { data: shop }] = await Promise.all([
+      supabase
+        .from("profiles_public")
+        .select("username, avatar_url, is_verified, created_at")
+        .eq("user_id", data.user_id)
+        .maybeSingle(),
+      supabase
+        .from("shops")
+        .select("name, phone, whatsapp, is_active")
+        .eq("user_id", data.user_id)
+        .eq("is_active", true)
+        .maybeSingle(),
+    ]);
 
-    if (profile) {
+    if (profile || shop) {
       setSeller({
-        username: (profile as any).display_name || "Seller",
-        avatar_url: null,
-        is_verified: null,
-        created_at: (profile as any).created_at,
-        phone: (profile as any).phone_number ?? null,
-        whatsapp: (profile as any).phone_number ?? null,
+        username: (shop as any)?.name || (profile as any)?.username || "Seller",
+        avatar_url: (profile as any)?.avatar_url ?? null,
+        is_verified: (profile as any)?.is_verified ?? null,
+        created_at: (profile as any)?.created_at || data.created_at || new Date().toISOString(),
+        phone: (shop as any)?.phone ?? null,
+        whatsapp: (shop as any)?.whatsapp ?? (shop as any)?.phone ?? null,
       });
     } else {
       setSeller(null);

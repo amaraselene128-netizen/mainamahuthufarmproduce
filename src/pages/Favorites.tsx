@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSellerContacts } from "@/hooks/useSellerContacts";
 import { Heart, Package, Sparkles, CalendarDays, Search } from "lucide-react";
 
 interface FavoriteWithListing {
@@ -15,6 +16,7 @@ interface FavoriteWithListing {
   created_at: string;
   listings: {
     id: string;
+    user_id: string;
     title: string;
     price: number | null;
     original_price: number | null;
@@ -50,6 +52,7 @@ export default function Favorites() {
           created_at,
           listings (
             id,
+            user_id,
             title,
             price,
             original_price,
@@ -90,6 +93,7 @@ export default function Favorites() {
     if (activeTab === "all") return true;
     return fav.listings.listing_type === activeTab;
   });
+  const contacts = useSellerContacts(filteredFavorites.map((fav) => fav.listings?.user_id).filter(Boolean) as string[]);
 
   const getCounts = () => {
     return {
@@ -193,46 +197,40 @@ export default function Favorites() {
                 </div>
               ) : (
                 <div className="listing-grid">
-                  {filteredFavorites.map((fav) => (
-                    <div key={fav.id} className="relative group">
-                      <ListingCard
-                        id={fav.listings.id}
-                        title={fav.listings.title}
-                        price={fav.listings.price || 0}
-                        originalPrice={
-                          fav.listings.original_price || undefined
-                        }
-                        image={fav.listings.images?.[0] || "/placeholder.svg"}
-                        location={fav.listings.location}
-                        category={fav.listings.listing_type}
-                        isSponsored={fav.listings.is_sponsored}
-                        isFeatured={fav.listings.is_featured}
-                        isFree={fav.listings.is_free}
-                        eventDate={
-                          fav.listings.event_date
-                            ? new Date(
-                                fav.listings.event_date
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : undefined
-                        }
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          removeFavorite(fav.id);
-                        }}
-                      >
-                        <Heart className="h-4 w-4 fill-current" />
-                      </Button>
-                    </div>
-                  ))}
+                  {filteredFavorites.map((fav) => {
+                    const seller = contacts[fav.listings.user_id];
+                    return (
+                      <div key={fav.id} className="relative group">
+                        <ListingCard
+                          id={fav.listings.id}
+                          title={fav.listings.title}
+                          price={fav.listings.price || 0}
+                          originalPrice={fav.listings.original_price || undefined}
+                          image={fav.listings.images?.[0] || "/placeholder.svg"}
+                          location={fav.listings.location}
+                          category={fav.listings.listing_type}
+                          isSponsored={fav.listings.is_sponsored}
+                          isFeatured={fav.listings.is_featured}
+                          isFree={fav.listings.is_free}
+                          eventDate={fav.listings.event_date ? new Date(fav.listings.event_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : undefined}
+                          sellerPhone={seller?.phone}
+                          sellerWhatsapp={seller?.whatsapp}
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            removeFavorite(fav.id);
+                          }}
+                        >
+                          <Heart className="h-4 w-4 fill-current" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>

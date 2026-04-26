@@ -4,6 +4,7 @@ import { useShopBySlug, useShopFollow } from "@/hooks/useShops";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { ListingCard } from "@/components/listings/ListingCard";
+import { ListingsGridWithContacts } from "@/components/listings/ListingsGridWithContacts";
 
 import { ShopProfileEditor } from "@/components/shops/ShopProfileEditor";
 import { ShopJsonLd } from "@/components/seo/ShopJsonLd";
@@ -142,20 +143,6 @@ export default function ShopDetail() {
     if (tab === "services") return l.listing_type === "service";
     if (tab === "events") return l.listing_type === "event";
     return true;
-  });
-
-  const mapListing = (listing: ShopListing) => ({
-    id: listing.id,
-    title: listing.title,
-    price: listing.price ?? undefined,
-    originalPrice: listing.original_price ?? undefined,
-    image: parseImages(listing.images)?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&q=80",
-    location: listing.location || "",
-    category: listing.listing_type as "product" | "service" | "event",
-    isSponsored: listing.is_sponsored || false,
-    isFeatured: listing.is_featured || false,
-    isFree: listing.is_free || false,
-    eventDate: listing.event_date ? format(new Date(listing.event_date), "MMM d") : undefined,
   });
 
   const socialLinks = useMemo(() => {
@@ -373,11 +360,10 @@ export default function ShopDetail() {
                   ))}
                 </div>
               ) : filteredListings.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                  {filteredListings.map((l) => (
-                    <ListingCard key={l.id} {...mapListing(l)} />
-                  ))}
-                </div>
+                <ListingsGridWithContacts
+                  listings={filteredListings.map((listing) => ({ ...listing, user_id: shop.user_id }))}
+                  category={t === "services" ? "service" : t === "events" ? "event" : "product"}
+                />
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
                   {isOwner ? (
@@ -514,22 +500,10 @@ function ShopAdsBanner({ shop }: { shop: any }) {
         <h2 className="font-semibold text-sm">Featured Ads</h2>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-        {ads.map((ad) => (
-          <ListingCard
-            key={ad.id}
-            id={ad.id}
-            title={ad.title}
-            price={ad.price ?? undefined}
-            originalPrice={ad.original_price ?? undefined}
-            image={parseImages(ad.images)?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&q=80"}
-            location={ad.location || ""}
-            category={ad.listing_type}
-            isSponsored={ad.is_sponsored || false}
-            isFeatured={ad.is_featured || false}
-            isFree={ad.is_free || false}
-            eventDate={ad.event_date ? format(new Date(ad.event_date), "MMM d") : undefined}
-          />
-        ))}
+        <ListingsGridWithContacts
+          listings={ads.map((ad) => ({ ...ad, user_id: shop.user_id }))}
+          category="product"
+        />
       </div>
     </div>
   );

@@ -31,6 +31,7 @@ export const ListingsGridWithContacts = memo(function ListingsGridWithContacts({
     <div className="listing-grid">
       {listings.map((listing) => {
         const seller = contacts[listing.user_id];
+        const listingCategory = (listing.listing_type || category) as "product" | "service" | "event";
         return (
           <ListingCard
             key={listing.id}
@@ -40,7 +41,7 @@ export const ListingsGridWithContacts = memo(function ListingsGridWithContacts({
             originalPrice={listing.original_price || undefined}
             image={parseImages(listing.images)?.[0] || fallbackImage}
             location={listing.location}
-            category={category}
+            category={listingCategory}
             isSponsored={listing.is_sponsored || false}
             isFeatured={listing.is_featured || false}
             isFree={listing.is_free || false}

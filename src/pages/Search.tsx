@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { parseImages } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import { ListingCard } from "@/components/listings/ListingCard";
+import { ListingsGridWithContacts } from "@/components/listings/ListingsGridWithContacts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -595,31 +595,11 @@ export default function Search() {
           </div>
         ) : listings.length > 0 ? (
           <>
-            <div className="listing-grid">
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  id={listing.id}
-                  title={listing.title}
-                  price={listing.price || 0}
-                  originalPrice={listing.original_price || undefined}
-                  image={parseImages(listing.images)?.[0] || "/placeholder.svg"}
-                  location={listing.location}
-                  category={listing.listing_type}
-                  isSponsored={listing.is_sponsored}
-                  isFeatured={listing.is_featured}
-                  isFree={listing.is_free}
-                  eventDate={
-                    listing.event_date
-                      ? new Date(listing.event_date).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric" }
-                        )
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
+            <ListingsGridWithContacts
+              listings={listings}
+              category={activeTab === "service" ? "service" : activeTab === "event" ? "event" : "product"}
+              fallbackImage="/placeholder.svg"
+            />
 
             {/* Pagination */}
             {totalPages > 1 && (

@@ -39,19 +39,24 @@ export function useSellerContacts(userIds: string[]) {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, phone_number")
+        .from("shops")
+        .select("user_id, name, phone, whatsapp, is_active")
         .in("user_id", missing);
 
       if (cancelled || error || !data) return;
       const next: Record<string, SellerContact> = { ...initial };
       for (const row of data as any[]) {
+        if (!row.is_active) continue;
+
+        const phone = row.phone ?? null;
+        const whatsapp = row.whatsapp ?? row.phone ?? null;
+        if (!phone && !whatsapp) continue;
+
         const contact: SellerContact = {
           user_id: row.user_id,
-          username: row.display_name ?? null,
-          phone: row.phone_number ?? null,
-          // Same number used for WhatsApp by default
-          whatsapp: row.phone_number ?? null,
+          username: row.name ?? null,
+          phone,
+          whatsapp,
         };
         cache.set(row.user_id, contact);
         next[row.user_id] = contact;
