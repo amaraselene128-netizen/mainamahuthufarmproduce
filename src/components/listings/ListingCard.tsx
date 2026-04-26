@@ -1,6 +1,7 @@
 import { memo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MapPin, Star, Clock, ShoppingCart, Phone, MessageCircle } from "lucide-react";
+import { Heart, MapPin, Star, Clock, ShoppingCart, Phone } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa6";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -169,7 +170,7 @@ export const ListingCard = memo(function ListingCard({
                   aria-label="WhatsApp seller"
                   className="h-7 w-7 sm:h-8 sm:w-8 inline-flex items-center justify-center rounded-full bg-[#25D366] text-white shadow-md hover:opacity-90 ring-2 ring-white/70"
                 >
-                  <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <FaWhatsapp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </a>
               )}
             </div>

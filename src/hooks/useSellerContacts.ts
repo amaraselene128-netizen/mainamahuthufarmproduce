@@ -38,29 +38,54 @@ export function useSellerContacts(userIds: string[]) {
 
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("shops")
-        .select("user_id, name, phone, whatsapp, is_active")
-        .in("user_id", missing);
-
-      if (cancelled || error || !data) return;
       const next: Record<string, SellerContact> = { ...initial };
-      for (const row of data as any[]) {
-        if (!row.is_active) continue;
 
+      const [{ data: shopRows }, { data: profileRows }] = await Promise.all([
+        supabase
+          .from("shops")
+          .select("user_id, name, phone, is_active")
+          .in("user_id", missing)
+          .eq("is_active", true),
+        supabase
+          .from("seller_contacts_public")
+          .select("user_id, username, phone, whatsapp")
+          .in("user_id", missing),
+      ]);
+
+      if (cancelled) return;
+
+      for (const row of (profileRows as any[]) || []) {
         const phone = row.phone ?? null;
         const whatsapp = row.whatsapp ?? row.phone ?? null;
         if (!phone && !whatsapp) continue;
 
         const contact: SellerContact = {
           user_id: row.user_id,
-          username: row.name ?? null,
+          username: row.username ?? null,
           phone,
           whatsapp,
         };
+
         cache.set(row.user_id, contact);
         next[row.user_id] = contact;
       }
+
+      for (const row of (shopRows as any[]) || []) {
+        const phone = row.phone ?? null;
+        const whatsapp = row.phone ?? null;
+        if (!phone && !whatsapp) continue;
+
+        const contact: SellerContact = {
+          user_id: row.user_id,
+          username: row.name ?? next[row.user_id]?.username ?? null,
+          phone,
+          whatsapp,
+        };
+
+        cache.set(row.user_id, contact);
+        next[row.user_id] = contact;
+      }
+
       setContacts(next);
     })();
 

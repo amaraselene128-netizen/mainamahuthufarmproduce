@@ -103,15 +103,20 @@ export default function ListingDetail() {
     if (!Array.isArray(parsed.images)) parsed.images = [];
     setListing(parsed);
     
-    const [{ data: profile }, { data: shop }] = await Promise.all([
+    const [{ data: profile }, { data: publicContact }, { data: shop }] = await Promise.all([
       supabase
         .from("profiles_public")
         .select("username, avatar_url, is_verified, created_at")
         .eq("user_id", data.user_id)
         .maybeSingle(),
       supabase
+        .from("seller_contacts_public")
+        .select("username, phone, whatsapp")
+        .eq("user_id", data.user_id)
+        .maybeSingle(),
+      supabase
         .from("shops")
-        .select("name, phone, whatsapp, is_active")
+        .select("name, phone, is_active")
         .eq("user_id", data.user_id)
         .eq("is_active", true)
         .maybeSingle(),
@@ -123,8 +128,8 @@ export default function ListingDetail() {
         avatar_url: (profile as any)?.avatar_url ?? null,
         is_verified: (profile as any)?.is_verified ?? null,
         created_at: (profile as any)?.created_at || data.created_at || new Date().toISOString(),
-        phone: (shop as any)?.phone ?? null,
-        whatsapp: (shop as any)?.whatsapp ?? (shop as any)?.phone ?? null,
+        phone: (shop as any)?.phone ?? (publicContact as any)?.phone ?? null,
+        whatsapp: (shop as any)?.phone ?? (publicContact as any)?.whatsapp ?? (publicContact as any)?.phone ?? null,
       });
     } else {
       setSeller(null);
