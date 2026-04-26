@@ -21,7 +21,7 @@ export const PremiumShops = memo(function PremiumShops() {
               <Crown className="h-6 w-6 text-gold" />
               <Badge variant="outline" className="border-gold text-gold font-semibold">Premium</Badge>
               <h2 className="font-display text-2xl md:text-3xl font-bold">
-                Featured Shops
+                Elite Storefronts
               </h2>
             </div>
             <p className="text-muted-foreground">
