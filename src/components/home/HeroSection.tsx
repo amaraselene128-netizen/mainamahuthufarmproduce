@@ -133,16 +133,19 @@ export function HeroSection() {
   const { shops } = useShops(20);
 
   const allBanners = useMemo<BannerItem[]>(() => {
-    const items = listings
-      .map((l: any) => ({
+    const items: BannerItem[] = [];
+    for (const l of listings as any[]) {
+      const image = parseImages(l.images)?.[0];
+      if (!image) continue;
+      items.push({
         id: l.id,
         title: l.title,
         price: l.price,
         location: l.location,
-        listing_type: l.listing_type as "product" | "service" | "event",
-        image: parseImages(l.images)?.[0] as string | undefined,
-      }))
-      .filter((l): l is BannerItem => !!l.image);
+        listing_type: l.listing_type,
+        image,
+      });
+    }
     return shuffle(items);
   }, [listings]);
 
@@ -175,15 +178,18 @@ export function HeroSection() {
     [allBanners]
   );
   const shopItems = useMemo<BannerItem[]>(() => {
-    const items = shops
-      .map((s: any) => ({
+    const items: BannerItem[] = [];
+    for (const s of shops as any[]) {
+      const image = (s.logo_url || s.cover_image_url) as string | undefined;
+      if (!image) continue;
+      items.push({
         id: s.slug || s.id,
         title: s.name,
         location: s.location,
-        listing_type: "product" as const,
-        image: (s.logo_url || s.cover_image_url) as string | undefined,
-      }))
-      .filter((s): s is BannerItem => !!s.image);
+        listing_type: "product",
+        image,
+      });
+    }
     return shuffle(items).slice(0, 8);
   }, [shops]);
 
