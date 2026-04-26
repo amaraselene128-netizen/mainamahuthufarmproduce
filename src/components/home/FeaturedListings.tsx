@@ -1,115 +1,82 @@
 import { Link } from "react-router-dom";
 import { parseImages } from "@/lib/utils";
-import { ArrowRight, Sparkles, ShoppingBag } from "lucide-react";
+import { ArrowRight, ShoppingBag, Sparkles } from "lucide-react";
 import "@/styles/featured-shops.css";
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/components/listings/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useListings } from "@/hooks/useListings";
+import { useHourlySeed } from "@/hooks/useHourlySeed";
+import { useSellerContacts } from "@/hooks/useSellerContacts";
 import { format } from "date-fns";
-import { useState, useEffect, useMemo, memo } from "react";
-import { supabase } from "@/integrations/supabase/untyped-client";
-
-interface SponsoredListing {
-  id: string;
-  title: string;
-  price: number | null;
-  original_price: number | null;
-  images: string[];
-  location: string;
-  listing_type: "product" | "service" | "event";
-  is_sponsored: boolean;
-  is_featured: boolean;
-  is_free: boolean;
-  favorites_count: number | null;
-  event_date: string | null;
-}
+import { useMemo, memo } from "react";
 
 // Skeleton grid for loading state
-const ListingGridSkeleton = memo(function ListingGridSkeleton({ count = 6 }: { count?: number }) {
+const ListingGridSkeleton = memo(function ListingGridSkeleton({ count = 9 }: { count?: number }) {
   return (
     <div className="listing-grid">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="space-y-3">
+        <div key={i} className="space-y-2">
           <Skeleton className="aspect-[4/3] rounded-xl" />
-          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-3/4" />
           <Skeleton className="h-3 w-1/2" />
-          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-3 w-1/3" />
         </div>
       ))}
     </div>
   );
 });
 
-export const FeaturedListings = memo(function FeaturedListings() {
-  const { listings: products, isLoading: productsLoading } = useListings({ type: "product", limit: 30 });
-  const { listings: services, isLoading: servicesLoading } = useListings({ type: "service", limit: 30 });
-  const { listings: events, isLoading: eventsLoading } = useListings({ type: "event", limit: 30 });
-
-  // Fetch ALL sponsored listings across all types
-  const [sponsoredListings, setSponsoredListings] = useState<SponsoredListing[]>([]);
-  const [sponsoredLoading, setSponsoredLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSponsored = async () => {
-      const { data, error } = await supabase
-        .from("listings_public")
-        .select("id, title, price, original_price, images, location, listing_type, is_sponsored, is_featured, is_free, favorites_count, event_date")
-        .eq("status", "available")
-        .eq("is_sponsored", true)
-        .order("created_at", { ascending: false })
-        .limit(12);
-
-      if (!error && data) {
-        setSponsoredListings(data as SponsoredListing[]);
-      }
-      setSponsoredLoading(false);
-    };
-
-    fetchSponsored();
-  }, []);
-
-  const mapListingToCard = useMemo(() => (listing: any) => ({
-    id: listing.id,
-    title: listing.title,
-    price: listing.price,
-    originalPrice: listing.original_price,
-    image: parseImages(listing.images)?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&q=80",
-    location: listing.location,
-    category: listing.listing_type as "product" | "service" | "event",
-    isSponsored: listing.is_sponsored,
-    isFeatured: listing.is_featured,
-    rating: listing.favorites_count ? Math.min(5, 4 + listing.favorites_count * 0.1) : undefined,
-    eventDate: listing.event_date ? format(new Date(listing.event_date), "MMM d") : undefined,
-    isFree: listing.is_free,
-  }), []);
+function FeaturedGrid({ listings }: { listings: any[] }) {
+  const userIds = useMemo(() => listings.map((l) => l.user_id).filter(Boolean), [listings]);
+  const contacts = useSellerContacts(userIds);
 
   return (
-    <section className="py-16 md:py-20 bg-muted/30">
-      <div className="container">
-        {/* Sponsored Listings Section - Always visible if there are sponsored ads */}
-        {sponsoredListings.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Sponsored</span>
-              </div>
-              <h3 className="font-display text-xl font-semibold">Promoted Listings</h3>
-            </div>
-            {sponsoredLoading ? (
-              <ListingGridSkeleton count={4} />
-            ) : (
-              <div className="listing-grid">
-                {sponsoredListings.map((listing) => (
-                  <ListingCard key={listing.id} {...mapListingToCard(listing)} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+    <div className="listing-grid">
+      {listings.map((listing) => {
+        const seller = contacts[listing.user_id];
+        return (
+          <ListingCard
+            key={listing.id}
+            id={listing.id}
+            title={listing.title}
+            price={listing.price ?? undefined}
+            originalPrice={listing.original_price ?? undefined}
+            image={parseImages(listing.images)?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&q=80"}
+            location={listing.location}
+            category={listing.listing_type}
+            isSponsored={listing.is_sponsored}
+            isFeatured={listing.is_featured}
+            rating={listing.favorites_count ? Math.min(5, 4 + listing.favorites_count * 0.1) : undefined}
+            eventDate={listing.event_date ? format(new Date(listing.event_date), "MMM d") : undefined}
+            isFree={listing.is_free}
+            sellerPhone={seller?.phone}
+            sellerWhatsapp={seller?.whatsapp}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
+export const FeaturedListings = memo(function FeaturedListings() {
+  // Hourly reshuffle seed — autofills featured grids every 1 hour
+  const hourSeed = useHourlySeed();
+
+  const { listings: products, isLoading: productsLoading } = useListings({
+    type: "product", limit: 18, shuffleSeed: hourSeed,
+  });
+  const { listings: services, isLoading: servicesLoading } = useListings({
+    type: "service", limit: 12, shuffleSeed: hourSeed,
+  });
+  const { listings: events, isLoading: eventsLoading } = useListings({
+    type: "event", limit: 12, shuffleSeed: hourSeed,
+  });
+
+  return (
+    <section className="py-12 md:py-16 bg-muted/30">
+      <div className="container">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
           <div>
@@ -119,8 +86,8 @@ export const FeaturedListings = memo(function FeaturedListings() {
                 Featured Listings
               </h2>
             </div>
-            <p className="text-muted-foreground text-lg">
-              Discover the best deals from trusted sellers
+            <p className="text-muted-foreground text-sm md:text-lg">
+              Fresh picks reshuffled every hour from across SokoniArena
             </p>
           </div>
           <Button variant="outline" asChild>
@@ -146,13 +113,6 @@ export const FeaturedListings = memo(function FeaturedListings() {
                   "✅ Verified sellers get priority placement in search results " +
                   "✅ Open your branded shop for a unique storefront experience " +
                   "🚀 Go to Dashboard → Add Listing to start selling now! " +
-                  "💰 No hidden fees — list, promote & sell with zero commission! " +
-                  "🔥 Hot deals updated daily on SokoniArena! " +
-                  "✅ Post your listing for FREE — reach thousands of buyers instantly " +
-                  "✅ Promote your ad to get 5× more views & sell faster " +
-                  "✅ Verified sellers get priority placement in search results " +
-                  "✅ Open your branded shop for a unique storefront experience " +
-                  "🚀 Go to Dashboard → Add Listing to start selling now! " +
                   "💰 No hidden fees — list, promote & sell with zero commission! "}
               </div>
             </div>
@@ -161,7 +121,7 @@ export const FeaturedListings = memo(function FeaturedListings() {
 
         {/* Tabs */}
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="w-full max-w-md mb-8 bg-background/50 p-1">
+          <TabsList className="w-full max-w-md mb-6 bg-background/50 p-1">
             <TabsTrigger value="products" className="flex-1">Products</TabsTrigger>
             <TabsTrigger value="services" className="flex-1">Services</TabsTrigger>
             <TabsTrigger value="events" className="flex-1">Events</TabsTrigger>
@@ -171,11 +131,7 @@ export const FeaturedListings = memo(function FeaturedListings() {
             {productsLoading ? (
               <ListingGridSkeleton />
             ) : products.length > 0 ? (
-              <div className="listing-grid">
-                {products.map((listing) => (
-                  <ListingCard key={listing.id} {...mapListingToCard(listing)} />
-                ))}
-              </div>
+              <FeaturedGrid listings={products} />
             ) : (
               <p className="text-center text-muted-foreground py-12">No products available</p>
             )}
@@ -185,11 +141,7 @@ export const FeaturedListings = memo(function FeaturedListings() {
             {servicesLoading ? (
               <ListingGridSkeleton />
             ) : services.length > 0 ? (
-              <div className="listing-grid">
-                {services.map((listing) => (
-                  <ListingCard key={listing.id} {...mapListingToCard(listing)} />
-                ))}
-              </div>
+              <FeaturedGrid listings={services} />
             ) : (
               <p className="text-center text-muted-foreground py-12">No services available</p>
             )}
@@ -199,11 +151,7 @@ export const FeaturedListings = memo(function FeaturedListings() {
             {eventsLoading ? (
               <ListingGridSkeleton />
             ) : events.length > 0 ? (
-              <div className="listing-grid">
-                {events.map((listing) => (
-                  <ListingCard key={listing.id} {...mapListingToCard(listing)} />
-                ))}
-              </div>
+              <FeaturedGrid listings={events} />
             ) : (
               <p className="text-center text-muted-foreground py-12">No events available</p>
             )}
