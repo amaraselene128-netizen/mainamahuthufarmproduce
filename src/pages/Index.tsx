@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { HeroSection } from "@/components/home/HeroSection";
 import { CategorySection } from "@/components/home/CategorySection";
-import { ShopNamesBar } from "@/components/home/ShopNamesBar";
+import { TopShops } from "@/components/home/TopShops";
 import { FlashSales } from "@/components/home/FlashSales";
 import { FeaturedListings } from "@/components/home/FeaturedListings";
 import { PremiumShops } from "@/components/home/PremiumShops";
@@ -13,13 +13,13 @@ const Index = () => {
   return (
     <Layout>
       <HeroSection />
-      <CategorySection />
-      <ShopNamesBar />
+      <TrustSection />
+      <TopShops />
       <FlashSales />
+      <CategorySection />
       <PremiumShops />
       <FeaturedListings />
       <FeaturedShops />
-      <TrustSection />
       <CTASection />
     </Layout>
   );

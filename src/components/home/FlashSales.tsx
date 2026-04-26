@@ -63,15 +63,50 @@ export const FlashSales = memo(function FlashSales() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
+      const cols =
+        "id, user_id, title, price, original_price, images, location, listing_type, is_sponsored, is_featured, is_free, favorites_count, event_date";
+
+      // 1) Try sponsored listings (true "Flash" promotions)
+      const sponsored = await supabase
         .from("listings_public")
-        .select("id, user_id, title, price, original_price, images, location, listing_type, is_sponsored, is_featured, is_free, favorites_count, event_date")
+        .select(cols)
         .eq("status", "available")
         .eq("is_sponsored", true)
         .order("created_at", { ascending: false })
         .limit(24);
+
+      let pool = (sponsored.data || []) as PromotedListing[];
+
+      // 2) Fall back to listings with a real discount (original_price > price)
+      if (pool.length < 8) {
+        const discounted = await supabase
+          .from("listings_public")
+          .select(cols)
+          .eq("status", "available")
+          .not("original_price", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(40);
+        const extra = ((discounted.data || []) as PromotedListing[]).filter(
+          (l) => l.price && l.original_price && l.price < l.original_price
+        );
+        const seen = new Set(pool.map((p) => p.id));
+        pool = pool.concat(extra.filter((l) => !seen.has(l.id)));
+      }
+
+      // 3) Final fallback — newest listings, so the section is never empty
+      if (pool.length < 8) {
+        const fresh = await supabase
+          .from("listings_public")
+          .select(cols)
+          .eq("status", "available")
+          .order("created_at", { ascending: false })
+          .limit(24);
+        const seen = new Set(pool.map((p) => p.id));
+        pool = pool.concat(((fresh.data || []) as PromotedListing[]).filter((l) => !seen.has(l.id)));
+      }
+
       if (cancelled) return;
-      setListings(shuffle((data || []) as PromotedListing[]));
+      setListings(shuffle(pool).slice(0, 16));
       setLoading(false);
     })();
     return () => {
@@ -91,7 +126,7 @@ export const FlashSales = memo(function FlashSales() {
           <div className="flex items-center flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-accent fill-accent" />
-              <h2 className="font-display text-2xl md:text-3xl font-bold">Flash Sales</h2>
+              <h2 className="font-display text-2xl md:text-3xl font-bold">Flash Deals</h2>
             </div>
             <span className="text-sm text-muted-foreground">Limited time offers — Don't miss out!</span>
           </div>
