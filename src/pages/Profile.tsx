@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { parseImages } from "@/lib/utils";
 import { useParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import { ListingCard } from "@/components/listings/ListingCard";
+import { ListingsGridWithContacts } from "@/components/listings/ListingsGridWithContacts";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -307,31 +307,11 @@ export default function Profile() {
                     )}
                   </div>
                 ) : (
-                  <div className="listing-grid">
-                    {filteredListings.map((listing) => (
-                      <ListingCard
-                        key={listing.id}
-                        id={listing.id}
-                        title={listing.title}
-                        price={listing.price || 0}
-                        originalPrice={listing.original_price || undefined}
-                        image={parseImages(listing.images)?.[0] || "/placeholder.svg"}
-                        location={listing.location}
-                        category={listing.listing_type}
-                        isSponsored={listing.is_sponsored}
-                        isFeatured={listing.is_featured}
-                        isFree={listing.is_free}
-                        eventDate={
-                          listing.event_date
-                            ? new Date(listing.event_date).toLocaleDateString(
-                                "en-US",
-                                { month: "short", day: "numeric" }
-                              )
-                            : undefined
-                        }
-                      />
-                    ))}
-                  </div>
+                  <ListingsGridWithContacts
+                    listings={filteredListings}
+                    category={activeTab === "service" ? "service" : activeTab === "event" ? "event" : "product"}
+                    fallbackImage="/placeholder.svg"
+                  />
                 )}
               </TabsContent>
             </Tabs>
