@@ -56,8 +56,9 @@ function useCountdown(hours = 8) {
 }
 
 export const FlashSales = memo(function FlashSales() {
-  const [listings, setListings] = useState<PromotedListing[]>([]);
+  const [pool, setPool] = useState<PromotedListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shuffleTick, setShuffleTick] = useState(0);
   const { h, m, s } = useCountdown(8);
 
   useEffect(() => {
@@ -66,47 +67,44 @@ export const FlashSales = memo(function FlashSales() {
       const cols =
         "id, user_id, title, price, original_price, images, location, listing_type, is_sponsored, is_featured, is_free, favorites_count, event_date";
 
-      // 1) Try sponsored listings (true "Flash" promotions)
-      const sponsored = await supabase
+      // 1) Promoted (sponsored or featured) listings first
+      const promoted = await supabase
         .from("listings_public")
         .select(cols)
         .eq("status", "available")
-        .eq("is_sponsored", true)
+        .or("is_sponsored.eq.true,is_featured.eq.true")
         .order("created_at", { ascending: false })
-        .limit(24);
+        .limit(60);
 
-      let pool = (sponsored.data || []) as PromotedListing[];
+      let acc = (promoted.data || []) as PromotedListing[];
 
-      // 2) Fall back to listings with a real discount (original_price > price)
-      if (pool.length < 8) {
+      // 2) Fill with discounted
+      if (acc.length < 30) {
         const discounted = await supabase
           .from("listings_public")
           .select(cols)
           .eq("status", "available")
           .not("original_price", "is", null)
           .order("created_at", { ascending: false })
-          .limit(40);
-        const extra = ((discounted.data || []) as PromotedListing[]).filter(
-          (l) => l.price && l.original_price && l.price < l.original_price
-        );
-        const seen = new Set(pool.map((p) => p.id));
-        pool = pool.concat(extra.filter((l) => !seen.has(l.id)));
+          .limit(60);
+        const seen = new Set(acc.map((p) => p.id));
+        acc = acc.concat(((discounted.data || []) as PromotedListing[]).filter((l) => !seen.has(l.id)));
       }
 
-      // 3) Final fallback — newest listings, so the section is never empty
-      if (pool.length < 8) {
+      // 3) Final fallback — newest
+      if (acc.length < 30) {
         const fresh = await supabase
           .from("listings_public")
           .select(cols)
           .eq("status", "available")
           .order("created_at", { ascending: false })
-          .limit(24);
-        const seen = new Set(pool.map((p) => p.id));
-        pool = pool.concat(((fresh.data || []) as PromotedListing[]).filter((l) => !seen.has(l.id)));
+          .limit(60);
+        const seen = new Set(acc.map((p) => p.id));
+        acc = acc.concat(((fresh.data || []) as PromotedListing[]).filter((l) => !seen.has(l.id)));
       }
 
       if (cancelled) return;
-      setListings(shuffle(pool).slice(0, 16));
+      setPool(acc);
       setLoading(false);
     })();
     return () => {
@@ -114,10 +112,17 @@ export const FlashSales = memo(function FlashSales() {
     };
   }, []);
 
-  const userIds = useMemo(() => listings.map((l) => l.user_id).filter(Boolean), [listings]);
+  // Reshuffle every 8s for a lively rotation feel
+  useEffect(() => {
+    const t = setInterval(() => setShuffleTick((n) => n + 1), 8000);
+    return () => clearInterval(t);
+  }, []);
+
+  const visible = useMemo(() => shuffle(pool).slice(0, 30), [pool, shuffleTick]);
+  const userIds = useMemo(() => visible.map((l) => l.user_id).filter(Boolean), [visible]);
   const contacts = useSellerContacts(userIds);
 
-  if (!loading && listings.length === 0) return null;
+  if (!loading && visible.length === 0) return null;
 
   return (
     <section className="py-10 md:py-14">
@@ -152,37 +157,55 @@ export const FlashSales = memo(function FlashSales() {
         </div>
 
         {loading ? (
-          <div className="listing-grid">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[4/3] rounded-xl" />
-                <Skeleton className="h-3 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="aspect-square rounded-lg" />
+                <Skeleton className="h-2.5 w-3/4" />
+                <Skeleton className="h-2.5 w-1/2" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="listing-grid">
-            {listings.map((l) => {
-              const seller = contacts[l.user_id];
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+            {visible.map((l) => {
+              const img =
+                parseImages(l.images)?.[0] ||
+                "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&q=70";
+              const path =
+                l.listing_type === "product" ? "products" : l.listing_type === "service" ? "services" : "events";
+              const discount =
+                l.original_price && l.price && l.price < l.original_price
+                  ? Math.round(((l.original_price - l.price) / l.original_price) * 100)
+                  : null;
               return (
-                <ListingCard
+                <Link
                   key={l.id}
-                  id={l.id}
-                  title={l.title}
-                  price={l.price ?? undefined}
-                  originalPrice={l.original_price ?? undefined}
-                  image={parseImages(l.images)?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&q=80"}
-                  location={l.location}
-                  category={l.listing_type}
-                  isSponsored={l.is_sponsored}
-                  isFeatured={l.is_featured}
-                  isFree={l.is_free}
-                  rating={l.favorites_count ? Math.min(5, 4 + l.favorites_count * 0.1) : undefined}
-                  eventDate={l.event_date ? format(new Date(l.event_date), "MMM d") : undefined}
-                  sellerPhone={seller?.phone}
-                  sellerWhatsapp={seller?.whatsapp}
-                />
+                  to={`/${path}/${l.id}`}
+                  className="group relative rounded-lg overflow-hidden bg-card border border-border hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md transition-all"
+                >
+                  <div className="relative aspect-square overflow-hidden bg-muted">
+                    <img
+                      src={img}
+                      alt={l.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    {discount !== null && (
+                      <span className="absolute top-1 left-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        -{discount}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-1.5 space-y-0.5">
+                    <p className="text-[11px] font-medium line-clamp-1 text-foreground">{l.title}</p>
+                    {l.price != null && (
+                      <p className="text-[11px] font-bold text-primary">
+                        KES {l.price.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </Link>
               );
             })}
           </div>
