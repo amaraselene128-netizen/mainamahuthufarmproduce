@@ -41,11 +41,14 @@ export default function Products() {
     }
   }, [categoryFromUrl]);
 
+  // Reshuffle each page mount (and every hour) for the default sort
+  const [pageSeed] = useState(() => Math.random());
   const { listings, isLoading, error } = useListings({
     type: "product",
     category: selectedCategory,
     searchQuery,
     sortBy,
+    shuffleSeed: sortBy === "newest" ? pageSeed : undefined,
   });
 
   return (
