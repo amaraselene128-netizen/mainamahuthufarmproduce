@@ -48,20 +48,23 @@ export function useListings(options: UseListingsOptions = {}) {
   }, [options.searchQuery]);
 
   // Memoize query params to prevent unnecessary refetches
-  const queryKey = useMemo(() => 
+  const queryKey = useMemo(() =>
     JSON.stringify({
       type: options.type,
       category: options.category,
       search: debouncedSearch,
       sortBy: options.sortBy,
       limit: options.limit,
+      shuffleSeed: options.shuffleSeed,
     }),
-    [options.type, options.category, debouncedSearch, options.sortBy, options.limit]
+    [options.type, options.category, debouncedSearch, options.sortBy, options.limit, options.shuffleSeed]
   );
 
   const fetchListings = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
+    const shouldShuffle = options.shuffleSeed !== undefined;
 
     let query = supabase
       .from("listings_public")
@@ -98,11 +101,16 @@ export function useListings(options: UseListingsOptions = {}) {
         query = query.order("favorites_count", { ascending: false });
         break;
       default:
-        query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+        if (!shouldShuffle) {
+          query = query.order("is_featured", { ascending: false }).order("created_at", { ascending: false });
+        }
     }
 
-    if (options.limit) {
-      query = query.limit(options.limit);
+    // When shuffling, fetch a wider pool then trim after shuffle so results
+    // genuinely vary instead of just reordering the same N rows each cycle.
+    const pool = shouldShuffle && options.limit ? Math.max(options.limit * 4, 60) : options.limit;
+    if (pool) {
+      query = query.limit(pool);
     }
 
     const { data, error: fetchError } = await query;
@@ -111,7 +119,12 @@ export function useListings(options: UseListingsOptions = {}) {
       setError(fetchError.message);
       setListings([]);
     } else {
-      setListings(data || []);
+      let result = data || [];
+      if (shouldShuffle) {
+        result = shuffleArray(result);
+        if (options.limit) result = result.slice(0, options.limit);
+      }
+      setListings(result);
     }
 
     setIsLoading(false);
