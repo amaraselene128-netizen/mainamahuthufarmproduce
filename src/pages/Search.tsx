@@ -86,9 +86,18 @@ export default function Search() {
   const [selectedLocation, setSelectedLocation] = useState(
     searchParams.get("location") || "All Locations"
   );
-  const [selectedCategory, setSelectedCategory] = useState(
-    searchParams.get("category") || "All Categories"
-  );
+  const [filter, setFilter] = useState<CategoryFilterValue>(() => {
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    return {
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    };
+  });
   const [priceRange, setPriceRange] = useState<[number, number]>([
     parseInt(searchParams.get("minPrice") || "0"),
     parseInt(searchParams.get("maxPrice") || "1000000"),
@@ -131,9 +140,15 @@ export default function Search() {
       queryBuilder = queryBuilder.ilike("location", `%${selectedLocation}%`);
     }
 
-    // Category filter (category field)
-    if (selectedCategory !== "All Categories") {
-      queryBuilder = queryBuilder.eq("category", selectedCategory);
+    // Section / category / subcategory cascade
+    if (filter.section) {
+      queryBuilder = queryBuilder.eq("section", filter.section);
+    }
+    if (filter.category) {
+      queryBuilder = queryBuilder.eq("category", filter.category);
+    }
+    if (filter.subcategory) {
+      queryBuilder = queryBuilder.eq("subcategory", filter.subcategory);
     }
 
     // Price filter with debounced values
