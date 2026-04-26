@@ -9,19 +9,16 @@ export function useHourlySeed(intervalMs: number = 60 * 60 * 1000) {
 
   useEffect(() => {
     const tick = () => setSeed(Math.floor(Date.now() / intervalMs));
-    // align next tick to the interval boundary
+    let intervalId: ReturnType<typeof setInterval> | null = null;
     const msUntilNext = intervalMs - (Date.now() % intervalMs);
-    const timeout = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       tick();
-      const interval = setInterval(tick, intervalMs);
-      // store on closure for cleanup
-      (timeout as any)._interval = interval;
+      intervalId = setInterval(tick, intervalMs);
     }, msUntilNext + 50);
 
     return () => {
-      clearTimeout(timeout);
-      const interval = (timeout as any)._interval;
-      if (interval) clearInterval(interval);
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [intervalMs]);
 
