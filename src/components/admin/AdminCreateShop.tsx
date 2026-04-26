@@ -11,11 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/untyped-client";
 
-const SHOP_CATEGORIES = [
-  "Electronics", "Fashion", "Home & Garden", "Food & Dining", "Health & Beauty",
-  "Sports & Fitness", "Vehicles", "Property", "Entertainment", "Education",
-  "Business Services", "Agriculture", "Art & Crafts", "Other"
-];
+import { sectionLabelsForType } from "@/lib/categories";
+const SHOP_CATEGORIES = sectionLabelsForType("all");
 
 export function AdminCreateShop() {
   const { user } = useAuth();

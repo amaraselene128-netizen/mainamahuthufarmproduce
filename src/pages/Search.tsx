@@ -34,6 +34,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { CategoryFilter, type CategoryFilterValue } from "@/components/listings/CategoryFilter";
+import { findSection } from "@/lib/categories";
 
 interface Listing {
   id: string;
@@ -66,17 +68,8 @@ const LOCATIONS = [
   "Nyeri",
 ];
 
-const CATEGORIES = [
-  "All Categories",
-  "Electronics",
-  "Vehicles",
-  "Fashion",
-  "Home & Garden",
-  "Sports",
-  "Services",
-  "Events",
-  "Others",
-];
+// Category list now comes from src/lib/categories.ts via the CategoryFilter
+// component. Search supports section + category + subcategory cascading.
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,9 +86,18 @@ export default function Search() {
   const [selectedLocation, setSelectedLocation] = useState(
     searchParams.get("location") || "All Locations"
   );
-  const [selectedCategory, setSelectedCategory] = useState(
-    searchParams.get("category") || "All Categories"
-  );
+  const [filter, setFilter] = useState<CategoryFilterValue>(() => {
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    return {
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    };
+  });
   const [priceRange, setPriceRange] = useState<[number, number]>([
     parseInt(searchParams.get("minPrice") || "0"),
     parseInt(searchParams.get("maxPrice") || "1000000"),
@@ -138,9 +140,15 @@ export default function Search() {
       queryBuilder = queryBuilder.ilike("location", `%${selectedLocation}%`);
     }
 
-    // Category filter (category field)
-    if (selectedCategory !== "All Categories") {
-      queryBuilder = queryBuilder.eq("category", selectedCategory);
+    // Section / category / subcategory cascade
+    if (filter.section) {
+      queryBuilder = queryBuilder.eq("section", filter.section);
+    }
+    if (filter.category) {
+      queryBuilder = queryBuilder.eq("category", filter.category);
+    }
+    if (filter.subcategory) {
+      queryBuilder = queryBuilder.eq("subcategory", filter.subcategory);
     }
 
     // Price filter with debounced values
@@ -201,7 +209,7 @@ export default function Search() {
     }
 
     setIsLoading(false);
-  }, [debouncedQuery, activeTab, sortBy, selectedLocation, selectedCategory, debouncedPriceRange, currentPage]);
+  }, [debouncedQuery, activeTab, sortBy, selectedLocation, filter, debouncedPriceRange, currentPage]);
 
   useEffect(() => {
     fetchListings();
@@ -215,8 +223,9 @@ export default function Search() {
     if (sortBy !== "newest") params.set("sort", sortBy);
     if (selectedLocation !== "All Locations")
       params.set("location", selectedLocation);
-    if (selectedCategory !== "All Categories")
-      params.set("category", selectedCategory);
+    if (filter.section) params.set("section", filter.section);
+    if (filter.category) params.set("category", filter.category);
+    if (filter.subcategory) params.set("subcategory", filter.subcategory);
     if (debouncedPriceRange[0] > 0) params.set("minPrice", debouncedPriceRange[0].toString());
     if (debouncedPriceRange[1] < 1000000)
       params.set("maxPrice", debouncedPriceRange[1].toString());
@@ -228,7 +237,7 @@ export default function Search() {
     activeTab,
     sortBy,
     selectedLocation,
-    selectedCategory,
+    filter,
     debouncedPriceRange,
     currentPage,
     setSearchParams,
@@ -241,7 +250,7 @@ export default function Search() {
 
   const clearFilters = () => {
     setSelectedLocation("All Locations");
-    setSelectedCategory("All Categories");
+    setFilter({ section: "", category: "", subcategory: "" });
     setPriceRange([0, 1000000]);
     setCurrentPage(1);
     setIsFiltersOpen(false);
@@ -268,21 +277,10 @@ export default function Search() {
         </Select>
       </div>
 
-      {/* Category */}
+      {/* Cascading category filter */}
       <div className="space-y-2">
         <Label>Category</Label>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CategoryFilter scope="all" value={filter} onChange={setFilter} compact={false} />
       </div>
 
       {/* Price Range */}
@@ -472,7 +470,9 @@ export default function Search() {
 
         {/* Active Filters */}
         {(selectedLocation !== "All Locations" ||
-          selectedCategory !== "All Categories" ||
+          filter.section ||
+          filter.category ||
+          filter.subcategory ||
           priceRange[0] > 0 ||
           priceRange[1] < 1000000) && (
           <div className="flex flex-wrap gap-2 mb-4">
@@ -487,13 +487,33 @@ export default function Search() {
                 <X className="h-3 w-3 ml-1" />
               </Button>
             )}
-            {selectedCategory !== "All Categories" && (
+            {filter.section && (
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelectedCategory("All Categories")}
+                onClick={() => setFilter({ section: "", category: "", subcategory: "" })}
               >
-                {selectedCategory}
+                {findSection(filter.section)?.label || filter.section}
+                <X className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+            {filter.category && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setFilter({ ...filter, category: "", subcategory: "" })}
+              >
+                {filter.category}
+                <X className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+            {filter.subcategory && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setFilter({ ...filter, subcategory: "" })}
+              >
+                {filter.subcategory}
                 <X className="h-3 w-3 ml-1" />
               </Button>
             )}

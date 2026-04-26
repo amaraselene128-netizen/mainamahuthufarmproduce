@@ -10,41 +10,46 @@ import { Search, SlidersHorizontal, Loader2, Sparkles } from "lucide-react";
 import "@/styles/featured-shops.css";
 import { useListings } from "@/hooks/useListings";
 import categoryEvents from "@/assets/category-events.png";
-
-
-const categories = [
-  "All Events",
-  "Music & Concerts",
-  "Business & Networking",
-  "Workshops & Classes",
-  "Sports & Fitness",
-  "Arts & Culture",
-  "Food & Drink",
-  "Charity & Causes",
-  "Entertainment",
-];
+import { CategoryFilter, type CategoryFilterValue } from "@/components/listings/CategoryFilter";
+import { findSection } from "@/lib/categories";
 
 export default function Events() {
   const [searchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get("category");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Events");
+  const [filter, setFilter] = useState<CategoryFilterValue>(() => {
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    return {
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    };
+  });
   const [sortBy, setSortBy] = useState("date");
 
   useEffect(() => {
-    if (categoryFromUrl) {
-      const matched = categories.find(
-        (c) => c.toLowerCase() === categoryFromUrl.toLowerCase()
-      );
-      if (matched) setSelectedCategory(matched);
-    }
-  }, [categoryFromUrl]);
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    setFilter({
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    });
+  }, [searchParams]);
 
   const [pageSeed] = useState(() => Math.random());
   const { listings, isLoading, error } = useListings({
     type: "event",
-    category: selectedCategory,
+    section: filter.section,
+    category: filter.category,
+    subcategory: filter.subcategory,
     searchQuery,
     sortBy,
     shuffleSeed: sortBy === "newest" ? pageSeed : undefined,
@@ -103,18 +108,7 @@ export default function Events() {
               />
             </div>
 
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CategoryFilter scope="event" value={filter} onChange={setFilter} />
 
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full md:w-40">
@@ -127,11 +121,6 @@ export default function Events() {
                 <SelectItem value="popular">Most Popular</SelectItem>
               </SelectContent>
             </Select>
-
-            <Button variant="outline">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-            </Button>
           </div>
         </div>
       </div>
@@ -165,7 +154,7 @@ export default function Events() {
             <p className="text-muted-foreground mb-4">No events found matching your criteria.</p>
             <Button variant="outline" onClick={() => {
               setSearchQuery("");
-              setSelectedCategory("All Events");
+              setFilter({ section: "", category: "", subcategory: "" });
             }}>
               Clear Filters
             </Button>

@@ -6,7 +6,10 @@ type ListingType = "product" | "service" | "event";
 
 interface UseListingsOptions {
   type?: ListingType;
+  /** Section slug (e.g. "electronics"). */
+  section?: string;
   category?: string;
+  subcategory?: string;
   searchQuery?: string;
   sortBy?: string;
   limit?: number;
@@ -51,13 +54,15 @@ export function useListings(options: UseListingsOptions = {}) {
   const queryKey = useMemo(() =>
     JSON.stringify({
       type: options.type,
+      section: options.section,
       category: options.category,
+      subcategory: options.subcategory,
       search: debouncedSearch,
       sortBy: options.sortBy,
       limit: options.limit,
       shuffleSeed: options.shuffleSeed,
     }),
-    [options.type, options.category, debouncedSearch, options.sortBy, options.limit, options.shuffleSeed]
+    [options.type, options.section, options.category, options.subcategory, debouncedSearch, options.sortBy, options.limit, options.shuffleSeed]
   );
 
   const fetchListings = useCallback(async () => {
@@ -76,8 +81,16 @@ export function useListings(options: UseListingsOptions = {}) {
       query = query.eq("listing_type", options.type);
     }
 
+    if (options.section && options.section !== "all") {
+      query = query.eq("section", options.section);
+    }
+
     if (options.category && options.category !== "All Categories" && options.category !== "All Events") {
       query = query.ilike("category", options.category);
+    }
+
+    if (options.subcategory && options.subcategory !== "All Subcategories") {
+      query = query.ilike("subcategory", options.subcategory);
     }
 
     if (debouncedSearch) {

@@ -15,11 +15,8 @@ import { Store, Edit, Loader2, Search, CheckCircle, XCircle, UserCog } from "luc
 import { format } from "date-fns";
 import type { Shop } from "@/hooks/useShops";
 
-const SHOP_CATEGORIES = [
-  "Electronics", "Fashion", "Home & Garden", "Food & Dining", "Health & Beauty",
-  "Sports & Fitness", "Vehicles", "Property", "Entertainment", "Education",
-  "Business Services", "Agriculture", "Art & Crafts", "Other"
-];
+import { sectionLabelsForType } from "@/lib/categories";
+const SHOP_CATEGORIES = sectionLabelsForType("all");
 
 export function AdminShopEditor() {
   const { toast } = useToast();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { Loader2 } from "lucide-react";
 import { ImageUploader } from "./ImageUploader";
+import {
+  getSectionsForType,
+  findSection,
+  type ListingTypeScope,
+} from "@/lib/categories";
 
 interface ListingFormProps {
   listing?: any;
@@ -17,12 +22,6 @@ interface ListingFormProps {
   onCancel: () => void;
   shopId?: string;
 }
-
-const categories = {
-  product: ["Electronics", "Vehicles", "Fashion", "Home & Garden", "Sports", "Books", "Others"],
-  service: ["Home Services", "Professional Services", "Health & Fitness", "Events", "Education", "Technology", "Beauty"],
-  event: ["Music & Concerts", "Business", "Workshops", "Sports", "Arts & Culture", "Food & Drink", "Charity"],
-};
 
 export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFormProps) {
   const { user } = useAuth();
@@ -33,7 +32,9 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
     title: listing?.title || "",
     description: listing?.description || "",
     listing_type: listing?.listing_type || "product",
+    section: listing?.section || "",
     category: listing?.category || "",
+    subcategory: listing?.subcategory || "",
     price: listing?.price?.toString() || "",
     original_price: listing?.original_price?.toString() || "",
     location: listing?.location || "",
@@ -42,6 +43,20 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
     delivery_available: listing?.delivery_available || false,
     event_date: listing?.event_date ? new Date(listing.event_date).toISOString().slice(0, 16) : "",
   });
+
+  // Cascading category options derived from the master taxonomy.
+  const availableSections = useMemo(
+    () => getSectionsForType(formData.listing_type as ListingTypeScope),
+    [formData.listing_type],
+  );
+  const activeSection = useMemo(
+    () => findSection(formData.section),
+    [formData.section],
+  );
+  const activeCategory = useMemo(
+    () => activeSection?.categories.find((c) => c.label === formData.category),
+    [activeSection, formData.category],
+  );
   
   const [images, setImages] = useState<string[]>(listing?.images || []);
 
@@ -77,7 +92,9 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
       title: formData.title,
       description: formData.description,
       listing_type: formData.listing_type,
+      section: formData.section || null,
       category: formData.category || null,
+      subcategory: formData.subcategory || null,
       price: formData.price ? parseFloat(formData.price) : null,
       original_price: formData.original_price ? parseFloat(formData.original_price) : null,
       location: formData.location,
@@ -141,7 +158,16 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
         <Label>Listing Type *</Label>
         <Select
           value={formData.listing_type}
-          onValueChange={(value) => handleChange("listing_type", value)}
+          onValueChange={(value) => {
+            // Reset cascading selection when switching type.
+            setFormData((prev) => ({
+              ...prev,
+              listing_type: value,
+              section: "",
+              category: "",
+              subcategory: "",
+            }));
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select type" />
@@ -179,24 +205,81 @@ export function ListingForm({ listing, onSuccess, onCancel, shopId }: ListingFor
         />
       </div>
 
-      {/* Category */}
-      <div className="space-y-2">
-        <Label>Category</Label>
-        <Select
-          value={formData.category}
-          onValueChange={(value) => handleChange("category", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories[formData.listing_type as keyof typeof categories]?.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Category cascade: Section → Category → Subcategory */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-2">
+          <Label>Section *</Label>
+          <Select
+            value={formData.section}
+            onValueChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                section: value,
+                category: "",
+                subcategory: "",
+              }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select section" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {availableSections.map((s) => (
+                <SelectItem key={s.slug} value={s.slug}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Category</Label>
+          <Select
+            value={formData.category}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, category: value, subcategory: "" }))
+            }
+            disabled={!activeSection}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={activeSection ? "Select category" : "Pick a section first"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {activeSection?.categories.map((c) => (
+                <SelectItem key={c.label} value={c.label}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Subcategory</Label>
+          <Select
+            value={formData.subcategory}
+            onValueChange={(value) => handleChange("subcategory", value)}
+            disabled={!activeCategory?.subcategories?.length}
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  activeCategory?.subcategories?.length
+                    ? "Select subcategory"
+                    : "Optional"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {activeCategory?.subcategories?.map((sc) => (
+                <SelectItem key={sc.label} value={sc.label}>
+                  {sc.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Price */}

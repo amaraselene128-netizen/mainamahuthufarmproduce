@@ -24,14 +24,14 @@ const mainCategories = [
 ];
 
 const subCategories = [
-  { icon: Smartphone, label: "Electronics", href: "/products?category=electronics" },
-  { icon: Car, label: "Vehicles", href: "/products?category=vehicles" },
-  { icon: Home, label: "Property", href: "/products?category=property" },
-  { icon: Shirt, label: "Fashion", href: "/products?category=fashion" },
-  { icon: Dumbbell, label: "Sports", href: "/products?category=sports" },
-  { icon: Briefcase, label: "Jobs", href: "/services?category=jobs" },
-  { icon: Music, label: "Entertainment", href: "/events?category=entertainment" },
-  { icon: Utensils, label: "Food & Dining", href: "/services?category=food" },
+  { icon: Smartphone, label: "Electronics", href: "/products?section=electronics" },
+  { icon: Car, label: "Vehicles", href: "/products?section=vehicles" },
+  { icon: Home, label: "Property", href: "/products?section=property" },
+  { icon: Shirt, label: "Fashion", href: "/products?section=fashion" },
+  { icon: Dumbbell, label: "Sports", href: "/products?section=sports-leisure" },
+  { icon: Briefcase, label: "Jobs", href: "/services?section=jobs-cvs" },
+  { icon: Music, label: "Entertainment", href: "/events?section=events-tickets" },
+  { icon: Utensils, label: "Food & Dining", href: "/services?section=professional-services" },
 ];
 
 const trendingSearches = [

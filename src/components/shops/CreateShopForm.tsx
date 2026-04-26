@@ -10,11 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-const SHOP_CATEGORIES = [
-  "Electronics", "Fashion", "Home & Garden", "Food & Dining", "Health & Beauty",
-  "Sports & Fitness", "Vehicles", "Property", "Entertainment", "Education",
-  "Business Services", "Agriculture", "Art & Crafts", "Other"
-];
+import { sectionLabelsForType } from "@/lib/categories";
+const SHOP_CATEGORIES = sectionLabelsForType("all");
 
 interface CreateShopFormProps {
   onSuccess: () => void;

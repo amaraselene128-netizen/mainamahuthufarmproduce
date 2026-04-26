@@ -10,42 +10,49 @@ import { Search, SlidersHorizontal, Grid3X3, LayoutGrid, Loader2, Sparkles } fro
 import "@/styles/featured-shops.css";
 import { useListings } from "@/hooks/useListings";
 import categoryProducts from "@/assets/category-products.png";
-
-const categories = [
-  "All Categories",
-  "Electronics",
-  "Vehicles",
-  "Fashion",
-  "Home & Garden",
-  "Sports",
-  "Books",
-  "Property",
-  "Others",
-];
+import { CategoryFilter, type CategoryFilterValue } from "@/components/listings/CategoryFilter";
+import { findSection } from "@/lib/categories";
 
 export default function Products() {
   const [searchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get("category");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [filter, setFilter] = useState<CategoryFilterValue>(() => {
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    // Tolerate legacy ?category=electronics by mapping to section slug.
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    return {
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    };
+  });
   const [sortBy, setSortBy] = useState("newest");
 
-  // Sync category from URL param on mount/change
+  // Sync filter from URL changes (e.g. clicking a homepage link).
   useEffect(() => {
-    if (categoryFromUrl) {
-      const matched = categories.find(
-        (c) => c.toLowerCase() === categoryFromUrl.toLowerCase()
-      );
-      if (matched) setSelectedCategory(matched);
-    }
-  }, [categoryFromUrl]);
+    const sectionParam = searchParams.get("section") || "";
+    const categoryParam = searchParams.get("category") || "";
+    const sectionFromCategory = !sectionParam && categoryParam
+      ? findSection(categoryParam.toLowerCase())?.slug || ""
+      : "";
+    setFilter({
+      section: sectionParam || sectionFromCategory,
+      category: sectionFromCategory ? "" : categoryParam,
+      subcategory: searchParams.get("subcategory") || "",
+    });
+  }, [searchParams]);
 
   // Reshuffle each page mount (and every hour) for the default sort
   const [pageSeed] = useState(() => Math.random());
   const { listings, isLoading, error } = useListings({
     type: "product",
-    category: selectedCategory,
+    section: filter.section,
+    category: filter.category,
+    subcategory: filter.subcategory,
     searchQuery,
     sortBy,
     shuffleSeed: sortBy === "newest" ? pageSeed : undefined,
@@ -105,19 +112,8 @@ export default function Products() {
               />
             </div>
 
-            {/* Category */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Cascading category filter */}
+            <CategoryFilter scope="product" value={filter} onChange={setFilter} />
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -131,12 +127,6 @@ export default function Products() {
                 <SelectItem value="popular">Most Popular</SelectItem>
               </SelectContent>
             </Select>
-
-            {/* More Filters Button */}
-            <Button variant="outline" className="md:w-auto">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-            </Button>
           </div>
         </div>
       </div>
@@ -179,7 +169,7 @@ export default function Products() {
             <p className="text-muted-foreground mb-4">No products found matching your criteria.</p>
             <Button variant="outline" onClick={() => {
               setSearchQuery("");
-              setSelectedCategory("All Categories");
+              setFilter({ section: "", category: "", subcategory: "" });
             }}>
               Clear Filters
             </Button>
