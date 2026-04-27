@@ -7,6 +7,7 @@ import { FeaturedListings } from "@/components/home/FeaturedListings";
 import { PremiumShops } from "@/components/home/PremiumShops";
 import { FeaturedShops } from "@/components/home/FeaturedShops";
 import { TrustSection } from "@/components/home/TrustSection";
+import { YouMightAlsoLike } from "@/components/home/YouMightAlsoLike";
 import { CTASection } from "@/components/home/CTASection";
 
 const Index = () => {
@@ -20,6 +21,7 @@ const Index = () => {
       <FeaturedListings />
       <FeaturedShops />
       <TrustSection />
+      <YouMightAlsoLike />
       <CTASection />
     </Layout>
   );
