@@ -638,6 +638,58 @@ export default function Search() {
           )}
         </p>
 
+        {/* Matching Shops */}
+        {shopHits.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+              <Store className="h-4 w-4" /> Shops matching "{debouncedQuery}"
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {shopHits.map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/shop/${s.slug}`}
+                  className="shrink-0 w-44 rounded-xl border bg-card hover:border-primary/50 hover:shadow-md transition-all p-3"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 overflow-hidden flex items-center justify-center text-primary font-bold shrink-0">
+                      {s.logo_url ? (
+                        <img src={s.logo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        s.name.charAt(0)
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">{s.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {s.followers_count || 0} followers
+                      </p>
+                    </div>
+                  </div>
+                  {s.description && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-2">{s.description}</p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Fallback notice when we broadened the search */}
+        {fallbackInfo && (
+          <div className="mb-4 p-3 rounded-lg border border-primary/20 bg-primary/5 text-sm">
+            No exact matches for{" "}
+            <span className="font-medium">"{debouncedQuery}"</span>. Showing related items
+            {fallbackInfo.category ? (
+              <> in category <span className="font-medium">{fallbackInfo.category}</span>.</>
+            ) : fallbackInfo.section ? (
+              <> in section <span className="font-medium">{findSection(fallbackInfo.section)?.label}</span>.</>
+            ) : (
+              "."
+            )}
+          </div>
+        )}
+
         {/* Image Gallery Strip - Google-style */}
         {!isLoading && listings.length > 0 && (
           <div className="mb-6">
