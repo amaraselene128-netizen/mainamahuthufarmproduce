@@ -153,7 +153,7 @@ export const FlashSales = memo(function FlashSales() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+          <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
             {Array.from({ length: 20 }).map((_, i) => (
               <div key={i} className="space-y-1.5">
                 <Skeleton className="aspect-square rounded-lg" />
@@ -163,7 +163,7 @@ export const FlashSales = memo(function FlashSales() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+          <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
             {visible.map((l) => {
               const img =
                 parseImages(l.images)?.[0] ||
