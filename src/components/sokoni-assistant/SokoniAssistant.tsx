@@ -43,6 +43,7 @@ export function SokoniAssistant() {
   const [listening, setListening] = useState(false);
   const [muted, setMuted] = useState(false);
   const [partial, setPartial] = useState("");
+  const [typed, setTyped] = useState("");
   const [messages, setMessages] = useState<StoredMsg[]>([]);
   const sessionRef = useRef<LiveSpeechSession | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -310,42 +311,59 @@ export function SokoniAssistant() {
             ))}
           </div>
 
-          {/* Mic / Live control */}
-          <div className="p-4 border-t flex items-center justify-center gap-3">
-            {!liveOn ? (
-              <button
-                onClick={startLiveSession}
-                aria-label="Start live voice session"
-                className={cn(
-                  "h-14 px-6 rounded-full flex items-center gap-2 transition-all",
-                  "bg-primary text-primary-foreground hover:scale-105 ring-4 ring-primary/20"
-                )}
-              >
-                <Mic className="h-5 w-5" />
-                <span className="text-sm font-medium">Start live session</span>
-              </button>
-            ) : (
-              <>
-                <div className={cn(
-                  "h-14 w-14 rounded-full flex items-center justify-center",
-                  listening ? "bg-primary/15 ring-4 ring-primary/30" : "bg-muted ring-4 ring-muted-foreground/10"
-                )}>
-                  {listening ? (
-                    <Mic className="h-6 w-6 text-primary" />
-                  ) : (
-                    <MicOff className="h-6 w-6 text-muted-foreground" />
-                  )}
-                </div>
+          {/* Type or speak input */}
+          <div className="p-3 border-t space-y-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const t = typed.trim();
+                if (!t) return;
+                setTyped("");
+                reply(t);
+              }}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder="Ask the Beast anything…"
+                className="flex-1 h-10 rounded-full border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <Button type="submit" size="sm" className="h-10 rounded-full px-4">Send</Button>
+            </form>
+            <div className="flex items-center justify-center gap-3">
+              {!liveOn ? (
                 <button
-                  onClick={endLiveSession}
-                  aria-label="End session"
-                  className="h-12 px-5 rounded-full bg-destructive text-destructive-foreground flex items-center gap-2 hover:scale-105 transition-transform"
+                  onClick={startLiveSession}
+                  aria-label="Start live voice session"
+                  className={cn(
+                    "h-11 px-5 rounded-full flex items-center gap-2 transition-all",
+                    "bg-primary text-primary-foreground hover:scale-105 ring-4 ring-primary/20"
+                  )}
                 >
-                  <PhoneOff className="h-4 w-4" />
-                  <span className="text-sm font-medium">End session</span>
+                  <Mic className="h-4 w-4" />
+                  <span className="text-xs font-medium">Live voice</span>
                 </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <div className={cn(
+                    "h-11 w-11 rounded-full flex items-center justify-center",
+                    listening ? "bg-primary/15 ring-4 ring-primary/30" : "bg-muted ring-4 ring-muted-foreground/10"
+                  )}>
+                    {listening ? <Mic className="h-5 w-5 text-primary" /> : <MicOff className="h-5 w-5 text-muted-foreground" />}
+                  </div>
+                  <button
+                    onClick={endLiveSession}
+                    aria-label="End session"
+                    className="h-10 px-4 rounded-full bg-destructive text-destructive-foreground flex items-center gap-2 hover:scale-105 transition-transform"
+                  >
+                    <PhoneOff className="h-4 w-4" />
+                    <span className="text-xs font-medium">End</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {!supported && (
