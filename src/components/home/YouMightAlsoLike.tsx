@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { parseImages } from "@/lib/utils";
-import { getViewHistory } from "@/hooks/useViewHistory";
+import { fetchViewHistory, getViewHistory } from "@/hooks/useViewHistory";
 
 interface RecListing {
   id: string;
@@ -46,7 +46,7 @@ export const YouMightAlsoLike = memo(function YouMightAlsoLike() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const history = getViewHistory();
+      const history = await fetchViewHistory();
       const cols =
         "id, title, price, images, location, listing_type, section, category, subcategory";
 
