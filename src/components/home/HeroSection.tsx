@@ -272,7 +272,7 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                {/* Trust row — bottom-left */}
+                {/* Trust row — bottom-left (desktop) */}
                 <div className="hidden sm:flex items-center gap-5 text-white/90 text-xs sm:text-sm">
                   <span className="inline-flex items-center gap-1.5">
                     <ShieldCheck className="h-4 w-4" /> 100% Secure
@@ -284,6 +284,9 @@ export function HeroSection() {
                     <RotateCcw className="h-4 w-4" /> Easy Returns
                   </span>
                 </div>
+
+                {/* MOBILE — rotating ad strip filling the empty green area */}
+                <MobileHeroAdStrip items={allBanners} />
               </div>
 
               {/* RIGHT — rotating listing image inside a soft white spotlight (no collision) */}
