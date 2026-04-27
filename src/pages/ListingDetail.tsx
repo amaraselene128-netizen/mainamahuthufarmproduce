@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useConversation } from "@/hooks/useConversation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { recordView } from "@/hooks/useViewHistory";
 
 interface Listing {
   id: string;
@@ -102,6 +103,13 @@ export default function ListingDetail() {
     }
     if (!Array.isArray(parsed.images)) parsed.images = [];
     setListing(parsed);
+    recordView({
+      id: parsed.id,
+      listing_type: parsed.listing_type,
+      section: (parsed as any).section ?? null,
+      category: parsed.category ?? null,
+      subcategory: (parsed as any).subcategory ?? null,
+    });
     
     const [{ data: profile }, { data: publicContact }, { data: shop }] = await Promise.all([
       supabase
