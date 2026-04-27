@@ -125,7 +125,51 @@ function MiniBanner({
   );
 }
 
-export function HeroSection() {
+/** Mobile-only rotating ad strip that fills the empty space below the hero CTAs. */
+function MobileHeroAdStrip({ items }: { items: BannerItem[] }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % items.length), 3000);
+    return () => clearInterval(t);
+  }, [items.length]);
+
+  if (!items.length) return null;
+  const cur = items[idx % items.length];
+  const path =
+    cur.listing_type === "product" ? "products"
+      : cur.listing_type === "service" ? "services" : "events";
+
+  return (
+    <Link
+      to={`/${path}/${cur.id}`}
+      className="sm:hidden mt-3 flex items-center gap-2 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 p-1.5 pr-3 max-w-[58%] hover:bg-white/20 transition-colors"
+      aria-label={cur.title}
+    >
+      <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-white/90">
+        <img
+          src={cur.image}
+          alt={cur.title}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-wide text-white/80 font-semibold leading-none">
+          Trending now
+        </p>
+        <p className="text-[11px] font-semibold text-white line-clamp-1 leading-tight mt-0.5">
+          {cur.title}
+        </p>
+        {cur.price != null && (
+          <p className="text-[10px] font-bold text-white/95 leading-none">
+            KES {cur.price.toLocaleString()}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
+}
   const navigate = useNavigate();
   // Pull a wide pool of listings for the rotating banner
   const { listings } = useListings({ limit: 60 });
