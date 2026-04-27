@@ -81,24 +81,24 @@ export function TrustSection() {
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Features Grid — 3 cols × 2 rows on all screens */}
+        <div className="grid grid-cols-3 gap-3 md:gap-6">
           {trustFeatures.map((feature) => {
             const Icon = feature.icon;
             return (
               <div
                 key={feature.title}
-                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+                className="group p-3 md:p-6 rounded-xl md:rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
               >
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <Icon className="h-6 w-6" />
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-4 text-center md:text-left">
+                  <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+                    <Icon className="h-4 w-4 md:h-6 md:w-6" />
                   </div>
-                  <div>
-                    <h3 className="font-display font-semibold text-lg mb-2">
+                  <div className="min-w-0">
+                    <h3 className="font-display font-semibold text-xs md:text-lg mb-0.5 md:mb-2 leading-tight">
                       {feature.title}
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="hidden md:block text-muted-foreground text-sm">
                       {feature.description}
                     </p>
                   </div>
