@@ -64,6 +64,7 @@ export default function ShopDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [tab, setTab] = useState("products");
+  const [tabAutoPicked, setTabAutoPicked] = useState(false);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const isOwner = user?.id === shop?.user_id;
@@ -79,6 +80,24 @@ export default function ShopDetail() {
     setListings((data as ShopListing[]) || []);
     setListingsLoading(false);
   };
+
+  // Auto-pick the first tab that actually has listings, so visitors never
+  // land on an empty Products tab when the shop only has services/events.
+  useEffect(() => {
+    if (listingsLoading || tabAutoPicked || listings.length === 0) return;
+    const has = (t: "product" | "service" | "event") =>
+      listings.some((l) => l.listing_type === t);
+    const order: Array<["products" | "services" | "events", "product" | "service" | "event"]> = [
+      ["products", "product"],
+      ["services", "service"],
+      ["events", "event"],
+    ];
+    if (!has(tab === "services" ? "service" : tab === "events" ? "event" : "product")) {
+      const next = order.find(([, t]) => has(t));
+      if (next) setTab(next[0]);
+    }
+    setTabAutoPicked(true);
+  }, [listings, listingsLoading, tab, tabAutoPicked]);
 
   useEffect(() => {
     if (!shop) return;
