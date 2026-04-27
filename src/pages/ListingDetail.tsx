@@ -143,20 +143,75 @@ export default function ListingDetail() {
       setSeller(null);
     }
 
-    let relatedQuery = supabase
-      .from("listings_public")
-      .select("*")
-      .eq("listing_type", data.listing_type)
-      .neq("id", data.id)
-      .eq("status", "available");
-    
+    // Related listings — strictly CATEGORY based (never seller based).
+    // 1) Same category + same listing_type
+    // 2) Same category (any type)
+    // 3) Same section (any type)
+    // 4) Same listing_type (popular fallback)
+    // Always returns at least a few items so the rail is never empty.
+    const RELATED_TARGET = 8;
+    const seen = new Set<string>([data.id]);
+    const collected: any[] = [];
+    const pushUnique = (rows: any[] | null | undefined) => {
+      for (const r of rows || []) {
+        if (!seen.has(r.id)) {
+          seen.add(r.id);
+          collected.push(r);
+          if (collected.length >= RELATED_TARGET) break;
+        }
+      }
+    };
+
     if (data.category) {
-      relatedQuery = relatedQuery.eq("category", data.category);
+      const { data: r1 } = await supabase
+        .from("listings_public")
+        .select("*")
+        .eq("status", "available")
+        .eq("category", data.category)
+        .eq("listing_type", data.listing_type)
+        .neq("id", data.id)
+        .order("views_count", { ascending: false, nullsFirst: false })
+        .limit(RELATED_TARGET);
+      pushUnique(r1);
+
+      if (collected.length < RELATED_TARGET) {
+        const { data: r2 } = await supabase
+          .from("listings_public")
+          .select("*")
+          .eq("status", "available")
+          .eq("category", data.category)
+          .neq("id", data.id)
+          .limit(RELATED_TARGET);
+        pushUnique(r2);
+      }
     }
 
-    const { data: related } = await relatedQuery.limit(4);
+    if (collected.length < RELATED_TARGET && (data as any).section) {
+      const excludeIds = Array.from(seen);
+      const { data: r3 } = await supabase
+        .from("listings_public")
+        .select("*")
+        .eq("status", "available")
+        .eq("section", (data as any).section)
+        .not("id", "in", `(${excludeIds.map((i) => `"${i}"`).join(",")})`)
+        .limit(RELATED_TARGET);
+      pushUnique(r3);
+    }
 
-    const parsedRelated = (related || []).map((item: any) => ({
+    if (collected.length < 4) {
+      const excludeIds = Array.from(seen);
+      const { data: r4 } = await supabase
+        .from("listings_public")
+        .select("*")
+        .eq("status", "available")
+        .eq("listing_type", data.listing_type)
+        .not("id", "in", `(${excludeIds.map((i) => `"${i}"`).join(",")})`)
+        .order("views_count", { ascending: false, nullsFirst: false })
+        .limit(RELATED_TARGET);
+      pushUnique(r4);
+    }
+
+    const parsedRelated = collected.slice(0, RELATED_TARGET).map((item: any) => ({
       ...item,
       images: parseImages(item.images),
     }));
