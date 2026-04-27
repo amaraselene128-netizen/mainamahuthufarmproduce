@@ -1,59 +1,85 @@
-// AI brain for Sokoni Assistant.
-// Streams replies from the sokoni-assistant edge function (Gemini 2.5 Flash Lite)
-// and parses tool calls (search_marketplace, navigate, end_session).
+// Sokoni BEAST brain.
+// Streams replies from the sokoni-assistant edge function (Lovable AI Gateway)
+// and dispatches the LLM's tool calls to client-side fang executors.
 //
-// Returns the final assembled text + any tool action, plus token deltas via onDelta.
+// Returns the final assembled text + the resolved action(s), plus token deltas via onDelta.
 
-import { searchEverything } from "./dbSearch";
+import {
+  execSearch, execNavigate, execContactSeller, execFavorite,
+  execMarketAnalysis, execShopAction, execStartListing,
+  execWalkthrough, execEndSession, execOpenListing,
+  type BeastToolResult,
+} from "./beastTools";
+import { cleanShengInput, withStarter } from "./beastPersonality";
+import {
+  loadMemory, saveMemory, recordIntent, topPreferences,
+  type BeastMemorySnapshot,
+} from "./beastMemory";
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sokoni-assistant`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
 
-export type AiAction =
-  | { type: "navigate"; path: string }
-  | { type: "search"; query: string; data?: { listings?: any[]; shops?: any[] } }
-  | { type: "end_session" };
+export type BeastAction = {
+  navigate?: string;
+  external?: string;
+  endSession?: boolean;
+  data?: any;
+  toolName?: string;
+};
 
-export type AiResult = {
+export type BeastResult = {
   reply: string;
-  action?: AiAction;
+  action?: BeastAction;
 };
 
-type ToolCallAccum = {
-  name: string;
-  args: string;
-};
+type ToolCallAccum = { name: string; args: string };
 
 export async function streamChat(opts: {
   messages: ChatMsg[];
   username?: string | null;
   isLoggedIn: boolean;
+  userId?: string | null;
   onDelta: (chunk: string) => void;
   signal?: AbortSignal;
-}): Promise<AiResult> {
-  const { messages, username, isLoggedIn, onDelta, signal } = opts;
+}): Promise<BeastResult> {
+  const { messages, username, isLoggedIn, userId, onDelta, signal } = opts;
+
+  // Pre-clean the latest user message (Sheng → English)
+  const enriched = messages.map((m, i) =>
+    i === messages.length - 1 && m.role === "user"
+      ? { ...m, content: cleanShengInput(m.content) }
+      : m,
+  );
+
+  // Inject memory context as a system note so the LLM uses it
+  const mem = loadMemory(userId || null);
+  const prefs = topPreferences(mem);
+  const memoryNote: ChatMsg = {
+    role: "system",
+    content:
+      `USER MEMORY (use to personalize): ` +
+      `recent_views=${mem.viewedListings.slice(0, 5).join(",") || "none"}; ` +
+      `cart_intent=${mem.cartIntent.slice(0, 3).join(",") || "none"}; ` +
+      `top_category=${prefs.category || "unknown"}; ` +
+      `top_location=${prefs.location || "unknown"}; ` +
+      `total_interactions=${mem.totalInteractions}.`,
+  };
 
   const resp = await fetch(FN_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${ANON_KEY}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
     signal,
     body: JSON.stringify({
       action: "chat",
-      data: { messages, username, isLoggedIn },
+      data: { messages: [memoryNote, ...enriched], username, isLoggedIn },
     }),
   });
 
   if (!resp.ok || !resp.body) {
     let errMsg = "AI request failed";
-    try {
-      const j = await resp.json();
-      errMsg = j.error || errMsg;
-    } catch { /* noop */ }
+    try { errMsg = (await resp.json())?.error || errMsg; } catch { /* noop */ }
     if (resp.status === 429) errMsg = "I'm getting a lot of requests right now. Please try again in a moment.";
     if (resp.status === 402) errMsg = "AI credits are exhausted. Please add credits in Lovable workspace settings.";
     throw new Error(errMsg);
@@ -70,7 +96,6 @@ export async function streamChat(opts: {
     const { value, done: rDone } = await reader.read();
     if (rDone) break;
     buffer += decoder.decode(value, { stream: true });
-
     let nl: number;
     while ((nl = buffer.indexOf("\n")) !== -1) {
       let line = buffer.slice(0, nl);
@@ -97,67 +122,71 @@ export async function streamChat(opts: {
           }
         }
       } catch {
-        // partial JSON across chunks — re-buffer
         buffer = line + "\n" + buffer;
         break;
       }
     }
   }
 
-  // Resolve tool call (use first one)
+  // Resolve first tool call
   const firstCall = Object.values(toolCalls)[0];
-  let action: AiAction | undefined;
-  let appendReply = "";
+  let action: BeastAction | undefined;
+  let toolReply = "";
 
   if (firstCall && firstCall.name) {
     let args: any = {};
     try { args = firstCall.args ? JSON.parse(firstCall.args) : {}; } catch { /* noop */ }
-
-    if (firstCall.name === "navigate" && typeof args.path === "string") {
-      action = { type: "navigate", path: args.path };
-      if (!assembled.trim()) appendReply = `Opening ${args.path} for you.`;
-    } else if (firstCall.name === "search_marketplace" && typeof args.query === "string") {
-      // Run real DB search client-side so we can show previews + summarise
-      try {
-        const result = await searchEverything(args.query, 5);
-        action = {
-          type: "search",
-          query: result.parsed.text || args.query,
-          data: { listings: result.listings, shops: result.shops },
-        };
-        if (!assembled.trim()) {
-          if (result.listings.length || result.shops.length) {
-            const top = result.listings[0];
-            const priceTxt = top?.price ? ` at KES ${Number(top.price).toLocaleString()}` : "";
-            const locTxt = top?.location ? ` in ${top.location}` : "";
-            appendReply = result.listings.length
-              ? `I found ${result.listings.length} match${result.listings.length > 1 ? "es" : ""}. Top pick: ${top.title}${priceTxt}${locTxt}. Opening the search page.`
-              : `Found ${result.shops.length} shop${result.shops.length > 1 ? "s" : ""} matching that. Opening search now.`;
-          } else {
-            appendReply = `I couldn't find anything for "${args.query}". Want to try different keywords?`;
-          }
-        }
-      } catch {
-        action = { type: "search", query: args.query };
-        if (!assembled.trim()) appendReply = `Searching for "${args.query}"…`;
-      }
-    } else if (firstCall.name === "end_session") {
-      action = { type: "end_session" };
-      if (!assembled.trim()) appendReply = "Goodbye! Have a great day on SokoniArena.";
+    const result = await dispatchTool(firstCall.name, args, userId || null);
+    if (result) {
+      action = {
+        navigate: result.navigate,
+        external: result.external,
+        endSession: result.endSession,
+        data: result.data,
+        toolName: firstCall.name,
+      };
+      toolReply = result.message;
+      // Update memory
+      recordIntent(mem, firstCall.name, args);
+      saveMemory(userId || null, mem);
     }
   }
 
-  if (appendReply) {
-    onDelta(appendReply);
-    assembled += appendReply;
+  // Decide final reply: prefer model text if any; otherwise use tool message.
+  let finalReply = assembled.trim();
+  if (toolReply) {
+    if (!finalReply) {
+      finalReply = withStarter(toolReply);
+      onDelta(finalReply);
+    } else {
+      // Append tool action confirmation only if model didn't already mention it
+      finalReply = `${finalReply}\n\n${toolReply}`;
+      onDelta(`\n\n${toolReply}`);
+    }
   }
 
-  return { reply: assembled.trim() || "…", action };
+  return { reply: finalReply || "…", action };
+}
+
+async function dispatchTool(name: string, args: any, userId: string | null): Promise<BeastToolResult | null> {
+  switch (name) {
+    case "search_marketplace": return execSearch(args);
+    case "navigate":           return execNavigate(args);
+    case "open_listing":       return execOpenListing(args);
+    case "contact_seller":     return execContactSeller(args);
+    case "save_favorite":      return execFavorite(args, userId);
+    case "market_analysis":    return execMarketAnalysis(args);
+    case "shop_action":        return execShopAction(args, userId);
+    case "start_listing":      return execStartListing(args, userId);
+    case "walkthrough":        return execWalkthrough();
+    case "end_session":        return execEndSession();
+    default:                   return null;
+  }
 }
 
 export function welcomeMessage(ctx: { username?: string | null; isLoggedIn: boolean }): string {
   if (ctx.isLoggedIn && ctx.username) {
-    return `Karibu tena, ${ctx.username}! I'm Sokoni Assistant — your AI guide to SokoniArena. Tap the mic and tell me what you're looking for, where you'd like to go, or anything you want to learn about.`;
+    return `Karibu tena, ${ctx.username}! I'm Sokoni Beast 🦁 — your marketplace predator. I can search, navigate, contact sellers, save favorites, analyze prices, follow shops or help you sell. Tap the mic or just type — twende!`;
   }
-  return "Karibu! I'm Sokoni Assistant — your AI-powered guide to SokoniArena. Sign in for personalised help, or just tap the mic and ask me anything: search, navigate, or learn how the marketplace works.";
+  return "Karibu! I'm Sokoni Beast 🦁 — your AI marketplace predator. I can hunt down products, services, shops or events, contact sellers via Call/WhatsApp, analyze market prices and guide you through SokoniArena. Sign in for personalised power, or just talk to me.";
 }
