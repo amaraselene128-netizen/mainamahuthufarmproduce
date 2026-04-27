@@ -17,6 +17,7 @@ const footerLinks = {
     { label: "Search", href: "/search" },
   ],
   legal: [
+    { label: "Help & Contact", href: "/help" },
     { label: "Terms & Conditions", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
   ],
@@ -141,6 +142,18 @@ export function Footer() {
                   <p className="text-background/50 text-xs mb-0.5">User Support</p>
                   <a href="mailto:support@sokoniarena.co.ke" className="text-background/70 hover:text-primary transition-colors">
                     support@sokoniarena.co.ke
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-3 text-sm">
+                <Phone className="h-4 w-4 mt-0.5 shrink-0 text-background/70" />
+                <div>
+                  <p className="text-background/50 text-xs mb-0.5">Call / WhatsApp</p>
+                  <a href="tel:+254708532145" className="block text-background/70 hover:text-primary transition-colors">
+                    0708 532 145
+                  </a>
+                  <a href="tel:+254708444210" className="block text-background/70 hover:text-primary transition-colors">
+                    0708 444 210
                   </a>
                 </div>
               </li>
