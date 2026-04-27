@@ -85,44 +85,50 @@ serve(async (req) => {
 
       const { messages = [], username, isLoggedIn } = data || {};
 
-      const systemPrompt = `You are Sokoni Assistant — the friendly, witty, deeply knowledgeable AI guide for SokoniArena, Kenya's social marketplace.
+      const systemPrompt = `You are SOKONI BEAST 🦁 — a witty, decisive, deeply knowledgeable AI marketplace predator for SokoniArena, Kenya's social marketplace. You combine the warmth of a Kenyan market expert with the precision of an apex hunter. You ALWAYS prefer using your tools to actually DO things rather than just talking about them.
 
 ABOUT SOKONIARENA:
-- Kenya's social marketplace for products, services, events, and shops
-- Users can browse, post listings, open shops, message sellers, save favorites
-- Has a social layer called Fun Circle (stories, friends, reactions)
-- Mobile-first PWA, M-Pesa friendly, prices in KES
+- Kenya's social marketplace for products, services, events, and shops (KES, M-Pesa friendly)
+- Users browse, post listings, open shops, message sellers, save favorites
+- Has Fun Circle social layer (stories, friends, reactions); mobile-first PWA
 - Free to browse and post basic listings; premium features (Featured listings, Sponsored ads, Shop promotions) are paid
 
 PAGES YOU CAN NAVIGATE TO:
-/ (home), /products, /services, /events, /shops, /fun-circle, /favorites, /messages, /dashboard, /login, /register, /how-it-works, /terms, /privacy, /search?q=...
+/ (home), /products, /services, /events, /shops, /shop/:slug, /fun-circle, /favorites, /messages, /dashboard, /login, /register, /how-it-works, /terms, /privacy, /search?q=...
 
-KEY GUIDES:
+YOUR TOOLS (use them aggressively — don't just describe, ACT):
+- search_marketplace: hunt for products, services, events or shops. Parses location, price, type filters automatically. Use whenever user wants to FIND something.
+- open_listing: open a specific listing detail page when the user references it by title or id.
+- navigate: take the user to any page on SokoniArena.
+- contact_seller: contact via WhatsApp, phone call or in-app message. Resolves the seller's number automatically.
+- save_favorite: save a listing to the user's wishlist (requires login).
+- market_analysis: analyze the price range (min, max, median, average) for a product across the whole marketplace.
+- shop_action: visit, follow or promote a shop.
+- start_listing: kick off creating a new listing for the user (pre-fills the form).
+- walkthrough: give a guided onboarding tour.
+- end_session: when user says bye/goodbye/kwaheri/stop.
+
+KEY GUIDES YOU KNOW:
 - Post listing: Sign in → Dashboard → New Listing → fill details → Publish
 - Open shop: Dashboard → My Shop → add name/logo/cover → submit for approval
-- Promote shop: Dashboard → My Shop → Request Promotion
-- Feature listing: Dashboard → listing → Request Featured/Sponsorship
-- Contact seller: open listing → Call/WhatsApp/Message buttons (sign in required for in-app)
-- Favorites: tap heart on any listing → view in /favorites
-- Reset password: /forgot-password → enter email → click link
+- Promote shop or feature listing: Dashboard → Request Promotion / Featured / Sponsorship
+- Reset password: /forgot-password → email → click link
+- Favorites: tap heart on listing or use save_favorite tool
 
-SAFETY: Meet in public, inspect items first, never pay before seeing item, prefer verified shops.
-
-YOU HAVE TOOLS:
-- search_marketplace: when user wants to find products, services, events or shops (parses location, price filters automatically server-side). Use this whenever they say "find/show/look for/I want X".
-- navigate: when user wants to go to a specific page.
-- end_session: when user says goodbye/bye/stop/end session.
+SAFETY (always remind for new users): meet in public, inspect items first, never pay before seeing item, prefer verified shops.
 
 USER CONTEXT:
 - Logged in: ${isLoggedIn ? "yes" : "no"}
 - Username: ${username || "guest"}
 
-STYLE:
-- Warm, concise, conversational (this will be spoken aloud — keep replies under 3 sentences when possible).
-- Mix in light Swahili greetings when natural (karibu, asante, sawa).
-- Never invent products or shops — use search_marketplace to find real data.
-- If unsure, ask one short clarifying question.
-- If user asks for personal stuff (my listings, my shop) and isn't logged in, tell them to sign in first.`;
+STYLE — THE BEAST VOICE:
+- Confident, decisive, conversational. This is spoken aloud — keep replies under 3 short sentences when possible.
+- Sprinkle Swahili/Sheng naturally: karibu, asante, sawa, poa, twende, nimepata, hakuna shida. Never overdo it.
+- ALWAYS use the right tool. If user says "find/show/look for/I want X" → search_marketplace. If they say "open/go to X" → navigate. If "call/whatsapp/message" → contact_seller. Don't just narrate — call the tool.
+- Use the USER MEMORY system note to personalize ("Based on what you've been viewing…", "Continuing your hunt for…").
+- If user requests personal stuff (my listings, favorites, dashboard) and isn't logged in, point them to /login.
+- Never invent products, shops or prices — always use tools to fetch real data.
+- If unsure between two intents, ask ONE short clarifying question.`;
 
       const tools = [
         {
@@ -133,9 +139,25 @@ STYLE:
             parameters: {
               type: "object",
               properties: {
-                query: { type: "string", description: "What to search for, in natural language. Can include location and price hints (e.g. 'iPhones under 30k in Nairobi')." },
+                query: { type: "string", description: "What to search for, in natural language. May include location and price hints (e.g. 'iPhones under 30k in Nairobi')." },
+                type: { type: "string", enum: ["product", "service", "event", "shop"], description: "Optional listing type filter." },
               },
               required: ["query"],
+              additionalProperties: false,
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "open_listing",
+            description: "Open a specific listing detail page by id or title.",
+            parameters: {
+              type: "object",
+              properties: {
+                listing_id: { type: "string" },
+                title: { type: "string" },
+              },
               additionalProperties: false,
             },
           },
@@ -158,6 +180,91 @@ STYLE:
         {
           type: "function",
           function: {
+            name: "contact_seller",
+            description: "Contact a seller via WhatsApp, phone call, or in-app message. Resolves the seller's contact info automatically from the listing or shop.",
+            parameters: {
+              type: "object",
+              properties: {
+                listing_id: { type: "string" },
+                shop_id: { type: "string" },
+                method: { type: "string", enum: ["whatsapp", "call", "message"] },
+              },
+              required: ["method"],
+              additionalProperties: false,
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "save_favorite",
+            description: "Save a listing to the user's wishlist (requires login).",
+            parameters: {
+              type: "object",
+              properties: { listing_id: { type: "string" } },
+              required: ["listing_id"],
+              additionalProperties: false,
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "market_analysis",
+            description: "Analyze the market price range (min, max, median, average) for a product across SokoniArena.",
+            parameters: {
+              type: "object",
+              properties: { query: { type: "string", description: "Item to analyze, e.g. 'Toyota Vitz 2015'." } },
+              required: ["query"],
+              additionalProperties: false,
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "shop_action",
+            description: "Visit, follow or promote a shop by id or name.",
+            parameters: {
+              type: "object",
+              properties: {
+                shop_id: { type: "string" },
+                shop_name: { type: "string" },
+                action: { type: "string", enum: ["visit", "follow", "promote"] },
+              },
+              required: ["action"],
+              additionalProperties: false,
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "start_listing",
+            description: "Help the user start creating a new listing — opens the listing form pre-filled with what they described.",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                price: { type: "number" },
+                category: { type: "string" },
+                type: { type: "string", enum: ["product", "service", "event"] },
+              },
+              additionalProperties: false,
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "walkthrough",
+            description: "Give the user a friendly guided tour of how SokoniArena works.",
+            parameters: { type: "object", properties: {}, additionalProperties: false },
+          },
+        },
+        {
+          type: "function",
+          function: {
             name: "end_session",
             description: "End the live voice session when the user says goodbye.",
             parameters: { type: "object", properties: {}, additionalProperties: false },
@@ -172,7 +279,7 @@ STYLE:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
+          model: "google/gemini-3-flash-preview",
           stream: true,
           messages: [{ role: "system", content: systemPrompt }, ...messages],
           tools,

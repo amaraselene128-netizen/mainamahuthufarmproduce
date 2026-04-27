@@ -25,8 +25,9 @@ import { AssistantMessage } from "./AssistantMessage";
 const QUICK_PROMPTS = [
   "Show me around",
   "Find iPhones under 30k in Nairobi",
+  "Analyze price for Toyota Vitz",
+  "Open my favorites",
   "How do I open a shop?",
-  "Why is SokoniArena special?",
 ];
 
 export function SokoniAssistant() {
@@ -42,6 +43,7 @@ export function SokoniAssistant() {
   const [listening, setListening] = useState(false);
   const [muted, setMuted] = useState(false);
   const [partial, setPartial] = useState("");
+  const [typed, setTyped] = useState("");
   const [messages, setMessages] = useState<StoredMsg[]>([]);
   const sessionRef = useRef<LiveSpeechSession | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -106,6 +108,7 @@ export function SokoniAssistant() {
           messages: history,
           username,
           isLoggedIn: !!user,
+          userId: user?.id ?? null,
           onDelta: (chunk) => {
             streamed += chunk;
             setPartial(streamed);
@@ -129,11 +132,14 @@ export function SokoniAssistant() {
           });
         }
 
-        if (result.action?.type === "navigate") {
-          setTimeout(() => navigate((result.action as any).path), 700);
-        } else if (result.action?.type === "search") {
-          setTimeout(() => navigate(`/search?q=${encodeURIComponent((result.action as any).query)}`), 700);
-        } else if (result.action?.type === "end_session") {
+        const action = result.action;
+        if (action?.external) {
+          window.open(action.external, "_blank", "noopener,noreferrer");
+        }
+        if (action?.navigate) {
+          setTimeout(() => navigate(action.navigate!), 700);
+        }
+        if (action?.endSession) {
           setTimeout(() => endLiveSession(), 1500);
         }
       } catch (err: any) {
@@ -257,11 +263,11 @@ export function SokoniAssistant() {
                 )}
               </div>
               <div>
-                <p className="font-semibold text-sm leading-tight">Sokoni Assistant</p>
+                <p className="font-semibold text-sm leading-tight">Sokoni Beast 🦁</p>
                 <p className="text-[11px] text-muted-foreground leading-tight">
                   {liveOn
-                    ? listening ? "Live • Listening…" : "Live • Paused"
-                    : muted ? "Voice muted" : "Tap the mic to start a live session"}
+                    ? listening ? "On the hunt • Listening…" : "Live • Paused"
+                    : muted ? "Voice muted" : "Tap mic for live mode, or type below"}
                 </p>
               </div>
             </div>
@@ -305,42 +311,59 @@ export function SokoniAssistant() {
             ))}
           </div>
 
-          {/* Mic / Live control */}
-          <div className="p-4 border-t flex items-center justify-center gap-3">
-            {!liveOn ? (
-              <button
-                onClick={startLiveSession}
-                aria-label="Start live voice session"
-                className={cn(
-                  "h-14 px-6 rounded-full flex items-center gap-2 transition-all",
-                  "bg-primary text-primary-foreground hover:scale-105 ring-4 ring-primary/20"
-                )}
-              >
-                <Mic className="h-5 w-5" />
-                <span className="text-sm font-medium">Start live session</span>
-              </button>
-            ) : (
-              <>
-                <div className={cn(
-                  "h-14 w-14 rounded-full flex items-center justify-center",
-                  listening ? "bg-primary/15 ring-4 ring-primary/30" : "bg-muted ring-4 ring-muted-foreground/10"
-                )}>
-                  {listening ? (
-                    <Mic className="h-6 w-6 text-primary" />
-                  ) : (
-                    <MicOff className="h-6 w-6 text-muted-foreground" />
-                  )}
-                </div>
+          {/* Type or speak input */}
+          <div className="p-3 border-t space-y-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const t = typed.trim();
+                if (!t) return;
+                setTyped("");
+                reply(t);
+              }}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="text"
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder="Ask the Beast anything…"
+                className="flex-1 h-10 rounded-full border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <Button type="submit" size="sm" className="h-10 rounded-full px-4">Send</Button>
+            </form>
+            <div className="flex items-center justify-center gap-3">
+              {!liveOn ? (
                 <button
-                  onClick={endLiveSession}
-                  aria-label="End session"
-                  className="h-12 px-5 rounded-full bg-destructive text-destructive-foreground flex items-center gap-2 hover:scale-105 transition-transform"
+                  onClick={startLiveSession}
+                  aria-label="Start live voice session"
+                  className={cn(
+                    "h-11 px-5 rounded-full flex items-center gap-2 transition-all",
+                    "bg-primary text-primary-foreground hover:scale-105 ring-4 ring-primary/20"
+                  )}
                 >
-                  <PhoneOff className="h-4 w-4" />
-                  <span className="text-sm font-medium">End session</span>
+                  <Mic className="h-4 w-4" />
+                  <span className="text-xs font-medium">Live voice</span>
                 </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <div className={cn(
+                    "h-11 w-11 rounded-full flex items-center justify-center",
+                    listening ? "bg-primary/15 ring-4 ring-primary/30" : "bg-muted ring-4 ring-muted-foreground/10"
+                  )}>
+                    {listening ? <Mic className="h-5 w-5 text-primary" /> : <MicOff className="h-5 w-5 text-muted-foreground" />}
+                  </div>
+                  <button
+                    onClick={endLiveSession}
+                    aria-label="End session"
+                    className="h-10 px-4 rounded-full bg-destructive text-destructive-foreground flex items-center gap-2 hover:scale-105 transition-transform"
+                  >
+                    <PhoneOff className="h-4 w-4" />
+                    <span className="text-xs font-medium">End</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {!supported && (
