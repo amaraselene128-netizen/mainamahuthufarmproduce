@@ -25,8 +25,9 @@ import { AssistantMessage } from "./AssistantMessage";
 const QUICK_PROMPTS = [
   "Show me around",
   "Find iPhones under 30k in Nairobi",
+  "Analyze price for Toyota Vitz",
+  "Open my favorites",
   "How do I open a shop?",
-  "Why is SokoniArena special?",
 ];
 
 export function SokoniAssistant() {
@@ -106,6 +107,7 @@ export function SokoniAssistant() {
           messages: history,
           username,
           isLoggedIn: !!user,
+          userId: user?.id ?? null,
           onDelta: (chunk) => {
             streamed += chunk;
             setPartial(streamed);
@@ -129,11 +131,14 @@ export function SokoniAssistant() {
           });
         }
 
-        if (result.action?.type === "navigate") {
-          setTimeout(() => navigate((result.action as any).path), 700);
-        } else if (result.action?.type === "search") {
-          setTimeout(() => navigate(`/search?q=${encodeURIComponent((result.action as any).query)}`), 700);
-        } else if (result.action?.type === "end_session") {
+        const action = result.action;
+        if (action?.external) {
+          window.open(action.external, "_blank", "noopener,noreferrer");
+        }
+        if (action?.navigate) {
+          setTimeout(() => navigate(action.navigate!), 700);
+        }
+        if (action?.endSession) {
           setTimeout(() => endLiveSession(), 1500);
         }
       } catch (err: any) {
