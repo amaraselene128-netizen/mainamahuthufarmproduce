@@ -12,6 +12,7 @@ import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { SokoniAssistant } from "@/components/sokoni-assistant/SokoniAssistant";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SokoniBeastWidget } from '@/components/SokoniBeastWidget';
 
 // Eager load critical routes
 import Index from "./pages/Index";
@@ -52,6 +53,19 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+
+function App() {
+  return (
+    <>
+      {/* Your existing app */}
+      <YourRoutes />
+      
+      {/* The Beast - always ready */}
+      <SokoniBeastWidget />
+    </>
+  );
+}
 
 // Minimal loading fallback
 function PageLoader() {
