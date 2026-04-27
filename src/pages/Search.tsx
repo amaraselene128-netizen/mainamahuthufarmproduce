@@ -35,7 +35,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { CategoryFilter, type CategoryFilterValue } from "@/components/listings/CategoryFilter";
-import { findSection } from "@/lib/categories";
+import { findSection, SECTIONS } from "@/lib/categories";
+import { Link } from "react-router-dom";
+import { Store } from "lucide-react";
 
 interface Listing {
   id: string;
@@ -50,6 +52,41 @@ interface Listing {
   is_free: boolean;
   event_date: string | null;
   created_at: string;
+}
+
+interface ShopHit {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  location: string | null;
+  followers_count: number | null;
+}
+
+/**
+ * Try to infer a category/subcategory from a free-text query.
+ * Returns the first taxonomy match whose label is contained in the query.
+ */
+function inferCategoryFromQuery(q: string): { category?: string; section?: string } {
+  const term = q.toLowerCase().trim();
+  if (!term) return {};
+  for (const section of SECTIONS) {
+    for (const c of section.categories) {
+      if (term.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(term)) {
+        return { category: c.label, section: section.slug };
+      }
+      for (const s of c.subcategories || []) {
+        if (term.includes(s.label.toLowerCase()) || s.label.toLowerCase().includes(term)) {
+          return { category: c.label, section: section.slug };
+        }
+      }
+    }
+    if (term.includes(section.label.toLowerCase().split(" ")[0])) {
+      return { section: section.slug };
+    }
+  }
+  return {};
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -77,6 +114,8 @@ export default function Search() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [shopHits, setShopHits] = useState<ShopHit[]>([]);
+  const [fallbackInfo, setFallbackInfo] = useState<{ category?: string; section?: string } | null>(null);
 
   // Filters
   const [activeTab, setActiveTab] = useState(
@@ -206,6 +245,57 @@ export default function Search() {
     } else if (data) {
       setListings(data as Listing[]);
       setTotalCount(count || 0);
+    }
+
+    // ───── Global enhancements ─────
+    // (a) Search shops with the same query so users discover storefronts.
+    if (debouncedQuery && debouncedQuery.trim()) {
+      const term = debouncedQuery.trim();
+      const { data: shopsData } = await supabase
+        .from("shops")
+        .select("id, name, slug, description, logo_url, location, followers_count")
+        .eq("is_active", true)
+        .or(
+          `name.ilike.%${term}%,description.ilike.%${term}%,location.ilike.%${term}%,category.ilike.%${term}%`
+        )
+        .order("followers_count", { ascending: false })
+        .limit(8);
+      setShopHits((shopsData as ShopHit[]) || []);
+    } else {
+      setShopHits([]);
+    }
+
+    // (b) Zero-result fallback: try to infer the category from the query and
+    // broaden the search so users always see something relevant.
+    const noResults = !error && (!data || data.length === 0);
+    if (noResults && debouncedQuery && debouncedQuery.trim()) {
+      const inferred = inferCategoryFromQuery(debouncedQuery);
+      if (inferred.category || inferred.section) {
+        let fallback = supabase
+          .from("listings_public")
+          .select("*", { count: "exact" })
+          .eq("status", "available");
+        if (activeTab !== "all") fallback = fallback.eq("listing_type", activeTab as any);
+        if (inferred.category) fallback = fallback.eq("category", inferred.category);
+        else if (inferred.section) fallback = fallback.eq("section", inferred.section);
+        fallback = fallback
+          .order("is_sponsored", { ascending: false })
+          .order("views_count", { ascending: false })
+          .order("created_at", { ascending: false })
+          .range(0, ITEMS_PER_PAGE - 1);
+        const { data: fb, count: fbCount } = await fallback;
+        if (fb && fb.length > 0) {
+          setListings(fb as Listing[]);
+          setTotalCount(fbCount || fb.length);
+          setFallbackInfo(inferred);
+        } else {
+          setFallbackInfo(null);
+        }
+      } else {
+        setFallbackInfo(null);
+      }
+    } else {
+      setFallbackInfo(null);
     }
 
     setIsLoading(false);
