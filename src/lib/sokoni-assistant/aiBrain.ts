@@ -1,8 +1,7 @@
-// Sokoni BEAST brain.
-// Streams replies from the sokoni-assistant edge function (Lovable AI Gateway)
-// and dispatches the LLM's tool calls to client-side fang executors.
-//
-// Returns the final assembled text + the resolved action(s), plus token deltas via onDelta.
+// Sokoni BEAST brain — Lovable-free.
+// Cascade: edge function (Groq → Gemini → OpenAI) → rule-based fallback.
+// If no AI key is configured on the backend, the edge function returns
+// {fallback:"rules"} and we transparently route to detectIntent (free).
 
 import {
   execSearch, execNavigate, execContactSeller, execFavorite,
@@ -13,8 +12,8 @@ import {
 import { cleanShengInput, withStarter } from "./beastPersonality";
 import {
   loadMemory, saveMemory, recordIntent, topPreferences,
-  type BeastMemorySnapshot,
 } from "./beastMemory";
+import { detectIntent } from "./intents";
 
 const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sokoni-assistant`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -46,45 +45,62 @@ export async function streamChat(opts: {
 }): Promise<BeastResult> {
   const { messages, username, isLoggedIn, userId, onDelta, signal } = opts;
 
-  // Pre-clean the latest user message (Sheng → English)
   const enriched = messages.map((m, i) =>
     i === messages.length - 1 && m.role === "user"
       ? { ...m, content: cleanShengInput(m.content) }
       : m,
   );
 
-  // Inject memory context as a system note so the LLM uses it
   const mem = loadMemory(userId || null);
   const prefs = topPreferences(mem);
   const memoryNote: ChatMsg = {
     role: "system",
     content:
-      `USER MEMORY (use to personalize): ` +
-      `recent_views=${mem.viewedListings.slice(0, 5).join(",") || "none"}; ` +
+      `USER MEMORY: recent_views=${mem.viewedListings.slice(0, 5).join(",") || "none"}; ` +
       `cart_intent=${mem.cartIntent.slice(0, 3).join(",") || "none"}; ` +
       `top_category=${prefs.category || "unknown"}; ` +
       `top_location=${prefs.location || "unknown"}; ` +
       `total_interactions=${mem.totalInteractions}.`,
   };
 
-  const resp = await fetch(FN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
-    signal,
-    body: JSON.stringify({
-      action: "chat",
-      data: { messages: [memoryNote, ...enriched], username, isLoggedIn },
-    }),
-  });
-
-  if (!resp.ok || !resp.body) {
-    let errMsg = "AI request failed";
-    try { errMsg = (await resp.json())?.error || errMsg; } catch { /* noop */ }
-    if (resp.status === 429) errMsg = "I'm getting a lot of requests right now. Please try again in a moment.";
-    if (resp.status === 402) errMsg = "AI credits are exhausted. Please add credits in Lovable workspace settings.";
-    throw new Error(errMsg);
+  let resp: Response;
+  try {
+    resp = await fetch(FN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
+      signal,
+      body: JSON.stringify({
+        action: "chat",
+        data: { messages: [memoryNote, ...enriched], username, isLoggedIn },
+      }),
+    });
+  } catch {
+    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
   }
 
+  // Backend signalled "no AI configured" or "all providers failed" → use rules.
+  const ct = resp.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    try {
+      const j = await resp.json();
+      if (j?.fallback === "rules") {
+        return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
+      }
+      if (j?.error) {
+        if (resp.status === 429) throw new Error("Too many requests. Try again in a moment.");
+        throw new Error(j.error);
+      }
+    } catch (e: any) {
+      if (e?.message) throw e;
+    }
+  }
+
+  if (!resp.ok || !resp.body) {
+    // Network/server error — degrade gracefully to rules.
+    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
+  }
+
+  // ---- Stream OpenAI-compatible SSE from the AI provider ----
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
@@ -128,7 +144,6 @@ export async function streamChat(opts: {
     }
   }
 
-  // Resolve first tool call
   const firstCall = Object.values(toolCalls)[0];
   let action: BeastAction | undefined;
   let toolReply = "";
@@ -139,33 +154,75 @@ export async function streamChat(opts: {
     const result = await dispatchTool(firstCall.name, args, userId || null);
     if (result) {
       action = {
-        navigate: result.navigate,
-        external: result.external,
-        endSession: result.endSession,
-        data: result.data,
-        toolName: firstCall.name,
+        navigate: result.navigate, external: result.external,
+        endSession: result.endSession, data: result.data, toolName: firstCall.name,
       };
       toolReply = result.message;
-      // Update memory
       recordIntent(mem, firstCall.name, args);
       saveMemory(userId || null, mem);
     }
   }
 
-  // Decide final reply: prefer model text if any; otherwise use tool message.
   let finalReply = assembled.trim();
   if (toolReply) {
     if (!finalReply) {
       finalReply = withStarter(toolReply);
       onDelta(finalReply);
     } else {
-      // Append tool action confirmation only if model didn't already mention it
       finalReply = `${finalReply}\n\n${toolReply}`;
       onDelta(`\n\n${toolReply}`);
     }
   }
 
-  return { reply: finalReply || "…", action };
+  // If we got nothing at all from the AI, fall back to rules instead of "…".
+  if (!finalReply) {
+    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
+  }
+
+  return { reply: finalReply, action };
+}
+
+// ---- Rule-based fallback (100% free, no external calls) ----
+async function runRuleFallback(
+  messages: ChatMsg[],
+  username: string | null | undefined,
+  isLoggedIn: boolean,
+  onDelta: (chunk: string) => void,
+  mem: ReturnType<typeof loadMemory>,
+  userId?: string | null,
+): Promise<BeastResult> {
+  const last = [...messages].reverse().find((m) => m.role === "user");
+  const userText = last?.content?.trim() || "";
+  if (!userText) {
+    const msg = "I didn't catch that. Could you say it again?";
+    onDelta(msg);
+    return { reply: msg };
+  }
+
+  const intent = await detectIntent(userText, {
+    username: username || null,
+    isLoggedIn,
+    walkthroughStep: 0,
+  });
+
+  const reply = withStarter(intent.reply);
+  onDelta(reply);
+
+  let action: BeastAction | undefined;
+  if (intent.action) {
+    switch (intent.action.type) {
+      case "navigate": action = { navigate: intent.action.path }; break;
+      case "search":   action = { navigate: `/search?q=${encodeURIComponent(intent.action.query)}` }; break;
+      case "external": action = { external: intent.action.url }; break;
+      case "end_session": action = { endSession: true }; break;
+    }
+  }
+
+  // Memory bookkeeping
+  recordIntent(mem, "rules_fallback", { text: userText });
+  saveMemory(userId || null, mem);
+
+  return { reply, action };
 }
 
 async function dispatchTool(name: string, args: any, userId: string | null): Promise<BeastToolResult | null> {
@@ -188,5 +245,5 @@ export function welcomeMessage(ctx: { username?: string | null; isLoggedIn: bool
   if (ctx.isLoggedIn && ctx.username) {
     return `Karibu tena, ${ctx.username}! I'm Sokoni Beast 🦁 — your marketplace predator. I can search, navigate, contact sellers, save favorites, analyze prices, follow shops or help you sell. Tap the mic or just type — twende!`;
   }
-  return "Karibu! I'm Sokoni Beast 🦁 — your AI marketplace predator. I can hunt down products, services, shops or events, contact sellers via Call/WhatsApp, analyze market prices and guide you through SokoniArena. Sign in for personalised power, or just talk to me.";
+  return "Karibu! I'm Sokoni Beast 🦁 — your AI marketplace guide. I can hunt down products, services, shops or events, contact sellers via Call/WhatsApp, analyze market prices and guide you through SokoniArena. Sign in for personalised power, or just talk to me.";
 }
