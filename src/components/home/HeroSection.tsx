@@ -239,8 +239,8 @@ export function HeroSection() {
               <div className="absolute right-1/3 top-4 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
 
               {/* TEXT — left side, constrained to avoid collision */}
-              <div className="relative z-10 h-full flex flex-col justify-between p-5 sm:p-7 md:p-8 text-primary-foreground">
-                <div className="max-w-[58%] sm:max-w-[50%] md:max-w-[48%]">
+              <div className="relative z-10 h-full flex flex-col justify-between p-4 sm:p-7 md:p-8 text-primary-foreground">
+                <div className="max-w-[55%] sm:max-w-[50%] md:max-w-[48%]">
                   <span className="inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm text-[11px] sm:text-xs font-semibold px-3 py-1 rounded-full mb-3 sm:mb-4">
                     <Flame className="h-3 w-3" /> Mega Deals
                   </span>
@@ -290,9 +290,9 @@ export function HeroSection() {
               {current && (
                 <Link
                   to={`/${categoryPath}/${current.id}`}
-                  className="absolute right-3 sm:right-5 md:right-7 top-1/2 -translate-y-1/2 z-[5]
-                             w-[44%] sm:w-[44%] md:w-[44%] aspect-square
-                             flex items-center justify-center group"
+                  className="absolute right-2 sm:right-5 md:right-7 top-1/2 -translate-y-1/2 z-[5]
+                             w-[40%] sm:w-[44%] md:w-[44%] aspect-square
+                             flex items-center justify-center group pointer-events-auto"
                   aria-label={current.title}
                 >
                   {/* White spotlight card behind image */}
@@ -330,14 +330,14 @@ export function HeroSection() {
                 </Link>
               )}
 
-              {/* Carousel arrows */}
+              {/* Carousel arrows — hidden on mobile to prevent overlap with CTAs/image */}
               {heroBanners.length > 1 && (
                 <>
                   <button
                     type="button"
                     aria-label="Previous"
                     onClick={goPrev}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-white/90 hover:bg-white text-primary shadow-md inline-flex items-center justify-center"
+                    className="hidden sm:inline-flex absolute left-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-white/90 hover:bg-white text-primary shadow-md items-center justify-center"
                   >
                     <ChevronRight className="h-5 w-5 rotate-180" />
                   </button>
@@ -345,7 +345,7 @@ export function HeroSection() {
                     type="button"
                     aria-label="Next"
                     onClick={goNext}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-white/90 hover:bg-white text-primary shadow-md inline-flex items-center justify-center"
+                    className="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 z-20 h-9 w-9 rounded-full bg-white/90 hover:bg-white text-primary shadow-md items-center justify-center"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
