@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { parseImages } from "@/lib/utils";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { ListingsGridWithContacts } from "@/components/listings/ListingsGridWithContacts";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import { CategoryFilter, type CategoryFilterValue } from "@/components/listings/CategoryFilter";
 import { findSection, SECTIONS } from "@/lib/categories";
-import { Link } from "react-router-dom";
 import { Store } from "lucide-react";
 
 interface Listing {
