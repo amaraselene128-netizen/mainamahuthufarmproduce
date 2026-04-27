@@ -262,11 +262,11 @@ export function SokoniAssistant() {
                 )}
               </div>
               <div>
-                <p className="font-semibold text-sm leading-tight">Sokoni Assistant</p>
+                <p className="font-semibold text-sm leading-tight">Sokoni Beast 🦁</p>
                 <p className="text-[11px] text-muted-foreground leading-tight">
                   {liveOn
-                    ? listening ? "Live • Listening…" : "Live • Paused"
-                    : muted ? "Voice muted" : "Tap the mic to start a live session"}
+                    ? listening ? "On the hunt • Listening…" : "Live • Paused"
+                    : muted ? "Voice muted" : "Tap mic for live mode, or type below"}
                 </p>
               </div>
             </div>
