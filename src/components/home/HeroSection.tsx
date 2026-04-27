@@ -170,6 +170,8 @@ function MobileHeroAdStrip({ items }: { items: BannerItem[] }) {
     </Link>
   );
 }
+
+export function HeroSection() {
   const navigate = useNavigate();
   // Pull a wide pool of listings for the rotating banner
   const { listings } = useListings({ limit: 60 });
