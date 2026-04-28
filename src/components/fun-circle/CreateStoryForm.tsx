@@ -27,15 +27,30 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
   const { profile } = useUserProfile();
   const { toast } = useToast();
   const { createStory, remainingImages } = useFunCircleStories();
+  const { shop } = useMyShop();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [content, setContent] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  // Post identity: "user" (default) or "shop" (if user owns one)
+  const [postAs, setPostAs] = useState<"user" | "shop">("user");
   // Canvas settings persist across posts
   const [storyBg, setStoryBg] = useState("transparent");
   const [storyFont, setStoryFont] = useState("Inter, sans-serif");
   const [storyTextColor, setStoryTextColor] = useState("inherit");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Honour ?postAs=shop deep-link from MyShopPanel
+  useEffect(() => {
+    if (shop && searchParams.get("postAs") === "shop") {
+      setPostAs("shop");
+      // strip the param so it doesn't stick after first paint
+      const next = new URLSearchParams(searchParams);
+      next.delete("postAs");
+      setSearchParams(next, { replace: true });
+    }
+  }, [shop, searchParams, setSearchParams]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
