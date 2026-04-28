@@ -123,7 +123,8 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
     }
 
     setIsPosting(true);
-    const result = await createStory(content.trim(), images);
+    const shopId = postAs === "shop" && shop ? shop.id : null;
+    const result = await createStory(content.trim(), images, [], shopId);
     setIsPosting(false);
 
     if (!result.error) {
