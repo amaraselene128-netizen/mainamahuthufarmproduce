@@ -66,6 +66,12 @@ export async function streamChat(opts: {
       `total_interactions=${mem.totalInteractions}.`,
   };
 
+  // If a multi-turn flow is active, drive it through the rule engine — the
+  // LLM has no context for our yes/no state machine.
+  if (flowState) {
+    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId, flowState);
+  }
+
   let resp: Response;
   try {
     resp = await fetch(FN_URL, {
