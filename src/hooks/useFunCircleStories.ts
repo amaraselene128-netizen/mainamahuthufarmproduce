@@ -185,7 +185,12 @@ export function useFunCircleStories() {
     setImagesUploadedToday(count);
   };
 
-  const createStory = async (content: string, images: string[], mentionedUserIds: string[] = []) => {
+  const createStory = async (
+    content: string,
+    images: string[],
+    mentionedUserIds: string[] = [],
+    shopId: string | null = null
+  ) => {
     if (!user) return { error: new Error("Not authenticated") };
 
     if (imagesUploadedToday + images.length > 5) {
@@ -201,6 +206,7 @@ export function useFunCircleStories() {
       .from("fun_circle_stories")
       .insert({
         user_id: user.id,
+        shop_id: shopId,
         content,
         images,
       })
