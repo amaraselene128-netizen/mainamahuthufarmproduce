@@ -254,7 +254,7 @@ async function dispatchTool(name: string, args: any, userId: string | null): Pro
 
 export function welcomeMessage(ctx: { username?: string | null; isLoggedIn: boolean }): string {
   if (ctx.isLoggedIn && ctx.username) {
-    return `Karibu tena, ${ctx.username}! I'm Sokoni Beast 🦁 — your marketplace predator. I can search, navigate, contact sellers, save favorites, analyze prices, follow shops or help you sell. Tap the mic or just type — twende!`;
+    return `Karibu tena, ${ctx.username}! I'm the Sokoni Arena assistant. Ask me to find anything, open any page, or guide you step by step — and I'll handle it.`;
   }
-  return "Karibu! I'm Sokoni Beast 🦁 — your AI marketplace guide. I can hunt down products, services, shops or events, contact sellers via Call/WhatsApp, analyze market prices and guide you through SokoniArena. Sign in for personalised power, or just talk to me.";
+  return "Karibu! I'm the Sokoni Arena assistant. I can hunt down products, services, shops or events, take you to any page, contact sellers and walk you through every feature. Just ask.";
 }
