@@ -189,7 +189,7 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
         </Avatar>
         <div className="flex-1 min-w-0">
           <Textarea
-            placeholder="What's on your mind? Share something with your friends..."
+            placeholder={postAs === "shop" && shop ? `Post an update from ${shop.name}…` : "What's on your mind? Share something with your friends..."}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="min-h-[80px] resize-none border-0 focus-visible:ring-0 p-0 text-base"
