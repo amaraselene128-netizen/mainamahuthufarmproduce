@@ -123,6 +123,11 @@ export function MyShopPanel() {
                   <ExternalLink className="h-4 w-4 mr-1" />View Shop
                 </Link>
               </Button>
+              <Button asChild variant="secondary">
+                <Link to="/fun-circle?postAs=shop">
+                  <Sparkles className="h-4 w-4 mr-1" />Post Shop Status
+                </Link>
+              </Button>
               <ShopPromotionButton shopId={shop.id} shopName={shop.name} />
               <Button variant="outline" onClick={() => setShowAds(!showAds)}>
                 <Megaphone className="h-4 w-4 mr-1" />
