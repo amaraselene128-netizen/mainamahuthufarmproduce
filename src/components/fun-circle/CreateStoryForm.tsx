@@ -1,13 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ImagePlus, X, Loader2, Send, Palette, Type } from "lucide-react";
+import { ImagePlus, X, Loader2, Send, Palette, Type, Store, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFunCircleStories } from "@/hooks/useFunCircleStories";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useMyShop } from "@/hooks/useShops";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -25,15 +27,30 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
   const { profile } = useUserProfile();
   const { toast } = useToast();
   const { createStory, remainingImages } = useFunCircleStories();
+  const { shop } = useMyShop();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [content, setContent] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  // Post identity: "user" (default) or "shop" (if user owns one)
+  const [postAs, setPostAs] = useState<"user" | "shop">("user");
   // Canvas settings persist across posts
   const [storyBg, setStoryBg] = useState("transparent");
   const [storyFont, setStoryFont] = useState("Inter, sans-serif");
   const [storyTextColor, setStoryTextColor] = useState("inherit");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Honour ?postAs=shop deep-link from MyShopPanel
+  useEffect(() => {
+    if (shop && searchParams.get("postAs") === "shop") {
+      setPostAs("shop");
+      // strip the param so it doesn't stick after first paint
+      const next = new URLSearchParams(searchParams);
+      next.delete("postAs");
+      setSearchParams(next, { replace: true });
+    }
+  }, [shop, searchParams, setSearchParams]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -106,7 +123,8 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
     }
 
     setIsPosting(true);
-    const result = await createStory(content.trim(), images);
+    const shopId = postAs === "shop" && shop ? shop.id : null;
+    const result = await createStory(content.trim(), images, [], shopId);
     setIsPosting(false);
 
     if (!result.error) {
@@ -119,6 +137,33 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
 
   return (
     <Card className="p-3 sm:p-4 space-y-4">
+      {/* Post-as toggle (only when user owns an active shop) */}
+      {shop && (
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Post as:</span>
+          <button
+            type="button"
+            onClick={() => setPostAs("user")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+              postAs === "user" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+            }`}
+          >
+            <UserIcon className="h-3 w-3" />
+            <span className="font-medium">{profile?.username || "Me"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPostAs("shop")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+              postAs === "shop" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+            }`}
+          >
+            <Store className="h-3 w-3" />
+            <span className="font-medium truncate max-w-[140px]">{shop.name}</span>
+          </button>
+        </div>
+      )}
+
       {/* Preview with styling */}
       {(storyBg !== "transparent" || storyFont !== "Inter, sans-serif" || storyTextColor !== "inherit") && content.trim() && (
         <div
@@ -135,14 +180,16 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
 
       <div className="flex gap-3">
         <Avatar className="h-10 w-10 shrink-0">
-          <AvatarImage src={profile?.avatar_url || undefined} />
+          <AvatarImage src={postAs === "shop" && shop ? shop.logo_url || undefined : profile?.avatar_url || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary">
-            {profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+            {postAs === "shop" && shop
+              ? (shop.name?.charAt(0)?.toUpperCase() || "S")
+              : (profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase())}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <Textarea
-            placeholder="What's on your mind? Share something with your friends..."
+            placeholder={postAs === "shop" && shop ? `Post an update from ${shop.name}…` : "What's on your mind? Share something with your friends..."}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="min-h-[80px] resize-none border-0 focus-visible:ring-0 p-0 text-base"

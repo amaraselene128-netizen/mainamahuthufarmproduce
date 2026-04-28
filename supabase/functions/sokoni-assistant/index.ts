@@ -43,7 +43,7 @@ function activeProviders(): Provider[] {
   if (groq) list.push({
     name: "groq",
     url: "https://api.groq.com/openai/v1/chat/completions",
-    model: Deno.env.get("GROQ_MODEL") || "llama-3.3-70b-versatile",
+    model: Deno.env.get("GROQ_MODEL") || "llama-3.1-8b-instant",
     key: groq,
   });
   const gemini = Deno.env.get("GEMINI_API_KEY");
