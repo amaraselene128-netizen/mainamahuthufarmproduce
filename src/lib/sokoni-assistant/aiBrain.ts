@@ -199,6 +199,7 @@ async function runRuleFallback(
   onDelta: (chunk: string) => void,
   mem: ReturnType<typeof loadMemory>,
   userId?: string | null,
+  flowState?: import("./conversation").FlowState | null,
 ): Promise<BeastResult> {
   const last = [...messages].reverse().find((m) => m.role === "user");
   const userText = last?.content?.trim() || "";
@@ -212,6 +213,7 @@ async function runRuleFallback(
     username: username || null,
     isLoggedIn,
     walkthroughStep: 0,
+    flowState: flowState ?? null,
   });
 
   const reply = withStarter(intent.reply);
@@ -220,10 +222,10 @@ async function runRuleFallback(
   let action: BeastAction | undefined;
   if (intent.action) {
     switch (intent.action.type) {
-      case "navigate": action = { navigate: intent.action.path }; break;
-      case "search":   action = { navigate: `/search?q=${encodeURIComponent(intent.action.query)}` }; break;
-      case "external": action = { external: intent.action.url }; break;
-      case "end_session": action = { endSession: true }; break;
+      case "navigate":     action = { navigate: intent.action.path }; break;
+      case "external":     action = { external: intent.action.url }; break;
+      case "end_session":  action = { endSession: true }; break;
+      case "speak_steps":  /* handled by the UI if needed */ break;
     }
   }
 
@@ -231,7 +233,7 @@ async function runRuleFallback(
   recordIntent(mem, "rules_fallback", { text: userText });
   saveMemory(userId || null, mem);
 
-  return { reply, action };
+  return { reply, action, flowState: intent.flowState ?? null };
 }
 
 async function dispatchTool(name: string, args: any, userId: string | null): Promise<BeastToolResult | null> {
