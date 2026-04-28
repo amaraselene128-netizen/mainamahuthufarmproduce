@@ -42,7 +42,7 @@ WITH CHECK (
     OR EXISTS (
       SELECT 1 FROM public.shops s
       WHERE s.id = shop_id
-        AND s.owner_id = auth.uid()
+        AND s.user_id = auth.uid()
         AND s.is_active = true
     )
   )
@@ -58,7 +58,7 @@ USING (
   auth.uid() = user_id
   OR (shop_id IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.shops s
-    WHERE s.id = shop_id AND s.owner_id = auth.uid()
+    WHERE s.id = shop_id AND s.user_id = auth.uid()
   ))
 );
 
