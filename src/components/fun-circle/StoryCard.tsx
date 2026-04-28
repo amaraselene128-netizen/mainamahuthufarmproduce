@@ -7,7 +7,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { MessageCircle, MoreHorizontal, Trash2, Clock, Heart, SmilePlus } from "lucide-react";
+import { MessageCircle, MoreHorizontal, Trash2, Clock, Heart, SmilePlus, Store } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { Story, ReactionType } from "@/hooks/useFunCircleStories";
