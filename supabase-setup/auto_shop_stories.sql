@@ -1,32 +1,24 @@
 -- =====================================================================
--- AUTO SHOP STORIES
--- For a curated set of shops, automatically post a Fun Circle story
--- using a RANDOM listing from that shop. The listing's title becomes the
--- story content, and the listing's description is added as the first
--- comment (authored by the shop owner).
+-- AUTO SHOP STORIES (max 5 active per shop)
+-- For a curated set of shops, automatically post Fun Circle stories
+-- using RANDOM listings from that shop. Each shop is kept topped up to
+-- a MAXIMUM of 5 active (non-expired) stories — the function only adds
+-- the difference, never more.
 --
--- Includes:
---   1) A reusable function `auto_post_shop_stories()` that picks N random
---      listings per shop and posts them as shop-authored stories.
---   2) An immediate one-shot run that posts 1 story for each of the
---      target shops (jex computers, uzima poultry farm, bora agriculture
---      hub, excel furniture, uwezo dairy, gaming pc and parts, moncy
---      braids, auto spares for cars, sokoni arena, matrix electronics
---      services, amara cosmetics).
---   3) An optional pg_cron schedule (commented) so new stories auto-post
---      every 6 hours. Uncomment if pg_cron is enabled on your project.
+-- The listing's title becomes the story content, and the listing's
+-- description is added as the first comment (authored by the shop owner).
 --
 -- HOW TO RUN:
 --   Open the Supabase SQL Editor → paste this whole file → click Run.
---   Safe to re-run.
+--   Safe to re-run (idempotent — caps at 5 active stories per shop).
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1) Reusable auto-post function
+-- 1) Reusable auto-post function (tops up to `max_active` per shop)
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.auto_post_shop_stories(
   shop_names text[],
-  per_shop int DEFAULT 1
+  max_active int DEFAULT 5
 )
 RETURNS int
 LANGUAGE plpgsql
@@ -38,6 +30,8 @@ DECLARE
   listing_rec   record;
   new_story_id  uuid;
   posted_count  int := 0;
+  active_count  int;
+  needed        int;
   story_text    text;
   story_images  jsonb;
 BEGIN
@@ -48,14 +42,32 @@ BEGIN
     WHERE s.is_active = true
       AND lower(s.name) = ANY (SELECT lower(unnest(shop_names)))
   LOOP
-    -- Pick `per_shop` random listings from this shop
+    -- How many active (non-expired) stories does this shop currently have?
+    SELECT count(*) INTO active_count
+    FROM public.fun_circle_stories
+    WHERE shop_id = shop_rec.id
+      AND expires_at > now();
+
+    needed := max_active - active_count;
+    IF needed <= 0 THEN
+      CONTINUE;  -- already at/over the cap, skip
+    END IF;
+
+    -- Pick `needed` random listings from this shop, avoiding duplicates
+    -- of any listing already used in an active story.
     FOR listing_rec IN
       SELECT l.id, l.title, l.description, l.images
       FROM public.listings l
       WHERE l.shop_id = shop_rec.id
         AND COALESCE(l.status, 'available') = 'available'
+        AND NOT EXISTS (
+          SELECT 1 FROM public.fun_circle_stories fs
+          WHERE fs.shop_id = shop_rec.id
+            AND fs.expires_at > now()
+            AND fs.content = COALESCE(NULLIF(trim(l.title), ''), 'New from ' || shop_rec.name)
+        )
       ORDER BY random()
-      LIMIT per_shop
+      LIMIT needed
     LOOP
       story_text := COALESCE(NULLIF(trim(listing_rec.title), ''), 'New from ' || shop_rec.name);
 
@@ -87,7 +99,7 @@ END;
 $$;
 
 -- ---------------------------------------------------------------------
--- 2) One-shot run for the requested shops
+-- 2) One-shot run: top each requested shop up to 5 active stories
 -- ---------------------------------------------------------------------
 SELECT public.auto_post_shop_stories(
   ARRAY[
@@ -103,12 +115,13 @@ SELECT public.auto_post_shop_stories(
     'Matrix Electronics Services',
     'Amara Cosmetics'
   ],
-  1   -- stories per shop, per run
+  5   -- maximum active stories per shop
 ) AS stories_posted;
 
 -- ---------------------------------------------------------------------
--- 3) (Optional) Auto-run every 6 hours via pg_cron
+-- 3) (Optional) Auto top-up every 6 hours via pg_cron
 --     Uncomment if pg_cron extension is installed on your project.
+--     This will keep each shop at 5 active stories as old ones expire.
 -- ---------------------------------------------------------------------
 -- CREATE EXTENSION IF NOT EXISTS pg_cron;
 --
@@ -123,13 +136,13 @@ SELECT public.auto_post_shop_stories(
 --         'Moncy Braids','Auto Spares for Cars','Sokoni Arena',
 --         'Matrix Electronics Services','Amara Cosmetics'
 --       ],
---       1
+--       5
 --     );
 --   $cron$
 -- );
 
 -- ---------------------------------------------------------------------
--- 4) Verify
+-- 4) Verify (should show up to 5 active stories per shop)
 -- ---------------------------------------------------------------------
 SELECT s.name AS shop, count(fs.id) AS active_stories
 FROM public.shops s
