@@ -17,6 +17,7 @@ export interface ReactionCounts {
 export interface Story {
   id: string;
   user_id: string;
+  shop_id?: string | null;
   content: string | null;
   images: string[];
   created_at: string;
@@ -27,6 +28,12 @@ export interface Story {
     username: string;
     avatar_url: string | null;
   };
+  shop?: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+  } | null;
   user_reaction?: ReactionType | null;
   mentions?: string[];
 }
