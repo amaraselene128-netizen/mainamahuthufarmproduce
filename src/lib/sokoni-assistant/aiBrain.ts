@@ -31,6 +31,8 @@ export type BeastAction = {
 export type BeastResult = {
   reply: string;
   action?: BeastAction;
+  /** Active multi-turn flow state to pass back on the next turn. */
+  flowState?: import("./conversation").FlowState | null;
 };
 
 type ToolCallAccum = { name: string; args: string };
@@ -42,8 +44,9 @@ export async function streamChat(opts: {
   userId?: string | null;
   onDelta: (chunk: string) => void;
   signal?: AbortSignal;
+  flowState?: import("./conversation").FlowState | null;
 }): Promise<BeastResult> {
-  const { messages, username, isLoggedIn, userId, onDelta, signal } = opts;
+  const { messages, username, isLoggedIn, userId, onDelta, signal, flowState } = opts;
 
   const enriched = messages.map((m, i) =>
     i === messages.length - 1 && m.role === "user"
