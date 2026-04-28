@@ -8,7 +8,7 @@ import { ShopListingsManager } from "@/components/dashboard/ShopListingsManager"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Store, Plus, Eye, Users, Star, MapPin, ExternalLink, Loader2, Crown, Megaphone, Link2 } from "lucide-react";
+import { Store, Plus, Eye, Users, Star, MapPin, ExternalLink, Loader2, Crown, Megaphone, Link2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
