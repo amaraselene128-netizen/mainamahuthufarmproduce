@@ -137,6 +137,33 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
 
   return (
     <Card className="p-3 sm:p-4 space-y-4">
+      {/* Post-as toggle (only when user owns an active shop) */}
+      {shop && (
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Post as:</span>
+          <button
+            type="button"
+            onClick={() => setPostAs("user")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+              postAs === "user" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+            }`}
+          >
+            <UserIcon className="h-3 w-3" />
+            <span className="font-medium">{profile?.username || "Me"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPostAs("shop")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors ${
+              postAs === "shop" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"
+            }`}
+          >
+            <Store className="h-3 w-3" />
+            <span className="font-medium truncate max-w-[140px]">{shop.name}</span>
+          </button>
+        </div>
+      )}
+
       {/* Preview with styling */}
       {(storyBg !== "transparent" || storyFont !== "Inter, sans-serif" || storyTextColor !== "inherit") && content.trim() && (
         <div
@@ -153,9 +180,11 @@ export function CreateStoryForm({ onSuccess }: CreateStoryFormProps) {
 
       <div className="flex gap-3">
         <Avatar className="h-10 w-10 shrink-0">
-          <AvatarImage src={profile?.avatar_url || undefined} />
+          <AvatarImage src={postAs === "shop" && shop ? shop.logo_url || undefined : profile?.avatar_url || undefined} />
           <AvatarFallback className="bg-primary/10 text-primary">
-            {profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+            {postAs === "shop" && shop
+              ? (shop.name?.charAt(0)?.toUpperCase() || "S")
+              : (profile?.username?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase())}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
