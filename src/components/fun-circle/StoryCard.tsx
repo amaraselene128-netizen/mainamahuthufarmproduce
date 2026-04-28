@@ -68,16 +68,30 @@ export const StoryCard = memo(function StoryCard({ story, onReact, onDelete, onS
       <Card className="overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 pb-2">
-          <Link to={`/profile/${story.user_id}`} className="flex items-center gap-3 hover:opacity-80 min-w-0">
+          <Link
+            to={isShopPost ? `/shop/${story.shop!.slug}` : `/profile/${story.user_id}`}
+            className="flex items-center gap-3 hover:opacity-80 min-w-0"
+          >
             <Avatar className="h-10 w-10 shrink-0">
-              <AvatarImage src={story.profile?.avatar_url || ""} />
+              <AvatarImage src={isShopPost ? story.shop!.logo_url || "" : story.profile?.avatar_url || ""} />
               <AvatarFallback className="bg-primary/10 text-primary">
-                {story.profile?.username?.charAt(0).toUpperCase() || "?"}
+                {(isShopPost ? story.shop!.name : story.profile?.username)?.charAt(0).toUpperCase() || "?"}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="font-medium text-sm truncate">{story.profile?.username || "Unknown"}</p>
-              <p className="text-xs text-muted-foreground">{postedAt}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm truncate">
+                  {isShopPost ? story.shop!.name : story.profile?.username || "Unknown"}
+                </p>
+                {isShopPost && (
+                  <Badge variant="secondary" className="h-4 px-1 text-[9px] gap-0.5 shrink-0">
+                    <Store className="h-2.5 w-2.5" />Shop
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isShopPost && story.profile?.username ? `by ${story.profile.username} · ${postedAt}` : postedAt}
+              </p>
             </div>
           </Link>
 
