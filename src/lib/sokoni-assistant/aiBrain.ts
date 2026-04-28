@@ -31,6 +31,8 @@ export type BeastAction = {
 export type BeastResult = {
   reply: string;
   action?: BeastAction;
+  /** Active multi-turn flow state to pass back on the next turn. */
+  flowState?: import("./conversation").FlowState | null;
 };
 
 type ToolCallAccum = { name: string; args: string };
@@ -42,8 +44,9 @@ export async function streamChat(opts: {
   userId?: string | null;
   onDelta: (chunk: string) => void;
   signal?: AbortSignal;
+  flowState?: import("./conversation").FlowState | null;
 }): Promise<BeastResult> {
-  const { messages, username, isLoggedIn, userId, onDelta, signal } = opts;
+  const { messages, username, isLoggedIn, userId, onDelta, signal, flowState } = opts;
 
   const enriched = messages.map((m, i) =>
     i === messages.length - 1 && m.role === "user"
@@ -62,6 +65,12 @@ export async function streamChat(opts: {
       `top_location=${prefs.location || "unknown"}; ` +
       `total_interactions=${mem.totalInteractions}.`,
   };
+
+  // If a multi-turn flow is active, drive it through the rule engine — the
+  // LLM has no context for our yes/no state machine.
+  if (flowState) {
+    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId, flowState);
+  }
 
   let resp: Response;
   try {
@@ -190,6 +199,7 @@ async function runRuleFallback(
   onDelta: (chunk: string) => void,
   mem: ReturnType<typeof loadMemory>,
   userId?: string | null,
+  flowState?: import("./conversation").FlowState | null,
 ): Promise<BeastResult> {
   const last = [...messages].reverse().find((m) => m.role === "user");
   const userText = last?.content?.trim() || "";
@@ -203,6 +213,7 @@ async function runRuleFallback(
     username: username || null,
     isLoggedIn,
     walkthroughStep: 0,
+    flowState: flowState ?? null,
   });
 
   const reply = withStarter(intent.reply);
@@ -211,10 +222,10 @@ async function runRuleFallback(
   let action: BeastAction | undefined;
   if (intent.action) {
     switch (intent.action.type) {
-      case "navigate": action = { navigate: intent.action.path }; break;
-      case "search":   action = { navigate: `/search?q=${encodeURIComponent(intent.action.query)}` }; break;
-      case "external": action = { external: intent.action.url }; break;
-      case "end_session": action = { endSession: true }; break;
+      case "navigate":     action = { navigate: intent.action.path }; break;
+      case "external":     action = { external: intent.action.url }; break;
+      case "end_session":  action = { endSession: true }; break;
+      case "speak_steps":  /* handled by the UI if needed */ break;
     }
   }
 
@@ -222,7 +233,7 @@ async function runRuleFallback(
   recordIntent(mem, "rules_fallback", { text: userText });
   saveMemory(userId || null, mem);
 
-  return { reply, action };
+  return { reply, action, flowState: intent.flowState ?? null };
 }
 
 async function dispatchTool(name: string, args: any, userId: string | null): Promise<BeastToolResult | null> {
@@ -243,7 +254,7 @@ async function dispatchTool(name: string, args: any, userId: string | null): Pro
 
 export function welcomeMessage(ctx: { username?: string | null; isLoggedIn: boolean }): string {
   if (ctx.isLoggedIn && ctx.username) {
-    return `Karibu tena, ${ctx.username}! I'm Sokoni Beast 🦁 — your marketplace predator. I can search, navigate, contact sellers, save favorites, analyze prices, follow shops or help you sell. Tap the mic or just type — twende!`;
+    return `Karibu tena, ${ctx.username}! I'm the Sokoni Arena assistant. Ask me to find anything, open any page, or guide you step by step — and I'll handle it.`;
   }
-  return "Karibu! I'm Sokoni Beast 🦁 — your AI marketplace guide. I can hunt down products, services, shops or events, contact sellers via Call/WhatsApp, analyze market prices and guide you through SokoniArena. Sign in for personalised power, or just talk to me.";
+  return "Karibu! I'm the Sokoni Arena assistant. I can hunt down products, services, shops or events, take you to any page, contact sellers and walk you through every feature. Just ask.";
 }

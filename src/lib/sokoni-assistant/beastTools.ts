@@ -4,7 +4,8 @@
 // cart and shop actions are instant.
 
 import { supabase } from "@/integrations/supabase/untyped-client";
-import { searchEverything, parseQuery } from "./dbSearch";
+import { parseQuery } from "./dbSearch";
+import { smartSearch, describeResult, bestNavigation } from "./smartSearch";
 import type { BeastMemorySnapshot } from "./beastMemory";
 
 export type BeastToolResult = {
@@ -16,29 +17,15 @@ export type BeastToolResult = {
 };
 
 // ---------------- SEARCH (products/services/events/shops) ----------------
+// Uses semantic expansion so we never return zero results, and navigates
+// straight to the listing detail page when we have a confident match.
 export async function execSearch(args: { query: string; type?: "product" | "service" | "event" | "shop" }): Promise<BeastToolResult> {
-  const result = await searchEverything(args.query, 6);
-  const total = result.listings.length + result.shops.length;
-  if (!total) {
-    return {
-      message: `Hakuna kitu for "${args.query}". Want me to broaden the search or try a different category?`,
-      navigate: `/search?q=${encodeURIComponent(args.query)}`,
-      data: { listings: [], shops: [] },
-    };
-  }
-  const top = result.listings[0];
-  const priceTxt = top?.price ? ` at KES ${Number(top.price).toLocaleString()}` : "";
-  const locTxt = top?.location ? ` in ${top.location}` : "";
-  const shopTxt = result.shops[0] ? ` Also ${result.shops.length} shop${result.shops.length > 1 ? "s" : ""} matched.` : "";
-  const msg = top
-    ? `Nimepata ${result.listings.length} match${result.listings.length > 1 ? "es" : ""}. Top pick: ${top.title}${priceTxt}${locTxt}.${shopTxt} Opening the search page.`
-    : `Found ${result.shops.length} shop${result.shops.length > 1 ? "s" : ""} for "${args.query}". Opening shops.`;
+  const type = args.type === "shop" ? undefined : args.type;
+  const result = await smartSearch(args.query, { limit: 8, type });
   return {
-    message: msg,
-    navigate: top
-      ? `/search?q=${encodeURIComponent(result.parsed.text || args.query)}`
-      : `/shops`,
-    data: { listings: result.listings, shops: result.shops },
+    message: describeResult(result),
+    navigate: bestNavigation(result),
+    data: { listings: result.listings, shops: result.shops, matchKind: result.matchKind },
   };
 }
 
