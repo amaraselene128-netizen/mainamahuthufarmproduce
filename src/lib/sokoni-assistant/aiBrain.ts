@@ -99,17 +99,23 @@ export async function streamChat(opts: {
   }
 
   let resp: Response;
+  // Hard 10s ceiling on the LLM round-trip — never let a slow provider stall the UI.
+  const ctrl = new AbortController();
+  const timeoutId = setTimeout(() => ctrl.abort(), 10_000);
+  if (signal) signal.addEventListener("abort", () => ctrl.abort());
   try {
     resp = await fetch(FN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
-      signal,
+      signal: ctrl.signal,
       body: JSON.stringify({
         action: "chat",
         data: { messages: [memoryNote, ...enriched], username, isLoggedIn },
       }),
     });
+    clearTimeout(timeoutId);
   } catch {
+    clearTimeout(timeoutId);
     return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
   }
 
