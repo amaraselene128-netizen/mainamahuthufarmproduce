@@ -98,14 +98,21 @@ export function useFunCircleStories() {
       }
 
       const userIds = [...new Set(data.map(s => s.user_id))];
+      const shopIds = [...new Set(data.map((s: any) => s.shop_id).filter(Boolean))];
       const storyIds = data.map(s => s.id);
 
-      // Parallel fetch for profiles, reactions, and mentions
-      const [profilesResult, reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
+      // Parallel fetch for profiles, shops, reactions, and mentions
+      const [profilesResult, shopsResult, reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
         supabase
           .from("profiles_public")
           .select("user_id, username, avatar_url")
           .in("user_id", userIds),
+        shopIds.length
+          ? supabase
+              .from("shops")
+              .select("id, name, slug, logo_url")
+              .in("id", shopIds)
+          : Promise.resolve({ data: [] as any[] }),
         user
           ? supabase
               .from("fun_circle_story_reactions")
@@ -124,6 +131,7 @@ export function useFunCircleStories() {
       ]);
 
       const profiles = profilesResult.data || [];
+      const shops = (shopsResult as any).data || [];
       const userReactions = new Map<string, ReactionType>(
         (reactionsResult.data || []).map(r => [r.story_id, r.reaction_type as ReactionType])
       );
@@ -138,12 +146,13 @@ export function useFunCircleStories() {
       });
 
       // Build stories with all related data
-      const storiesWithProfiles = data.map(story => {
+      const storiesWithProfiles = data.map((story: any) => {
         return {
           ...story,
           images: Array.isArray(story.images) ? story.images : [],
           reactions_count: reactionCountsByStory.get(story.id) || { ...defaultReactionCounts },
           profile: profiles.find(p => p.user_id === story.user_id),
+          shop: story.shop_id ? shops.find((s: any) => s.id === story.shop_id) || null : null,
           user_reaction: userReactions.get(story.id) || null,
           mentions: mentionsByStory.get(story.id) || [],
         };
