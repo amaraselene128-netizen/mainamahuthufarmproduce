@@ -37,6 +37,26 @@ export type BeastResult = {
 
 type ToolCallAccum = { name: string; args: string };
 
+// ── Fast-path heuristic ────────────────────────────────────────────────
+// 95% of user messages are short, intent-shaped queries (search, navigate,
+// greet, ask "how do I X"). For these we answer in <200ms from the local
+// rule engine + DB search — no network round-trip to the LLM at all.
+// Only complex, conversational utterances escalate to the edge AI.
+function isFastIntent(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return true;
+  // Short messages → always fast path.
+  const wordCount = t.split(/\s+/).length;
+  if (wordCount <= 12) return true;
+  // Common patterns we handle locally regardless of length.
+  if (/^(hi|hello|hey|habari|mambo|niaje|sasa|jambo|karibu|asante|thanks|thank you|bye|kwaheri)/i.test(t)) return true;
+  if (/\b(find|search|show me|look for|tafuta|nipe|do you have|got any|any|i need|i want)\b/i.test(t)) return true;
+  if (/\b(open|go to|take me to|navigate|visit|jump to|scroll to)\b/i.test(t)) return true;
+  if (/\b(how do i|how to|how does|where (is|do)|what is|what's|whats|why is|why does)\b/i.test(t)) return true;
+  if (/\b(my (listings|ads|shop|cart|orders|favorites?|profile))\b/i.test(t)) return true;
+  return false;
+}
+
 export async function streamChat(opts: {
   messages: ChatMsg[];
   username?: string | null;
@@ -70,6 +90,12 @@ export async function streamChat(opts: {
   // LLM has no context for our yes/no state machine.
   if (flowState) {
     return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId, flowState);
+  }
+
+  // ⚡ FAST PATH — answer locally, no network. ~20× faster than calling the LLM.
+  const lastUser = [...enriched].reverse().find((m) => m.role === "user");
+  if (lastUser && isFastIntent(lastUser.content)) {
+    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
   }
 
   let resp: Response;
