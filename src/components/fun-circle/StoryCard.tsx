@@ -37,6 +37,7 @@ export const StoryCard = memo(function StoryCard({ story, onReact, onDelete, onS
   const [showComments, setShowComments] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const isOwner = user?.id === story.user_id;
+  const isShopPost = !!story.shop;
 
   const expiresIn = formatDistanceToNow(new Date(story.expires_at), { addSuffix: true });
   const postedAt = formatDistanceToNow(new Date(story.created_at), { addSuffix: true });
