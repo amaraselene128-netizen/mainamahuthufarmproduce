@@ -1,33 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mic, MicOff, X, Volume2, VolumeX, Sparkles, PhoneOff, Trash2 } from "lucide-react";
+import { Mic, X, Volume2, VolumeX, Sparkles, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { streamChat, welcomeMessage, type ChatMsg } from "@/lib/sokoni-assistant/aiBrain";
 import {
   isSpeechRecognitionSupported,
+  createRecognizer,
   speak,
   stopSpeaking,
+  type SpeechRecognitionLike,
 } from "@/lib/sokoni-assistant/speech";
-import { LiveSpeechSession } from "@/lib/sokoni-assistant/liveSession";
 import {
   appendLocal,
   clearHistory,
-  endConversation,
   loadHistory,
   persistMessage,
   type StoredMsg,
 } from "@/lib/sokoni-assistant/persistence";
+import type { FlowState } from "@/lib/sokoni-assistant/conversation";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { AssistantMessage } from "./AssistantMessage";
 
 const QUICK_PROMPTS = [
   "Show me around",
-  "Find iPhones under 30k in Nairobi",
-  "Analyze price for Toyota Vitz",
-  "Open my favorites",
+  "What is Fun Circle?",
   "How do I open a shop?",
+  "Find dining sets in Nairobi",
+  "Open my favorites",
 ];
 
 export function SokoniAssistant() {
@@ -39,13 +40,14 @@ export function SokoniAssistant() {
   }, [user]);
 
   const [open, setOpen] = useState(false);
-  const [liveOn, setLiveOn] = useState(false);
-  const [listening, setListening] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [muted, setMuted] = useState(false);
   const [partial, setPartial] = useState("");
   const [typed, setTyped] = useState("");
   const [messages, setMessages] = useState<StoredMsg[]>([]);
-  const sessionRef = useRef<LiveSpeechSession | null>(null);
+  const [flowState, setFlowState] = useState<FlowState | null>(null);
+  const recRef = useRef<SpeechRecognitionLike | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supported = isSpeechRecognitionSupported();
   const userIdRef = useRef<string | null>(null);
@@ -70,7 +72,6 @@ export function SokoniAssistant() {
     userIdRef.current = user?.id ?? null;
   }, [open, user, username]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, partial]);
@@ -94,13 +95,13 @@ export function SokoniAssistant() {
       };
       pushMessage(userMsg);
 
-      // Build conversation history (last 12 messages) for AI context
       const history: ChatMsg[] = messages
         .slice(-12)
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.text }));
       history.push({ role: "user", content: userText });
 
       setPartial("Thinking…");
+      setThinking(true);
       let streamed = "";
 
       try {
@@ -109,6 +110,7 @@ export function SokoniAssistant() {
           username,
           isLoggedIn: !!user,
           userId: user?.id ?? null,
+          flowState,
           onDelta: (chunk) => {
             streamed += chunk;
             setPartial(streamed);
@@ -116,6 +118,7 @@ export function SokoniAssistant() {
         });
 
         setPartial("");
+        setThinking(false);
         const botMsg: StoredMsg = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -123,93 +126,81 @@ export function SokoniAssistant() {
           ts: Date.now(),
         };
         pushMessage(botMsg);
+        setFlowState(result.flowState ?? null);
 
-        // Speak full reply once generation completes
-        if (!muted && result.reply) {
-          sessionRef.current?.pauseForSpeaking();
-          speak(result.reply, {
-            onEnd: () => sessionRef.current?.resumeAfterSpeaking(),
-          });
-        }
+        if (!muted && result.reply) speak(result.reply);
 
         const action = result.action;
-        if (action?.external) {
-          window.open(action.external, "_blank", "noopener,noreferrer");
-        }
-        if (action?.navigate) {
-          setTimeout(() => navigate(action.navigate!), 700);
-        }
-        if (action?.endSession) {
-          setTimeout(() => endLiveSession(), 1500);
-        }
+        if (action?.external) window.open(action.external, "_blank", "noopener,noreferrer");
+        if (action?.navigate) setTimeout(() => navigate(action.navigate!), 700);
+        if (action?.endSession) setTimeout(() => setOpen(false), 1500);
       } catch (err: any) {
         setPartial("");
-        const errText = err?.message || "Something went wrong reaching the AI. Please try again.";
+        setThinking(false);
+        const errText = err?.message || "Something went wrong. Please try again.";
         pushMessage({ id: crypto.randomUUID(), role: "assistant", text: errText, ts: Date.now() });
         if (!muted) speak(errText);
       }
     },
-    [messages, muted, navigate, pushMessage, user, username]
+    [messages, muted, navigate, pushMessage, user, username, flowState]
   );
 
-  // ---- Live session control ----
-  const startLiveSession = useCallback(async () => {
+  // ── Press-to-talk mic ──
+  const startRecording = useCallback(async () => {
     if (!supported) {
-      toast({
-        variant: "destructive",
-        title: "Voice not supported",
-        description: "Try Chrome, Edge or Safari for live voice.",
-      });
+      toast({ variant: "destructive", title: "Voice not supported", description: "Try Chrome, Edge or Safari." });
       return;
     }
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      toast({
-        variant: "destructive",
-        title: "Microphone blocked",
-        description: "Please allow microphone access to talk to Sokoni Assistant.",
-      });
+      toast({ variant: "destructive", title: "Microphone blocked", description: "Allow microphone access to use voice." });
       return;
     }
-    if (sessionRef.current) sessionRef.current.stop();
-    const session = new LiveSpeechSession({
-      onPartial: (t) => setPartial(t),
-      onFinal: (t) => {
-        setPartial("");
-        if (t) reply(t);
-      },
-      onListeningChange: setListening,
-      onError: (err) => {
-        if (err && err !== "no-speech") {
-          toast({ variant: "destructive", title: "Voice error", description: err });
-        }
-      },
-    });
-    sessionRef.current = session;
-    session.start();
-    setLiveOn(true);
+    stopSpeaking();
+    const rec = createRecognizer("en-US");
+    if (!rec) return;
+    let finalText = "";
+    rec.onresult = (e: any) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t + " ";
+        else interim += t;
+      }
+      setPartial((finalText + " " + interim).trim());
+    };
+    rec.onerror = () => { setRecording(false); };
+    rec.onend = () => {
+      setRecording(false);
+      const t = (finalText || "").trim();
+      setPartial("");
+      if (t) reply(t);
+    };
+    recRef.current = rec;
+    setRecording(true);
+    try { rec.start(); } catch { /* already started */ }
   }, [reply, supported]);
 
-  const endLiveSession = useCallback(() => {
-    sessionRef.current?.stop();
-    sessionRef.current = null;
-    setLiveOn(false);
-    setListening(false);
-    setPartial("");
-    stopSpeaking();
-    if (userIdRef.current) endConversation(userIdRef.current);
+  const stopRecording = useCallback(() => {
+    try { recRef.current?.stop(); } catch { /* ignore */ }
   }, []);
 
-  // Stop everything when panel closes
+  const toggleMic = useCallback(() => {
+    if (recording) stopRecording();
+    else startRecording();
+  }, [recording, startRecording, stopRecording]);
+
+  // Cleanup
   useEffect(() => {
     if (!open) {
-      endLiveSession();
+      try { recRef.current?.stop(); } catch { /* ignore */ }
+      stopSpeaking();
+      setRecording(false);
+      setPartial("");
     }
-  }, [open, endLiveSession]);
-
-  // Cleanup on unmount
-  useEffect(() => () => { sessionRef.current?.stop(); stopSpeaking(); }, []);
+  }, [open]);
+  useEffect(() => () => { try { recRef.current?.stop(); } catch { /* ignore */ } stopSpeaking(); }, []);
 
   const toggleMute = () => {
     if (!muted) stopSpeaking();
@@ -218,7 +209,7 @@ export function SokoniAssistant() {
 
   const handleClearHistory = () => {
     if (user) clearHistory(user.id);
-    setMessages([]);
+    setFlowState(null);
     const w: StoredMsg = { id: crypto.randomUUID(), role: "assistant", text: welcomeMessage({ username, isLoggedIn: !!user }), ts: Date.now() };
     setMessages([w]);
   };
@@ -228,7 +219,7 @@ export function SokoniAssistant() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          aria-label="Open Sokoni Assistant"
+          aria-label="Open Sokoni Arena assistant"
           className={cn(
             "fixed bottom-6 right-6 z-[60] h-14 w-14 rounded-full",
             "bg-primary text-primary-foreground shadow-2xl",
@@ -237,7 +228,7 @@ export function SokoniAssistant() {
           )}
         >
           <Sparkles className="h-6 w-6" />
-          <span className="sr-only">Sokoni Assistant</span>
+          <span className="sr-only">Sokoni Arena assistant</span>
           <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary-foreground ring-2 ring-background animate-pulse" />
         </button>
       )}
@@ -251,23 +242,21 @@ export function SokoniAssistant() {
             "flex flex-col overflow-hidden"
           )}
           role="dialog"
-          aria-label="Sokoni Assistant"
+          aria-label="Sokoni Arena assistant"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-primary/10 to-primary/5">
             <div className="flex items-center gap-2">
               <div className="relative h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                 <Sparkles className="h-4 w-4" />
-                {liveOn && (
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-background animate-pulse" />
+                {recording && (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
                 )}
               </div>
               <div>
-                <p className="font-semibold text-sm leading-tight">Sokoni Beast 🦁</p>
+                <p className="font-semibold text-sm leading-tight">Sokoni Arena</p>
                 <p className="text-[11px] text-muted-foreground leading-tight">
-                  {liveOn
-                    ? listening ? "On the hunt • Listening…" : "Live • Paused"
-                    : muted ? "Voice muted" : "Tap mic for live mode, or type below"}
+                  {recording ? "Listening — tap mic to stop" : thinking ? "Thinking…" : muted ? "Voice muted" : "Type or tap the mic"}
                 </p>
               </div>
             </div>
@@ -291,7 +280,7 @@ export function SokoniAssistant() {
             {messages.map((m) => <AssistantMessage key={m.id} m={m} />)}
             {partial && (
               <div className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm bg-primary/40 text-primary-foreground italic">
+                <div className="max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm bg-primary/30 text-foreground italic">
                   {partial}…
                 </div>
               </div>
@@ -311,8 +300,8 @@ export function SokoniAssistant() {
             ))}
           </div>
 
-          {/* Type or speak input */}
-          <div className="p-3 border-t space-y-2">
+          {/* Input row */}
+          <div className="p-3 border-t">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -323,47 +312,30 @@ export function SokoniAssistant() {
               }}
               className="flex items-center gap-2"
             >
+              <button
+                type="button"
+                onClick={toggleMic}
+                aria-label={recording ? "Stop recording" : "Start recording"}
+                className={cn(
+                  "h-10 w-10 rounded-full flex items-center justify-center transition-colors shrink-0",
+                  recording
+                    ? "bg-red-500 text-white ring-4 ring-red-500/30 animate-pulse"
+                    : "bg-primary text-primary-foreground hover:opacity-90"
+                )}
+              >
+                <Mic className="h-4 w-4" />
+              </button>
               <input
                 type="text"
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
-                placeholder="Ask the Beast anything…"
+                placeholder="Ask Sokoni Arena anything…"
                 className="flex-1 h-10 rounded-full border border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <Button type="submit" size="sm" className="h-10 rounded-full px-4">Send</Button>
+              <Button type="submit" size="sm" className="h-10 rounded-full px-4" disabled={thinking}>
+                {thinking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+              </Button>
             </form>
-            <div className="flex items-center justify-center gap-3">
-              {!liveOn ? (
-                <button
-                  onClick={startLiveSession}
-                  aria-label="Start live voice session"
-                  className={cn(
-                    "h-11 px-5 rounded-full flex items-center gap-2 transition-all",
-                    "bg-primary text-primary-foreground hover:scale-105 ring-4 ring-primary/20"
-                  )}
-                >
-                  <Mic className="h-4 w-4" />
-                  <span className="text-xs font-medium">Live voice</span>
-                </button>
-              ) : (
-                <>
-                  <div className={cn(
-                    "h-11 w-11 rounded-full flex items-center justify-center",
-                    listening ? "bg-primary/15 ring-4 ring-primary/30" : "bg-muted ring-4 ring-muted-foreground/10"
-                  )}>
-                    {listening ? <Mic className="h-5 w-5 text-primary" /> : <MicOff className="h-5 w-5 text-muted-foreground" />}
-                  </div>
-                  <button
-                    onClick={endLiveSession}
-                    aria-label="End session"
-                    className="h-10 px-4 rounded-full bg-destructive text-destructive-foreground flex items-center gap-2 hover:scale-105 transition-transform"
-                  >
-                    <PhoneOff className="h-4 w-4" />
-                    <span className="text-xs font-medium">End</span>
-                  </button>
-                </>
-              )}
-            </div>
           </div>
 
           {!supported && (
