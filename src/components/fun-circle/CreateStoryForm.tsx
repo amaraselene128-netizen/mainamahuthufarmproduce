@@ -1,13 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ImagePlus, X, Loader2, Send, Palette, Type } from "lucide-react";
+import { ImagePlus, X, Loader2, Send, Palette, Type, Store, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFunCircleStories } from "@/hooks/useFunCircleStories";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useMyShop } from "@/hooks/useShops";
 import { supabase } from "@/integrations/supabase/untyped-client";
 import { useToast } from "@/hooks/use-toast";
 import {
