@@ -16,6 +16,7 @@ import {
   findFlow, startFlow, continueFlow, type FlowState, type FlowAdvance,
 } from "./conversation";
 import { classify, type Intent } from "./intentEngine";
+import { lookupConversation, lookupTechSupport } from "./trainingData";
 
 export type AssistantAction =
   | { type: "navigate"; path: string }
