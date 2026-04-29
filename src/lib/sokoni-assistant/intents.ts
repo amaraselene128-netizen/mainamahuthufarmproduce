@@ -175,6 +175,12 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
           return { reply: adv.reply, action: adv.navigate ? { type: "navigate", path: adv.navigate } : undefined, flowState: adv.ended ? undefined : adv.state };
         }
       }
+      // Try tech-support knowledge base.
+      const tech = lookupTechSupport(text);
+      if (tech) return { reply: `${tech.answer} (${tech.category.toLowerCase()} issue)` };
+      // Try general conversational knowledge.
+      const conv = lookupConversation(text);
+      if (conv) return { reply: conv };
       // Fallback: give a helpful answer + offer to search.
       return { reply: `I don't have a canned answer for that yet. Want me to search the marketplace for "${intent.query || rawText}"?`, action: { type: "navigate", path: `/search?q=${encodeURIComponent(intent.query || rawText)}` } };
     }
