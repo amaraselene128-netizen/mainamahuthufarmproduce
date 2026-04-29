@@ -1,22 +1,13 @@
-// Sokoni BEAST brain — Lovable-free.
-// Cascade: edge function (Groq → Gemini → OpenAI) → rule-based fallback.
-// If no AI key is configured on the backend, the edge function returns
-// {fallback:"rules"} and we transparently route to detectIntent (free).
+// Sokoni BEAST brain — 100% offline, no third-party LLM.
+// Every message is classified by the local intent engine and answered
+// from the in-app rule layer + DB search. Average response < 200 ms.
+//
+// Public surface stays unchanged so SokoniAssistant.tsx works as-is.
 
-import {
-  execSearch, execNavigate, execContactSeller, execFavorite,
-  execMarketAnalysis, execShopAction, execStartListing,
-  execWalkthrough, execEndSession, execOpenListing,
-  type BeastToolResult,
-} from "./beastTools";
 import { cleanShengInput, withStarter } from "./beastPersonality";
-import {
-  loadMemory, saveMemory, recordIntent, topPreferences,
-} from "./beastMemory";
+import { loadMemory, saveMemory, recordIntent } from "./beastMemory";
 import { detectIntent } from "./intents";
-
-const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sokoni-assistant`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+import type { FlowState } from "./conversation";
 
 export type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
 
@@ -31,31 +22,8 @@ export type BeastAction = {
 export type BeastResult = {
   reply: string;
   action?: BeastAction;
-  /** Active multi-turn flow state to pass back on the next turn. */
-  flowState?: import("./conversation").FlowState | null;
+  flowState?: FlowState | null;
 };
-
-type ToolCallAccum = { name: string; args: string };
-
-// ── Fast-path heuristic ────────────────────────────────────────────────
-// 95% of user messages are short, intent-shaped queries (search, navigate,
-// greet, ask "how do I X"). For these we answer in <200ms from the local
-// rule engine + DB search — no network round-trip to the LLM at all.
-// Only complex, conversational utterances escalate to the edge AI.
-function isFastIntent(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  if (!t) return true;
-  // Short messages → always fast path.
-  const wordCount = t.split(/\s+/).length;
-  if (wordCount <= 12) return true;
-  // Common patterns we handle locally regardless of length.
-  if (/^(hi|hello|hey|habari|mambo|niaje|sasa|jambo|karibu|asante|thanks|thank you|bye|kwaheri)/i.test(t)) return true;
-  if (/\b(find|search|show me|look for|tafuta|nipe|do you have|got any|any|i need|i want)\b/i.test(t)) return true;
-  if (/\b(open|go to|take me to|navigate|visit|jump to|scroll to)\b/i.test(t)) return true;
-  if (/\b(how do i|how to|how does|where (is|do)|what is|what's|whats|why is|why does)\b/i.test(t)) return true;
-  if (/\b(my (listings|ads|shop|cart|orders|favorites?|profile))\b/i.test(t)) return true;
-  return false;
-}
 
 export async function streamChat(opts: {
   messages: ChatMsg[];
@@ -64,182 +32,19 @@ export async function streamChat(opts: {
   userId?: string | null;
   onDelta: (chunk: string) => void;
   signal?: AbortSignal;
-  flowState?: import("./conversation").FlowState | null;
+  flowState?: FlowState | null;
 }): Promise<BeastResult> {
-  const { messages, username, isLoggedIn, userId, onDelta, signal, flowState } = opts;
+  const { messages, username, isLoggedIn, userId, onDelta, flowState } = opts;
 
-  const enriched = messages.map((m, i) =>
-    i === messages.length - 1 && m.role === "user"
-      ? { ...m, content: cleanShengInput(m.content) }
-      : m,
-  );
-
-  const mem = loadMemory(userId || null);
-  const prefs = topPreferences(mem);
-  const memoryNote: ChatMsg = {
-    role: "system",
-    content:
-      `USER MEMORY: recent_views=${mem.viewedListings.slice(0, 5).join(",") || "none"}; ` +
-      `cart_intent=${mem.cartIntent.slice(0, 3).join(",") || "none"}; ` +
-      `top_category=${prefs.category || "unknown"}; ` +
-      `top_location=${prefs.location || "unknown"}; ` +
-      `total_interactions=${mem.totalInteractions}.`,
-  };
-
-  // If a multi-turn flow is active, drive it through the rule engine — the
-  // LLM has no context for our yes/no state machine.
-  if (flowState) {
-    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId, flowState);
-  }
-
-  // ⚡ FAST PATH — answer locally, no network. ~20× faster than calling the LLM.
-  const lastUser = [...enriched].reverse().find((m) => m.role === "user");
-  if (lastUser && isFastIntent(lastUser.content)) {
-    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
-  }
-
-  let resp: Response;
-  // Hard 10s ceiling on the LLM round-trip — never let a slow provider stall the UI.
-  const ctrl = new AbortController();
-  const timeoutId = setTimeout(() => ctrl.abort(), 10_000);
-  if (signal) signal.addEventListener("abort", () => ctrl.abort());
-  try {
-    resp = await fetch(FN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ANON_KEY}` },
-      signal: ctrl.signal,
-      body: JSON.stringify({
-        action: "chat",
-        data: { messages: [memoryNote, ...enriched], username, isLoggedIn },
-      }),
-    });
-    clearTimeout(timeoutId);
-  } catch {
-    clearTimeout(timeoutId);
-    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
-  }
-
-  // Backend signalled "no AI configured" or "all providers failed" → use rules.
-  const ct = resp.headers.get("content-type") || "";
-  if (ct.includes("application/json")) {
-    try {
-      const j = await resp.json();
-      if (j?.fallback === "rules") {
-        return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
-      }
-      if (j?.error) {
-        if (resp.status === 429) throw new Error("Too many requests. Try again in a moment.");
-        throw new Error(j.error);
-      }
-    } catch (e: any) {
-      if (e?.message) throw e;
-    }
-  }
-
-  if (!resp.ok || !resp.body) {
-    // Network/server error — degrade gracefully to rules.
-    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
-  }
-
-  // ---- Stream OpenAI-compatible SSE from the AI provider ----
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let assembled = "";
-  const toolCalls: Record<number, ToolCallAccum> = {};
-  let done = false;
-
-  while (!done) {
-    const { value, done: rDone } = await reader.read();
-    if (rDone) break;
-    buffer += decoder.decode(value, { stream: true });
-    let nl: number;
-    while ((nl = buffer.indexOf("\n")) !== -1) {
-      let line = buffer.slice(0, nl);
-      buffer = buffer.slice(nl + 1);
-      if (line.endsWith("\r")) line = line.slice(0, -1);
-      if (!line || line.startsWith(":")) continue;
-      if (!line.startsWith("data: ")) continue;
-      const payload = line.slice(6).trim();
-      if (payload === "[DONE]") { done = true; break; }
-      try {
-        const parsed = JSON.parse(payload);
-        const delta = parsed.choices?.[0]?.delta;
-        if (!delta) continue;
-        if (typeof delta.content === "string" && delta.content) {
-          assembled += delta.content;
-          onDelta(delta.content);
-        }
-        if (Array.isArray(delta.tool_calls)) {
-          for (const tc of delta.tool_calls) {
-            const idx = tc.index ?? 0;
-            if (!toolCalls[idx]) toolCalls[idx] = { name: "", args: "" };
-            if (tc.function?.name) toolCalls[idx].name += tc.function.name;
-            if (tc.function?.arguments) toolCalls[idx].args += tc.function.arguments;
-          }
-        }
-      } catch {
-        buffer = line + "\n" + buffer;
-        break;
-      }
-    }
-  }
-
-  const firstCall = Object.values(toolCalls)[0];
-  let action: BeastAction | undefined;
-  let toolReply = "";
-
-  if (firstCall && firstCall.name) {
-    let args: any = {};
-    try { args = firstCall.args ? JSON.parse(firstCall.args) : {}; } catch { /* noop */ }
-    const result = await dispatchTool(firstCall.name, args, userId || null);
-    if (result) {
-      action = {
-        navigate: result.navigate, external: result.external,
-        endSession: result.endSession, data: result.data, toolName: firstCall.name,
-      };
-      toolReply = result.message;
-      recordIntent(mem, firstCall.name, args);
-      saveMemory(userId || null, mem);
-    }
-  }
-
-  let finalReply = assembled.trim();
-  if (toolReply) {
-    if (!finalReply) {
-      finalReply = withStarter(toolReply);
-      onDelta(finalReply);
-    } else {
-      finalReply = `${finalReply}\n\n${toolReply}`;
-      onDelta(`\n\n${toolReply}`);
-    }
-  }
-
-  // If we got nothing at all from the AI, fall back to rules instead of "…".
-  if (!finalReply) {
-    return await runRuleFallback(messages, username, isLoggedIn, onDelta, mem, userId);
-  }
-
-  return { reply: finalReply, action };
-}
-
-// ---- Rule-based fallback (100% free, no external calls) ----
-async function runRuleFallback(
-  messages: ChatMsg[],
-  username: string | null | undefined,
-  isLoggedIn: boolean,
-  onDelta: (chunk: string) => void,
-  mem: ReturnType<typeof loadMemory>,
-  userId?: string | null,
-  flowState?: import("./conversation").FlowState | null,
-): Promise<BeastResult> {
   const last = [...messages].reverse().find((m) => m.role === "user");
-  const userText = last?.content?.trim() || "";
+  const userText = cleanShengInput(last?.content?.trim() || "");
   if (!userText) {
     const msg = "I didn't catch that. Could you say it again?";
     onDelta(msg);
     return { reply: msg };
   }
+
+  const mem = loadMemory(userId || null);
 
   const intent = await detectIntent(userText, {
     username: username || null,
@@ -254,34 +59,17 @@ async function runRuleFallback(
   let action: BeastAction | undefined;
   if (intent.action) {
     switch (intent.action.type) {
-      case "navigate":     action = { navigate: intent.action.path }; break;
-      case "external":     action = { external: intent.action.url }; break;
-      case "end_session":  action = { endSession: true }; break;
-      case "speak_steps":  /* handled by the UI if needed */ break;
+      case "navigate":    action = { navigate: intent.action.path }; break;
+      case "external":    action = { external: intent.action.url }; break;
+      case "end_session": action = { endSession: true }; break;
+      case "speak_steps": /* handled by UI if needed */ break;
     }
   }
 
-  // Memory bookkeeping
-  recordIntent(mem, "rules_fallback", { text: userText });
+  recordIntent(mem, "rules", { text: userText });
   saveMemory(userId || null, mem);
 
   return { reply, action, flowState: intent.flowState ?? null };
-}
-
-async function dispatchTool(name: string, args: any, userId: string | null): Promise<BeastToolResult | null> {
-  switch (name) {
-    case "search_marketplace": return execSearch(args);
-    case "navigate":           return execNavigate(args);
-    case "open_listing":       return execOpenListing(args);
-    case "contact_seller":     return execContactSeller(args);
-    case "save_favorite":      return execFavorite(args, userId);
-    case "market_analysis":    return execMarketAnalysis(args);
-    case "shop_action":        return execShopAction(args, userId);
-    case "start_listing":      return execStartListing(args, userId);
-    case "walkthrough":        return execWalkthrough();
-    case "end_session":        return execEndSession();
-    default:                   return null;
-  }
 }
 
 export function welcomeMessage(ctx: { username?: string | null; isLoggedIn: boolean }): string {
