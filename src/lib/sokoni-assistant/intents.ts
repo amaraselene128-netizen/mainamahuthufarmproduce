@@ -16,6 +16,7 @@ import {
   findFlow, startFlow, continueFlow, type FlowState, type FlowAdvance,
 } from "./conversation";
 import { classify, type Intent } from "./intentEngine";
+import { lookupConversation, lookupTechSupport } from "./trainingData";
 
 export type AssistantAction =
   | { type: "navigate"; path: string }
@@ -117,8 +118,10 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
     case "THANK":
       return { reply: "Karibu sana! Anything else?" };
 
-    case "SMALLTALK":
-      return { reply: `I'm doing great${ctx.username ? `, ${ctx.username}` : ""}! Ready to help — search, navigate, or guide you. What do you need?` };
+    case "SMALLTALK": {
+      const conv = lookupConversation(text);
+      return { reply: conv || `I'm doing great${ctx.username ? `, ${ctx.username}` : ""}! Ready to help — search, navigate, or guide you. What do you need?` };
+    }
 
     case "SELF":
       return { reply: "I'm the Sokoni Arena assistant — a 100% offline brain trained on the marketplace. I search products, services, shops and events; navigate every page; contact sellers; compare items; and walk you through any feature." };
@@ -174,6 +177,12 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
           return { reply: adv.reply, action: adv.navigate ? { type: "navigate", path: adv.navigate } : undefined, flowState: adv.ended ? undefined : adv.state };
         }
       }
+      // Try tech-support knowledge base.
+      const tech = lookupTechSupport(text);
+      if (tech) return { reply: `${tech.answer} (${tech.category.toLowerCase()} issue)` };
+      // Try general conversational knowledge.
+      const conv = lookupConversation(text);
+      if (conv) return { reply: conv };
       // Fallback: give a helpful answer + offer to search.
       return { reply: `I don't have a canned answer for that yet. Want me to search the marketplace for "${intent.query || rawText}"?`, action: { type: "navigate", path: `/search?q=${encodeURIComponent(intent.query || rawText)}` } };
     }
@@ -231,6 +240,9 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
       return { reply: "Cancelled. What would you like to do next?" };
 
     default:
+      // Try conversational small-talk first.
+      const conv2 = lookupConversation(text);
+      if (conv2) return { reply: conv2 };
       // Fallback to a search anyway — better than dead air.
       return await runSearch(rawText);
   }

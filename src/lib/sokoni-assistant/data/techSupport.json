@@ -1,0 +1,30 @@
+{
+"cannot connect to wi fi":{
+"answer":"Verify your email settings.",
+"category":"Hardware"
+},
+"software installation failure":{
+"answer":"Run a system diagnostic tool.",
+"category":"Account"
+},
+"forgot password":{
+"answer":"Follow the software installation guide.",
+"category":"Network"
+},
+"unable to access email":{
+"answer":"Run a system diagnostic tool.",
+"category":"Hardware"
+},
+"blue screen error":{
+"answer":"Restart your router.",
+"category":"Hardware"
+},
+"printer not responding":{
+"answer":"Clear cache and remove unnecessary programs.",
+"category":"Network"
+},
+"slow system performance":{
+"answer":"Restart your router.",
+"category":"Performance"
+}
+}
