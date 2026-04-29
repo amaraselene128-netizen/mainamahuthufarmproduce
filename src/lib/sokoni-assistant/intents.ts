@@ -238,7 +238,7 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
   return { reply: "I'm not sure how to help with that. Try asking me to search, navigate, or guide you." };
 }
 
-async function runSearch(raw: string): Promise<IntentResult> {
+async function runSearch(raw: string, _intent?: Intent): Promise<IntentResult> {
   try {
     const result: SmartSearchResult = await smartSearch(raw, { limit: 8 });
     const reply = describeResult(result);
