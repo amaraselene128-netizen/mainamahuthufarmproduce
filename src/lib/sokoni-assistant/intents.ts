@@ -118,8 +118,10 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
     case "THANK":
       return { reply: "Karibu sana! Anything else?" };
 
-    case "SMALLTALK":
-      return { reply: `I'm doing great${ctx.username ? `, ${ctx.username}` : ""}! Ready to help — search, navigate, or guide you. What do you need?` };
+    case "SMALLTALK": {
+      const conv = lookupConversation(text);
+      return { reply: conv || `I'm doing great${ctx.username ? `, ${ctx.username}` : ""}! Ready to help — search, navigate, or guide you. What do you need?` };
+    }
 
     case "SELF":
       return { reply: "I'm the Sokoni Arena assistant — a 100% offline brain trained on the marketplace. I search products, services, shops and events; navigate every page; contact sellers; compare items; and walk you through any feature." };
