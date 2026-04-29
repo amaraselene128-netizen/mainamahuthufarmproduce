@@ -1,6 +1,7 @@
 // Smart rule-based intent engine for Sokoni Arena assistant.
-// 100% free. Combines: smart semantic search, every-page navigation,
-// multi-turn yes/no flows, walkthrough, FAQs and feature guides.
+// 100% offline. Combines: 600+ phrase intent classifier, smart semantic
+// search, every-page navigation, multi-turn yes/no flows, walkthrough,
+// FAQs, feature guides and Swahili/Sheng coverage.
 
 import {
   SITE_PAGES,
@@ -14,6 +15,7 @@ import { smartSearch, describeResult, bestNavigation, type SmartSearchResult } f
 import {
   findFlow, startFlow, continueFlow, type FlowState, type FlowAdvance,
 } from "./conversation";
+import { classify, type Intent } from "./intentEngine";
 
 export type AssistantAction =
   | { type: "navigate"; path: string }
@@ -97,116 +99,146 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
         flowState: adv.ended ? undefined : adv.state,
       };
     }
-    // fall through to normal intent if flow yielded nothing
   }
 
-  // ── End session ──
-  if (BYE_RE.test(text)) {
-    return {
-      reply: `Goodbye${ctx.username ? `, ${ctx.username}` : ""}! Have a great day on Sokoni Arena.`,
-      action: { type: "end_session" },
-    };
-  }
+  // ── 600+ phrase intent classifier ──
+  const intent = classify(rawText);
 
-  // ── Greetings / small talk ──
-  if (GREETING_RE.test(text)) {
-    return { reply: `Hey${ctx.username ? `, ${ctx.username}` : ""}! What can I help you with — search, navigate, or learn how something works?` };
-  }
-  if (THANKS_RE.test(text)) return { reply: "Karibu! Anything else?" };
-  if (SELF_RE.test(text)) {
-    return { reply: "I'm the Sokoni Arena assistant — your free guide for the marketplace. I can search products, services, shops and events, navigate every page and section, contact sellers and walk you through any feature step by step." };
-  }
-  if (HELP_RE.test(text)) {
-    return { reply: "I can search ('find dining sets in Nairobi'), navigate ('open Fun Circle' or 'take me to my dashboard'), explain features step by step ('how do I open a shop'), give a walkthrough, and answer FAQs about safety, payments and pricing. Just ask." };
-  }
-
-  // ── Walkthrough ──
-  if (WALK_RE.test(text)) {
-    return { reply: WALKTHROUGH_STEPS[0], action: { type: "speak_steps", steps: WALKTHROUGH_STEPS } };
-  }
-
-  // ── Why Sokoni Arena ──
-  if (ADVANTAGE_RE.test(text)) {
-    return { reply: "Sokoni Arena stands out: " + SOKONI_ADVANTAGES.slice(0, 5).join("; ") + ". Want a walkthrough?" };
-  }
-
-  // ── Multi-turn flow: kick off if user asks about something we have a flow for ──
-  const flow = findFlow(text);
-  if (flow) {
-    const adv = startFlow(flow, { isLoggedIn: ctx.isLoggedIn });
-    if (adv.type === "reply") {
+  switch (intent.type) {
+    case "BYE":
       return {
-        reply: adv.reply,
-        action: adv.navigate ? { type: "navigate", path: adv.navigate } : undefined,
-        flowState: adv.ended ? undefined : adv.state,
+        reply: `Goodbye${ctx.username ? `, ${ctx.username}` : ""}! Have a great day on Sokoni Arena.`,
+        action: { type: "end_session" },
       };
-    }
-  }
 
-  // Direct "what is fun circle" → flow
-  if (FUNCIRCLE_Q_RE.test(text)) {
-    const f = findFlow("fun circle")!;
-    const adv = startFlow(f, { isLoggedIn: ctx.isLoggedIn });
-    if (adv.type === "reply") {
-      return { reply: adv.reply, flowState: adv.ended ? undefined : adv.state };
-    }
-  }
+    case "GREET":
+      return { reply: `Hey${ctx.username ? `, ${ctx.username}` : ""}! What can I help you with — search, navigate, or learn how something works?` };
 
-  // ── FAQ ──
-  const faq = matchFaq(text);
-  if (faq && !SEARCH_RE.test(text) && !NAV_RE.test(text)) {
-    return { reply: faq.answer };
-  }
+    case "THANK":
+      return { reply: "Karibu sana! Anything else?" };
 
-  // ── Feature guides (how-to) ──
-  const feat = matchFeature(text);
-  if (feat) {
-    const reply = `${feat.title}: ${feat.steps.join(". ")}.`;
-    return { reply, action: feat.cta ? { type: "navigate", path: feat.cta.path } : undefined };
-  }
+    case "SMALLTALK":
+      return { reply: `I'm doing great${ctx.username ? `, ${ctx.username}` : ""}! Ready to help — search, navigate, or guide you. What do you need?` };
 
-  // ── Home section deep-link (e.g. "scroll to flash sales") ──
-  const homeSec = matchHomeSection(text);
-  if (homeSec && (NAV_RE.test(text) || /\b(flash sales|featured shops|top shops|premium shops)\b/i.test(text))) {
-    return { reply: `Opening ${homeSec.label} on the homepage.`, action: { type: "navigate", path: `/#${homeSec.id}` } };
-  }
+    case "SELF":
+      return { reply: "I'm the Sokoni Arena assistant — a 100% offline brain trained on the marketplace. I search products, services, shops and events; navigate every page; contact sellers; compare items; and walk you through any feature." };
 
-  // ── Direct page navigation ──
-  if (NAV_RE.test(text)) {
-    const page = matchPage(text);
-    if (page) {
-      if (page.requiresAuth && !ctx.isLoggedIn) {
-        return { reply: `${page.names[0]} needs sign-in. Taking you to login.`, action: { type: "navigate", path: "/login" } };
+    case "HELP":
+      return { reply: "Try: 'find dining sets in Nairobi under 30k', 'open Fun Circle', 'how do I post a listing', 'I need a plumber near me', or 'compare iPhone 13 and Samsung S22'. I also handle Swahili & Sheng." };
+
+    case "WALKTHROUGH":
+      return { reply: WALKTHROUGH_STEPS[0], action: { type: "speak_steps", steps: WALKTHROUGH_STEPS } };
+
+    case "ADVANTAGE":
+      return { reply: "Sokoni Arena stands out: " + SOKONI_ADVANTAGES.slice(0, 5).join("; ") + ". Want a walkthrough?" };
+
+    case "ACK":
+      return { reply: "👍 What next?" };
+
+    case "NEGATION":
+      return { reply: "No problem — tell me what you'd like instead." };
+
+    case "CORRECTION":
+      // Re-route the corrected query as a fresh search.
+      return await runSearch(intent.query || rawText);
+
+    case "NAVIGATE": {
+      if (!intent.navTarget) break;
+      const requiresAuth = SITE_PAGES.some(p => p.path === intent.navTarget && p.requiresAuth);
+      if (requiresAuth && !ctx.isLoggedIn) {
+        return { reply: "That page needs sign-in. Taking you to login.", action: { type: "navigate", path: "/login" } };
       }
-      return { reply: `Opening ${page.names[0]}.`, action: { type: "navigate", path: page.path } };
+      const path = intent.navSection ? `${intent.navTarget}#${intent.navSection}` : intent.navTarget;
+      const label = SITE_PAGES.find(p => p.path === intent.navTarget)?.names[0] || "page";
+      return { reply: `Opening ${label}.`, action: { type: "navigate", path } };
     }
-  }
-  // Plain page reference like "shops" or "favorites"
-  const pageOnly = matchPage(text);
-  if (pageOnly && text.split(/\s+/).length <= 5) {
-    if (pageOnly.requiresAuth && !ctx.isLoggedIn) {
-      return { reply: `${pageOnly.names[0]} needs sign-in.`, action: { type: "navigate", path: "/login" } };
+
+    case "QUESTION_HOWTO":
+    case "QUESTION_WHAT":
+    case "QUESTION_WHY": {
+      // Try feature guides + FAQs first.
+      const feat = matchFeature(text);
+      if (feat) {
+        return {
+          reply: `${feat.title}: ${feat.steps.join(". ")}.`,
+          action: feat.cta ? { type: "navigate", path: feat.cta.path } : undefined,
+        };
+      }
+      const faq = matchFaq(text);
+      if (faq) return { reply: faq.answer };
+      // Try kicking off a flow ("what is fun circle")
+      const flow = findFlow(text);
+      if (flow) {
+        const adv = startFlow(flow, { isLoggedIn: ctx.isLoggedIn });
+        if (adv.type === "reply") {
+          return { reply: adv.reply, action: adv.navigate ? { type: "navigate", path: adv.navigate } : undefined, flowState: adv.ended ? undefined : adv.state };
+        }
+      }
+      // Fallback: give a helpful answer + offer to search.
+      return { reply: `I don't have a canned answer for that yet. Want me to search the marketplace for "${intent.query || rawText}"?`, action: { type: "navigate", path: `/search?q=${encodeURIComponent(intent.query || rawText)}` } };
     }
-    return { reply: `Opening ${pageOnly.names[0]}.`, action: { type: "navigate", path: pageOnly.path } };
+
+    case "QUESTION_PRICE":
+      return await runSearch(intent.query || rawText);
+
+    case "QUESTION_LOCATION": {
+      const navHit = matchPage(text);
+      if (navHit) return { reply: `Here's ${navHit.names[0]}.`, action: { type: "navigate", path: navHit.path } };
+      return await runSearch(intent.query || rawText);
+    }
+
+    case "QUESTION_TIME": {
+      // Events page is the best answer for time-based queries.
+      return { reply: "Opening the Events page so you can see schedules.", action: { type: "navigate", path: "/events" } };
+    }
+
+    case "PURCHASE":
+    case "SEARCH":
+    case "MODIFY":
+      return await runSearch(intent.query || rawText, intent);
+
+    case "SORT":
+      return { reply: `Got it — sorting by ${intent.sort}. Opening results.`, action: { type: "navigate", path: `/search?sort=${intent.sort}` } };
+
+    case "SELL":
+      if (!ctx.isLoggedIn) return { reply: "To list something, sign in first.", action: { type: "navigate", path: "/login" } };
+      return { reply: "Opening the new listing form.", action: { type: "navigate", path: "/dashboard?action=new-listing" } };
+
+    case "SAVE":
+      if (!ctx.isLoggedIn) return { reply: "Sign in to save items.", action: { type: "navigate", path: "/login" } };
+      return { reply: "Tap the heart on any listing to save it. Opening your favorites.", action: { type: "navigate", path: "/favorites" } };
+
+    case "UNSAVE":
+      if (!ctx.isLoggedIn) return { reply: "Sign in to manage favorites.", action: { type: "navigate", path: "/login" } };
+      return { reply: "Open your favorites and tap the heart again to remove an item.", action: { type: "navigate", path: "/favorites" } };
+
+    case "CONTACT": {
+      const method = intent.contactMethod || "MESSAGE";
+      return { reply: `Open any listing and tap ${method === "WHATSAPP" ? "WhatsApp" : method === "CALL" ? "Call" : method === "EMAIL" ? "Email" : "Message"} on the seller card.` };
+    }
+
+    case "SERVICE_REQUEST": {
+      const q = intent.query || intent.serviceCategory || rawText;
+      const r = await smartSearch(q, { limit: 8, type: "service" });
+      const reply = describeResult(r);
+      return { reply, action: { type: "navigate", path: bestNavigation(r) }, data: { listings: r.listings, shops: r.shops } };
+    }
+
+    case "COMPARE":
+      return { reply: `Searching listings to compare: "${intent.query || rawText}"…`, action: { type: "navigate", path: `/search?q=${encodeURIComponent(intent.query || rawText)}` } };
+
+    case "CANCEL":
+      return { reply: "Cancelled. What would you like to do next?" };
+
+    default:
+      // Fallback to a search anyway — better than dead air.
+      return await runSearch(rawText);
   }
 
-  // ── Personal account shortcuts ──
-  if (/\b(my (listings|ads|shop|cart|orders|favorites?|profile))\b/i.test(text)) {
-    if (!ctx.isLoggedIn) {
-      return { reply: "Sign in first to access your account. Opening login.", action: { type: "navigate", path: "/login" } };
-    }
-    if (/favorite/.test(text)) return { reply: "Opening your favorites.", action: { type: "navigate", path: "/favorites" } };
-    return { reply: "Opening your dashboard.", action: { type: "navigate", path: "/dashboard" } };
-  }
-
-  // ── Search (explicit OR fallback) ──
-  const stripped = SEARCH_RE.test(text)
-    ? text.replace(SEARCH_RE, " ").replace(/^\s*for\s+/i, "").trim()
-    : rawText;
-  return await runSearch(stripped || rawText);
+  return { reply: "I'm not sure how to help with that. Try asking me to search, navigate, or guide you." };
 }
 
-async function runSearch(raw: string): Promise<IntentResult> {
+async function runSearch(raw: string, _intent?: Intent): Promise<IntentResult> {
   try {
     const result: SmartSearchResult = await smartSearch(raw, { limit: 8 });
     const reply = describeResult(result);
