@@ -238,6 +238,9 @@ export async function detectIntent(rawText: string, ctx: AssistantContext): Prom
       return { reply: "Cancelled. What would you like to do next?" };
 
     default:
+      // Try conversational small-talk first.
+      const conv2 = lookupConversation(text);
+      if (conv2) return { reply: conv2 };
       // Fallback to a search anyway — better than dead air.
       return await runSearch(rawText);
   }
