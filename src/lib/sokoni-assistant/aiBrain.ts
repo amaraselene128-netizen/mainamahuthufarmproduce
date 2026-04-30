@@ -157,7 +157,7 @@ export async function streamChat(opts: {
 
 export function welcomeMessage(ctx: { username?: string | null; isLoggedIn: boolean }): string {
   if (ctx.isLoggedIn && ctx.username) {
-    return `Karibu tena, ${ctx.username}! I'm Sokoni Assistant — your AI guide to SokoniArena. Tap the mic and tell me what you're looking for, where you'd like to go, or anything you want to learn about.`;
+    return `Karibu tena, ${ctx.username}! 👋 I'm Sokoni Assistant. Ask me anything — how to post a listing, open a shop, find products, reset your password… I'll walk you through it.`;
   }
-  return "Karibu! I'm Sokoni Assistant — your AI-powered guide to SokoniArena. Sign in for personalised help, or just tap the mic and ask me anything: search, navigate, or learn how the marketplace works.";
+  return "Karibu! 👋 I'm Sokoni Assistant. Ask me anything about SokoniArena — how to do something, where to find it, or just tell me what you're looking for.";
 }
