@@ -16,72 +16,22 @@ export default function ResetPassword() {
   const [show, setShow] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [ready, setReady] = useState(false);
-  const [linkError, setLinkError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { updatePassword } = useAuth();
 
   useEffect(() => {
-    let cancelled = false;
-
+    // Supabase parses the recovery token from the URL hash automatically
+    // when detectSessionInUrl is true. Wait for a session to be present.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
         setReady(true);
       }
     });
-
-    (async () => {
-      // 1) Already have a session? (legacy hash flow auto-parsed by SDK)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) { if (!cancelled) setReady(true); return; }
-
-      // 2) PKCE flow — Supabase sends ?code=... that must be exchanged.
-      const url = new URL(window.location.href);
-      const code = url.searchParams.get("code");
-      const errDesc = url.searchParams.get("error_description") || url.hash.match(/error_description=([^&]+)/)?.[1];
-
-      if (errDesc) {
-        if (!cancelled) setLinkError(decodeURIComponent(errDesc.replace(/\+/g, " ")));
-        return;
-      }
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!cancelled) {
-          if (error) setLinkError(error.message);
-          else {
-            setReady(true);
-            // Clean ?code from the URL so a refresh doesn't retry it.
-            url.searchParams.delete("code");
-            window.history.replaceState({}, "", url.pathname + url.search + url.hash);
-          }
-        }
-        return;
-      }
-
-      // 3) Legacy hash tokens — set session manually if present.
-      const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
-      const hp = new URLSearchParams(hash);
-      const access_token = hp.get("access_token");
-      const refresh_token = hp.get("refresh_token");
-      const type = hp.get("type");
-      if (access_token && refresh_token && (type === "recovery" || type === null)) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (!cancelled) {
-          if (error) setLinkError(error.message);
-          else {
-            setReady(true);
-            window.history.replaceState({}, "", window.location.pathname);
-          }
-        }
-        return;
-      }
-
-      // Nothing usable in the URL.
-      if (!cancelled) setLinkError("This reset link is invalid or has expired. Please request a new one.");
-    })();
-
-    return () => { cancelled = true; subscription.unsubscribe(); };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setReady(true);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,21 +64,8 @@ export default function ResetPassword() {
             <CardHeader className="text-center">
               <CardTitle className="font-display text-2xl">Set New Password</CardTitle>
               <CardDescription>
-                {linkError
-                  ? linkError
-                  : ready
-                    ? "Enter and confirm your new password."
-                    : "Validating your reset link..."}
+                {ready ? "Enter and confirm your new password." : "Validating your reset link..."}
               </CardDescription>
-              {linkError && (
-                <button
-                  type="button"
-                  onClick={() => navigate("/forgot-password", { replace: true })}
-                  className="mt-2 text-sm text-primary hover:underline"
-                >
-                  Request a new reset link
-                </button>
-              )}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
