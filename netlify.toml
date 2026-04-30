@@ -6,7 +6,7 @@
 [functions]
   edge_functions = true
 
-# Edge Functions configuration (this handles bot prerendering)
+# Edge Functions configuration
 [[edge_functions]]
   function = "prerender"
   path = "/products/*"
@@ -23,7 +23,7 @@
   function = "prerender"
   path = "/shop/*"
 
-# Sitemap redirects (these don't need bot detection)
+# Sitemap redirects
 [[redirects]]
   from = "/sitemap-dynamic-index.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=index"
@@ -54,7 +54,7 @@
   status = 200
   force = true
 
-# Serve static sitemap files
+# Static sitemap files
 [[redirects]]
   from = "/sitemap.xml"
   to = "/sitemap.xml"
@@ -75,13 +75,13 @@
   to = "/robots.txt"
   status = 200
 
-# SPA catch-all (must be LAST - only for non-bot requests)
+# SPA catch-all
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Headers configuration (keep your existing headers)
+# Headers
 [[headers]]
   for = "/sitemap-*.xml"
   [headers.values]
