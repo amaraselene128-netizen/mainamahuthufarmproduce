@@ -2,11 +2,12 @@
   command = "npm run build"
   publish = "dist"
 
-# Enable Edge Functions
+# Edge Functions configuration (correct syntax)
 [functions]
-  edge_functions = true
+  [functions.edge_functions]
+    # No external modules needed for now
 
-# Edge Functions configuration
+# Edge Functions routes
 [[edge_functions]]
   function = "prerender"
   path = "/products/*"
