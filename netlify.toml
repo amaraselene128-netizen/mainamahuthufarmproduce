@@ -2,6 +2,39 @@
   command = "npm run build"
   publish = "dist"
 
+# ============================================================
+# BOT PRERENDERING (must come BEFORE the SPA catch-all)
+# Crawlers get fully-rendered SEO HTML from the prerender edge function.
+# Real users fall through to the SPA.
+# ============================================================
+[[redirects]]
+  from = "/products/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/products/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
+[[redirects]]
+  from = "/services/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/services/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
+[[redirects]]
+  from = "/events/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/events/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
+[[redirects]]
+  from = "/shop/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/shop/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
 # Proxy dynamic sitemaps through your domain (must come BEFORE static sitemap rules)
 [[redirects]]
   from = "/dynamic-sitemap"
