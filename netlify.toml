@@ -2,41 +2,74 @@
   command = "npm run build"
   publish = "dist"
 
+# ============================================================
+# BOT PRERENDERING (must come BEFORE the SPA catch-all)
+# Crawlers get fully-rendered SEO HTML from the prerender edge function.
+# Real users fall through to the SPA.
+# ============================================================
+[[redirects]]
+  from = "/products/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/products/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
+[[redirects]]
+  from = "/services/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/services/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
+[[redirects]]
+  from = "/events/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/events/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
+[[redirects]]
+  from = "/shop/*"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/prerender?path=/shop/:splat"
+  status = 200
+  force = true
+  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+
 # Proxy dynamic sitemaps through your domain (must come BEFORE static sitemap rules)
 [[redirects]]
   from = "/dynamic-sitemap"
-  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/dynamic-sitemap"
   status = 200
   force = true
   query = { type = ":type" }
 
 [[redirects]]
   from = "/sitemap-dynamic-index.xml"
-  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=index"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/dynamic-sitemap?type=index"
   status = 200
   force = true
 
 [[redirects]]
   from = "/sitemap-dynamic-shops.xml"
-  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=shops"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/dynamic-sitemap?type=shops"
   status = 200
   force = true
 
 [[redirects]]
   from = "/sitemap-dynamic-products.xml"
-  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=products"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/dynamic-sitemap?type=products"
   status = 200
   force = true
 
 [[redirects]]
   from = "/sitemap-dynamic-services.xml"
-  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=services"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/dynamic-sitemap?type=services"
   status = 200
   force = true
 
 [[redirects]]
   from = "/sitemap-dynamic-events.xml"
-  to = "https://wngpqhnkfbrpapokmkfw.supabase.co/functions/v1/dynamic-sitemap?type=events"
+  to = "https://wxokpcbouchusnplpruc.supabase.co/functions/v1/dynamic-sitemap?type=events"
   status = 200
   force = true
 
