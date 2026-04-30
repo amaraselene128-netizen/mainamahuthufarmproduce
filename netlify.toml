@@ -2,47 +2,28 @@
   command = "npm run build"
   publish = "dist"
 
-# ============================================================
-# BOT PRERENDERING (must come BEFORE the SPA catch-all)
-# Crawlers get fully-rendered SEO HTML from the prerender edge function.
-# Real users fall through to the SPA.
-# ============================================================
-[[redirects]]
-  from = "/products/*"
-  to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/prerender?path=/products/:splat"
-  status = 200
-  force = true
-  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+# Enable Edge Functions
+[functions]
+  edge_functions = true
 
-[[redirects]]
-  from = "/services/*"
-  to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/prerender?path=/services/:splat"
-  status = 200
-  force = true
-  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
+# Edge Functions configuration (this handles bot prerendering)
+[[edge_functions]]
+  function = "prerender"
+  path = "/products/*"
+  
+[[edge_functions]]
+  function = "prerender"
+  path = "/services/*"
+  
+[[edge_functions]]
+  function = "prerender"
+  path = "/events/*"
+  
+[[edge_functions]]
+  function = "prerender"
+  path = "/shop/*"
 
-[[redirects]]
-  from = "/events/*"
-  to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/prerender?path=/events/:splat"
-  status = 200
-  force = true
-  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
-
-[[redirects]]
-  from = "/shop/*"
-  to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/prerender?path=/shop/:splat"
-  status = 200
-  force = true
-  conditions = { User-Agent = ["Googlebot", "Bingbot", "Slurp", "DuckDuckBot", "Baiduspider", "YandexBot", "Sogou", "Exabot", "facebot", "facebookexternalhit", "Twitterbot", "LinkedInBot", "WhatsApp", "TelegramBot", "Applebot", "Discordbot", "Pinterestbot", "redditbot", "ia_archiver"] }
-
-# Proxy dynamic sitemaps through your domain (must come BEFORE static sitemap rules)
-[[redirects]]
-  from = "/dynamic-sitemap"
-  to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap"
-  status = 200
-  force = true
-  query = { type = ":type" }
-
+# Sitemap redirects (these don't need bot detection)
 [[redirects]]
   from = "/sitemap-dynamic-index.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=index"
@@ -73,7 +54,7 @@
   status = 200
   force = true
 
-# Serve sitemap files directly (must come BEFORE catch-all redirect)
+# Serve static sitemap files
 [[redirects]]
   from = "/sitemap.xml"
   to = "/sitemap.xml"
@@ -90,96 +71,21 @@
   status = 200
 
 [[redirects]]
-  from = "/sitemap-products.xml"
-  to = "/sitemap-products.xml"
-  status = 200
-
-[[redirects]]
-  from = "/sitemap-services.xml"
-  to = "/sitemap-services.xml"
-  status = 200
-
-[[redirects]]
-  from = "/sitemap-events.xml"
-  to = "/sitemap-events.xml"
-  status = 200
-
-[[redirects]]
-  from = "/sitemap-shops.xml"
-  to = "/sitemap-shops.xml"
-  status = 200
-
-[[redirects]]
-  from = "/sitemap.txt"
-  to = "/sitemap.txt"
-  status = 200
-
-[[redirects]]
   from = "/robots.txt"
   to = "/robots.txt"
   status = 200
 
-# SPA catch-all redirect (must be LAST)
+# SPA catch-all (must be LAST - only for non-bot requests)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-# Sitemap headers
+
+# Headers configuration (keep your existing headers)
 [[headers]]
-  for = "/sitemap.xml"
+  for = "/sitemap-*.xml"
   [headers.values]
     Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap-index.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap-pages.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap-products.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap-services.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap-events.xml"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-# Dynamic sitemap proxy headers
-[[headers]]
-  for = "/sitemap-dynamic-*"
-  [headers.values]
-    Content-Type = "application/xml; charset=utf-8"
-    X-Robots-Tag = "noindex"
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap.txt"
-  [headers.values]
-    Content-Type = "text/plain; charset=utf-8"
-    X-Robots-Tag = "noindex"
     Cache-Control = "public, max-age=3600"
 
 [[headers]]
@@ -188,7 +94,6 @@
     Content-Type = "text/plain; charset=utf-8"
     Cache-Control = "public, max-age=86400"
 
-# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
