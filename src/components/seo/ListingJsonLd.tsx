@@ -74,17 +74,34 @@ export function ListingJsonLd({
     };
   }
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://sokoniarena.co.ke/" },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: categoryPath.charAt(0).toUpperCase() + categoryPath.slice(1),
+        item: `https://sokoniarena.co.ke/${categoryPath}`,
+      },
+      { "@type": "ListItem", position: 3, name: title, item: url },
+    ],
+  };
+
   return (
     <Helmet>
-      <title>{`${title} | SokoniArena Kenya`}</title>
+      <title>{`${title} | Sokoni Arena Kenya`}</title>
       <meta name="description" content={metaDesc} />
+      <meta name="keywords" content={`${title}, ${title} sokoni, sokoni arena, sokoni kenya, ${listingType} on sokoni`} />
       <link rel="canonical" href={url} />
-      <meta property="og:title" content={`${title} | SokoniArena`} />
+      <meta property="og:title" content={`${title} | Sokoni Arena`} />
       <meta property="og:description" content={metaDesc} />
       <meta property="og:url" content={url} />
       {images?.[0] && <meta property="og:image" content={images[0]} />}
       <meta property="og:type" content={listingType === "event" ? "event" : "product"} />
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
     </Helmet>
   );
 }
