@@ -1,32 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mic, MicOff, X, Volume2, VolumeX, Sparkles, PhoneOff, Trash2 } from "lucide-react";
+import { Send, X, Sparkles, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { streamChat, welcomeMessage, type ChatMsg } from "@/lib/sokoni-assistant/aiBrain";
 import {
-  isSpeechRecognitionSupported,
-  speak,
-  stopSpeaking,
-} from "@/lib/sokoni-assistant/speech";
-import { LiveSpeechSession } from "@/lib/sokoni-assistant/liveSession";
-import {
   appendLocal,
   clearHistory,
-  endConversation,
   loadHistory,
   persistMessage,
   type StoredMsg,
 } from "@/lib/sokoni-assistant/persistence";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
 import { AssistantMessage } from "./AssistantMessage";
 
 const QUICK_PROMPTS = [
-  "Show me around",
-  "Find iPhones under 30k in Nairobi",
+  "How do I post a listing?",
   "How do I open a shop?",
-  "Why is SokoniArena special?",
+  "How do I contact a seller?",
+  "How do I reset my password?",
+  "How do I promote my shop?",
+  "Find iPhones under 30k in Nairobi",
 ];
 
 export function SokoniAssistant() {
@@ -38,15 +32,14 @@ export function SokoniAssistant() {
   }, [user]);
 
   const [open, setOpen] = useState(false);
-  const [liveOn, setLiveOn] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [input, setInput] = useState("");
   const [partial, setPartial] = useState("");
+  const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<StoredMsg[]>([]);
-  const sessionRef = useRef<LiveSpeechSession | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const supported = isSpeechRecognitionSupported();
+  const inputRef = useRef<HTMLInputElement>(null);
   const userIdRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Welcome + load history on open
   useEffect(() => {
@@ -63,12 +56,11 @@ export function SokoniAssistant() {
         ts: Date.now(),
       };
       setMessages([welcome]);
-      if (!muted) speak(welcome.text);
     }
     userIdRef.current = user?.id ?? null;
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, [open, user, username]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-scroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, partial]);
@@ -82,30 +74,38 @@ export function SokoniAssistant() {
     }
   }, []);
 
-  const reply = useCallback(
+  const send = useCallback(
     async (userText: string) => {
+      const text = userText.trim();
+      if (!text || busy) return;
+
       const userMsg: StoredMsg = {
         id: crypto.randomUUID(),
         role: "user",
-        text: userText,
+        text,
         ts: Date.now(),
       };
       pushMessage(userMsg);
+      setInput("");
+      setBusy(true);
 
-      // Build conversation history (last 12 messages) for AI context
+      // Build conversation history (last 10 messages for speed)
       const history: ChatMsg[] = messages
-        .slice(-12)
+        .slice(-10)
         .map((m) => ({ role: m.role as "user" | "assistant", content: m.text }));
-      history.push({ role: "user", content: userText });
+      history.push({ role: "user", content: text });
 
-      setPartial("Thinking…");
+      setPartial("…");
       let streamed = "";
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
 
       try {
         const result = await streamChat({
           messages: history,
           username,
           isLoggedIn: !!user,
+          signal: ctrl.signal,
           onDelta: (chunk) => {
             streamed += chunk;
             setPartial(streamed);
@@ -121,101 +121,39 @@ export function SokoniAssistant() {
         };
         pushMessage(botMsg);
 
-        // Speak full reply once generation completes
-        if (!muted && result.reply) {
-          sessionRef.current?.pauseForSpeaking();
-          speak(result.reply, {
-            onEnd: () => sessionRef.current?.resumeAfterSpeaking(),
-          });
-        }
-
         if (result.action?.type === "navigate") {
-          setTimeout(() => navigate((result.action as any).path), 700);
+          setTimeout(() => navigate((result.action as any).path), 500);
         } else if (result.action?.type === "search") {
-          setTimeout(() => navigate(`/search?q=${encodeURIComponent((result.action as any).query)}`), 700);
-        } else if (result.action?.type === "end_session") {
-          setTimeout(() => endLiveSession(), 1500);
+          setTimeout(() => navigate(`/search?q=${encodeURIComponent((result.action as any).query)}`), 500);
         }
       } catch (err: any) {
         setPartial("");
-        const errText = err?.message || "Something went wrong reaching the AI. Please try again.";
-        pushMessage({ id: crypto.randomUUID(), role: "assistant", text: errText, ts: Date.now() });
-        if (!muted) speak(errText);
+        if (err?.name !== "AbortError") {
+          const errText = err?.message || "Something went wrong. Please try again.";
+          pushMessage({ id: crypto.randomUUID(), role: "assistant", text: errText, ts: Date.now() });
+        }
+      } finally {
+        setBusy(false);
+        abortRef.current = null;
+        setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
-    [messages, muted, navigate, pushMessage, user, username]
+    [busy, messages, navigate, pushMessage, user, username]
   );
-
-  // ---- Live session control ----
-  const startLiveSession = useCallback(async () => {
-    if (!supported) {
-      toast({
-        variant: "destructive",
-        title: "Voice not supported",
-        description: "Try Chrome, Edge or Safari for live voice.",
-      });
-      return;
-    }
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "Microphone blocked",
-        description: "Please allow microphone access to talk to Sokoni Assistant.",
-      });
-      return;
-    }
-    if (sessionRef.current) sessionRef.current.stop();
-    const session = new LiveSpeechSession({
-      onPartial: (t) => setPartial(t),
-      onFinal: (t) => {
-        setPartial("");
-        if (t) reply(t);
-      },
-      onListeningChange: setListening,
-      onError: (err) => {
-        if (err && err !== "no-speech") {
-          toast({ variant: "destructive", title: "Voice error", description: err });
-        }
-      },
-    });
-    sessionRef.current = session;
-    session.start();
-    setLiveOn(true);
-  }, [reply, supported]);
-
-  const endLiveSession = useCallback(() => {
-    sessionRef.current?.stop();
-    sessionRef.current = null;
-    setLiveOn(false);
-    setListening(false);
-    setPartial("");
-    stopSpeaking();
-    if (userIdRef.current) endConversation(userIdRef.current);
-  }, []);
-
-  // Stop everything when panel closes
-  useEffect(() => {
-    if (!open) {
-      endLiveSession();
-    }
-  }, [open, endLiveSession]);
-
-  // Cleanup on unmount
-  useEffect(() => () => { sessionRef.current?.stop(); stopSpeaking(); }, []);
-
-  const toggleMute = () => {
-    if (!muted) stopSpeaking();
-    setMuted((m) => !m);
-  };
 
   const handleClearHistory = () => {
     if (user) clearHistory(user.id);
-    setMessages([]);
-    const w: StoredMsg = { id: crypto.randomUUID(), role: "assistant", text: welcomeMessage({ username, isLoggedIn: !!user }), ts: Date.now() };
+    const w: StoredMsg = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      text: welcomeMessage({ username, isLoggedIn: !!user }),
+      ts: Date.now(),
+    };
     setMessages([w]);
   };
+
+  // Cleanup abort on unmount
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   return (
     <>
@@ -252,23 +190,15 @@ export function SokoniAssistant() {
             <div className="flex items-center gap-2">
               <div className="relative h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                 <Sparkles className="h-4 w-4" />
-                {liveOn && (
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary ring-2 ring-background animate-pulse" />
-                )}
               </div>
               <div>
                 <p className="font-semibold text-sm leading-tight">Sokoni Assistant</p>
                 <p className="text-[11px] text-muted-foreground leading-tight">
-                  {liveOn
-                    ? listening ? "Live • Listening…" : "Live • Paused"
-                    : muted ? "Voice muted" : "Tap the mic to start a live session"}
+                  Ask me anything about SokoniArena
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleMute} aria-label={muted ? "Unmute voice" : "Mute voice"}>
-                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </Button>
               {user && (
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClearHistory} aria-label="Clear conversation">
                   <Trash2 className="h-4 w-4" />
@@ -284,70 +214,65 @@ export function SokoniAssistant() {
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m) => <AssistantMessage key={m.id} m={m} />)}
             {partial && (
-              <div className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm bg-primary/40 text-primary-foreground italic">
-                  {partial}…
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded-2xl rounded-bl-sm px-3 py-2 text-sm bg-muted text-foreground">
+                  {partial === "…" ? (
+                    <span className="inline-flex gap-1 items-center text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-current animate-bounce" />
+                    </span>
+                  ) : partial}
                 </div>
               </div>
             )}
           </div>
 
           {/* Quick prompts */}
-          <div className="px-3 py-2 border-t flex gap-2 overflow-x-auto">
-            {QUICK_PROMPTS.map((q) => (
-              <button
-                key={q}
-                onClick={() => reply(q)}
-                className="shrink-0 text-xs rounded-full border border-border px-3 py-1.5 hover:bg-muted transition-colors"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-
-          {/* Mic / Live control */}
-          <div className="p-4 border-t flex items-center justify-center gap-3">
-            {!liveOn ? (
-              <button
-                onClick={startLiveSession}
-                aria-label="Start live voice session"
-                className={cn(
-                  "h-14 px-6 rounded-full flex items-center gap-2 transition-all",
-                  "bg-primary text-primary-foreground hover:scale-105 ring-4 ring-primary/20"
-                )}
-              >
-                <Mic className="h-5 w-5" />
-                <span className="text-sm font-medium">Start live session</span>
-              </button>
-            ) : (
-              <>
-                <div className={cn(
-                  "h-14 w-14 rounded-full flex items-center justify-center",
-                  listening ? "bg-primary/15 ring-4 ring-primary/30" : "bg-muted ring-4 ring-muted-foreground/10"
-                )}>
-                  {listening ? (
-                    <Mic className="h-6 w-6 text-primary" />
-                  ) : (
-                    <MicOff className="h-6 w-6 text-muted-foreground" />
-                  )}
-                </div>
+          {messages.length <= 1 && (
+            <div className="px-3 py-2 border-t flex gap-2 overflow-x-auto">
+              {QUICK_PROMPTS.map((q) => (
                 <button
-                  onClick={endLiveSession}
-                  aria-label="End session"
-                  className="h-12 px-5 rounded-full bg-destructive text-destructive-foreground flex items-center gap-2 hover:scale-105 transition-transform"
+                  key={q}
+                  onClick={() => send(q)}
+                  disabled={busy}
+                  className="shrink-0 text-xs rounded-full border border-border px-3 py-1.5 hover:bg-muted transition-colors disabled:opacity-50"
                 >
-                  <PhoneOff className="h-4 w-4" />
-                  <span className="text-sm font-medium">End session</span>
+                  {q}
                 </button>
-              </>
-            )}
-          </div>
-
-          {!supported && (
-            <p className="px-4 pb-3 text-[11px] text-center text-muted-foreground">
-              Voice input isn't supported in this browser. Use Chrome, Edge or Safari.
-            </p>
+              ))}
+            </div>
           )}
+
+          {/* Input */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              send(input);
+            }}
+            className="p-3 border-t flex items-center gap-2"
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask how to do anything…"
+              disabled={busy}
+              className="flex-1 h-10 px-3 rounded-full border border-border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <button
+              type="submit"
+              disabled={busy || !input.trim()}
+              aria-label="Send message"
+              className={cn(
+                "h-10 w-10 rounded-full flex items-center justify-center transition-all shrink-0",
+                "bg-primary text-primary-foreground hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+              )}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+          </form>
         </div>
       )}
     </>
