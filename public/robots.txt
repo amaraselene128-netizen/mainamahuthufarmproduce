@@ -40,15 +40,9 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /private/
 
-# Allow static assets
-Allow: /favicon.ico
-Allow: /sitemap*.xml
-Allow: /sitemap.txt
-Allow: /robots.txt
-
-# Sitemaps - static pages + dynamic index (covers shops, products, services, events)
-Sitemap: https://sokoniarena.co.ke/sitemap.xml
+# Sitemaps - Use Netlify proxy URLs (these should work)
 Sitemap: https://sokoniarena.co.ke/sitemap-dynamic-index.xml
+Sitemap: https://sokoniarena.co.ke/sitemap-index.xml
 
 # Host
 Host: https://sokoniarena.co.ke

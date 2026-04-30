@@ -2,7 +2,7 @@
   command = "npm run build"
   publish = "dist"
 
-# Edge Functions configuration (correct syntax)
+# Edge Functions configuration
 [functions]
   [functions.edge_functions]
     # No external modules needed for now
@@ -24,67 +24,76 @@
   function = "prerender"
   path = "/shop/*"
 
-# Sitemap redirects
+# Dynamic sitemap redirects (MUST come before static files)
 [[redirects]]
   from = "/sitemap-dynamic-index.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=index"
   status = 200
   force = true
+  headers = {Content-Type = "application/xml"}
 
 [[redirects]]
   from = "/sitemap-dynamic-shops.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=shops"
   status = 200
   force = true
+  headers = {Content-Type = "application/xml"}
 
 [[redirects]]
   from = "/sitemap-dynamic-products.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=products"
   status = 200
   force = true
+  headers = {Content-Type = "application/xml"}
 
 [[redirects]]
   from = "/sitemap-dynamic-services.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=services"
   status = 200
   force = true
+  headers = {Content-Type = "application/xml"}
 
 [[redirects]]
   from = "/sitemap-dynamic-events.xml"
   to = "https://nanxwdsvtgswkwjodlpm.supabase.co/functions/v1/dynamic-sitemap?type=events"
   status = 200
   force = true
+  headers = {Content-Type = "application/xml"}
 
-# Static sitemap files
+# Static sitemap files (only if they exist in dist/)
 [[redirects]]
   from = "/sitemap.xml"
   to = "/sitemap.xml"
   status = 200
+  force = false
 
 [[redirects]]
   from = "/sitemap-index.xml"
   to = "/sitemap-index.xml"
   status = 200
-
-[[redirects]]
-  from = "/sitemap-pages.xml"
-  to = "/sitemap-pages.xml"
-  status = 200
+  force = false
 
 [[redirects]]
   from = "/robots.txt"
   to = "/robots.txt"
   status = 200
+  force = false
 
-# SPA catch-all
+# SPA catch-all (must be LAST)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Headers
+# Headers for XML files
 [[headers]]
-  for = "/sitemap-*.xml"
+  for = "/sitemap-dynamic-*.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=utf-8"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/sitemap*.xml"
   [headers.values]
     Content-Type = "application/xml; charset=utf-8"
     Cache-Control = "public, max-age=3600"
