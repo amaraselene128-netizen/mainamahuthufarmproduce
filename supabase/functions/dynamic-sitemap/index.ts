@@ -40,56 +40,29 @@ Deno.serve(async (req) => {
         xml += `  <url>\n    <loc>${siteUrl}/shop/${shop.slug}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
       }
     }
-  } else if (type === "products") {
-    xml += `  <url>\n    <loc>${siteUrl}/products</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+  } else if (type === "products" || type === "services" || type === "events") {
+    const kind = type.slice(0, -1); // product | service | event
+    xml += `  <url>\n    <loc>${siteUrl}/${type}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
 
-    const { data: listings, error } = await supabase
-      .from("listings_public")
-      .select("id, updated_at, listing_type")
-      .eq("status", "available")
-      .eq("listing_type", "product")
-      .order("created_at", { ascending: false })
-      .limit(200);
-
-    if (!error && listings) {
+    // Paginate to include ALL listings (Supabase caps at 1000 per query)
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: listings, error } = await supabase
+        .from("listings_public")
+        .select("id, updated_at")
+        .eq("status", "available")
+        .eq("listing_type", kind)
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error || !listings || listings.length === 0) break;
       for (const item of listings) {
         const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
-        xml += `  <url>\n    <loc>${siteUrl}/products/${item.id}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+        xml += `  <url>\n    <loc>${siteUrl}/${type}/${item.id}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
       }
-    }
-  } else if (type === "services") {
-    xml += `  <url>\n    <loc>${siteUrl}/services</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
-
-    const { data: listings, error } = await supabase
-      .from("listings_public")
-      .select("id, updated_at")
-      .eq("status", "available")
-      .eq("listing_type", "service")
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (!error && listings) {
-      for (const item of listings) {
-        const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
-        xml += `  <url>\n    <loc>${siteUrl}/services/${item.id}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
-      }
-    }
-  } else if (type === "events") {
-    xml += `  <url>\n    <loc>${siteUrl}/events</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
-
-    const { data: listings, error } = await supabase
-      .from("listings_public")
-      .select("id, updated_at")
-      .eq("status", "available")
-      .eq("listing_type", "event")
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (!error && listings) {
-      for (const item of listings) {
-        const lastmod = item.updated_at ? item.updated_at.split("T")[0] : today;
-        xml += `  <url>\n    <loc>${siteUrl}/events/${item.id}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
-      }
+      if (listings.length < PAGE) break;
+      from += PAGE;
+      if (from >= 50000) break; // sitemap spec cap
     }
   } else if (type === "index") {
     // Return sitemap index
