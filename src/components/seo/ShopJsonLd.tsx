@@ -7,12 +7,14 @@ interface ShopJsonLdProps {
 }
 
 export function ShopJsonLd({ shop, listingsCount = 0 }: ShopJsonLdProps) {
+  const shopUrl = `https://sokoniarena.co.ke/shop/${shop.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
     name: shop.name,
+    alternateName: [shop.name, `${shop.name} Sokoni`, `${shop.name} on Sokoni Arena`],
     description: shop.description || `Shop on SokoniArena - ${shop.name}`,
-    url: `https://sokoniarena.co.ke/shop/${shop.slug}`,
+    url: shopUrl,
     image: shop.logo_url || shop.cover_image_url || undefined,
     address: shop.location
       ? {
@@ -44,26 +46,38 @@ export function ShopJsonLd({ shop, listingsCount = 0 }: ShopJsonLdProps) {
     ].filter(Boolean),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://sokoniarena.co.ke/" },
+      { "@type": "ListItem", position: 2, name: "Shops", item: "https://sokoniarena.co.ke/shops" },
+      { "@type": "ListItem", position: 3, name: shop.name, item: shopUrl },
+    ],
+  };
+
   return (
     <Helmet>
-      <title>{shop.name} | SokoniArena Kenya</title>
+      <title>{`${shop.name} | Sokoni Arena Kenya`}</title>
       <meta
         name="description"
         content={
           shop.description ||
-          `Discover ${shop.name} on SokoniArena - Kenya's trusted marketplace. Browse products, services & events.`
+          `${shop.name} on Sokoni Arena (Sokoni) — Kenya's trusted marketplace. Browse products, services & events from ${shop.name}.`
         }
       />
-      <link rel="canonical" href={`https://sokoniarena.co.ke/shop/${shop.slug}`} />
-      <meta property="og:title" content={`${shop.name} | SokoniArena`} />
+      <meta name="keywords" content={`${shop.name}, ${shop.name} sokoni, ${shop.name} kenya, sokoni shops, sokoni arena`} />
+      <link rel="canonical" href={shopUrl} />
+      <meta property="og:title" content={`${shop.name} | Sokoni Arena`} />
       <meta
         property="og:description"
-        content={shop.description || `Shop at ${shop.name} on SokoniArena Kenya`}
+        content={shop.description || `Shop at ${shop.name} on Sokoni Arena Kenya`}
       />
-      <meta property="og:url" content={`https://sokoniarena.co.ke/shop/${shop.slug}`} />
+      <meta property="og:url" content={shopUrl} />
       {shop.cover_image_url && <meta property="og:image" content={shop.cover_image_url} />}
       <meta property="og:type" content="business.business" />
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
     </Helmet>
   );
 }
