@@ -4,7 +4,7 @@ import { ArrowRight, Crown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShopCard } from "@/components/shops/ShopCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useShops } from "@/hooks/useShops";
+import { useFeaturedShops } from "@/hooks/useShops";
 import "@/styles/featured-shops.css";
 
 const marqueeText =
@@ -18,7 +18,7 @@ const marqueeText =
   "⭐ Join thousands of trusted sellers already thriving on SokoniArena! ";
 
 export const FeaturedShops = memo(function FeaturedShops() {
-  const { shops, isLoading } = useShops(8);
+  const { shops, isLoading } = useFeaturedShops(18);
 
   if (!isLoading && shops.length === 0) return null;
 
