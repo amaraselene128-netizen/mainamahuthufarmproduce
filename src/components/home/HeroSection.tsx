@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import {
   Smartphone, Cpu, Shirt, Home, Sparkles,
   Monitor, Dumbbell, Car, ShoppingBasket, Baby,
-  ChevronRight, Instagram, Facebook, Twitter, Youtube, Pinterest, Linkedin,
-  Tag, Store, HelpCircle
+  ChevronRight, Instagram, Facebook, Twitter, Youtube, 
+  Linkedin, Tag, Store, HelpCircle, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,7 +25,7 @@ const socialIcons = [
   { icon: Facebook, label: "Facebook", color: "hover:text-blue-600" },
   { icon: Twitter, label: "Twitter", color: "hover:text-sky-500" },
   { icon: Youtube, label: "YouTube", color: "hover:text-red-600" },
-  { icon: Pinterest, label: "Pinterest", color: "hover:text-red-500" },
+  { icon: MapPin, label: "Pinterest", color: "hover:text-red-500" }, // Using MapPin as fallback for Pinterest
   { icon: Linkedin, label: "LinkedIn", color: "hover:text-blue-700" },
 ];
 
