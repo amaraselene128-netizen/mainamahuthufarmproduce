@@ -94,7 +94,7 @@ export const FlashSales = memo(function FlashSales() {
     return () => clearInterval(t);
   }, []);
 
-  const visible = useMemo(() => shuffle(pool).slice(0, 30), [pool, shuffleTick]);
+  const visible = useMemo(() => shuffle(pool).slice(0, 50), [pool, shuffleTick]);
 
   if (!loading && visible.length === 0) return null;
 
@@ -129,7 +129,7 @@ export const FlashSales = memo(function FlashSales() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+          <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 sm:gap-3">
             {Array.from({ length: 20 }).map((_, i) => (
               <div key={i} className="space-y-1.5">
                 <Skeleton className="aspect-square rounded-lg" />
@@ -139,7 +139,7 @@ export const FlashSales = memo(function FlashSales() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+          <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 sm:gap-3">
             {visible.map((l) => {
               const img =
                 parseImages(l.images)?.[0] ||
