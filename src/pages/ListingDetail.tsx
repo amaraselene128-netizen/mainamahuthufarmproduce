@@ -111,7 +111,7 @@ export default function ListingDetail() {
       subcategory: (parsed as any).subcategory ?? null,
     });
     
-    const [{ data: profile }, { data: publicContact }, { data: shop }] = await Promise.all([
+    const [{ data: profile }, { data: publicContact }, { data: profileFull }, { data: shop }] = await Promise.all([
       supabase
         .from("profiles_public")
         .select("username, avatar_url, is_verified, created_at")
@@ -123,25 +123,30 @@ export default function ListingDetail() {
         .eq("user_id", data.user_id)
         .maybeSingle(),
       supabase
+        .from("profiles")
+        .select("username, full_name, phone, avatar_url, created_at")
+        .eq("user_id", data.user_id)
+        .maybeSingle(),
+      supabase
         .from("shops")
-        .select("name, phone, is_active")
+        .select("name, phone, whatsapp, is_active")
         .eq("user_id", data.user_id)
         .eq("is_active", true)
         .maybeSingle(),
     ]);
 
-    if (profile || shop) {
-      setSeller({
-        username: (shop as any)?.name || (profile as any)?.username || "Seller",
-        avatar_url: (profile as any)?.avatar_url ?? null,
-        is_verified: (profile as any)?.is_verified ?? null,
-        created_at: (profile as any)?.created_at || data.created_at || new Date().toISOString(),
-        phone: (shop as any)?.phone ?? (publicContact as any)?.phone ?? null,
-        whatsapp: (shop as any)?.phone ?? (publicContact as any)?.whatsapp ?? (publicContact as any)?.phone ?? null,
-      });
-    } else {
-      setSeller(null);
-    }
+    const fullPhone = (profileFull as any)?.phone ?? null;
+    const sellerPhone = (shop as any)?.phone ?? (publicContact as any)?.phone ?? fullPhone ?? null;
+    const sellerWhats = (shop as any)?.whatsapp ?? (shop as any)?.phone ?? (publicContact as any)?.whatsapp ?? (publicContact as any)?.phone ?? fullPhone ?? null;
+
+    setSeller({
+      username: (shop as any)?.name || (profile as any)?.username || (profileFull as any)?.username || (profileFull as any)?.full_name || "Seller",
+      avatar_url: (profile as any)?.avatar_url ?? (profileFull as any)?.avatar_url ?? null,
+      is_verified: (profile as any)?.is_verified ?? null,
+      created_at: (profile as any)?.created_at || (profileFull as any)?.created_at || data.created_at || new Date().toISOString(),
+      phone: sellerPhone,
+      whatsapp: sellerWhats,
+    });
 
     // Related listings — strictly CATEGORY based (never seller based).
     // 1) Same category + same listing_type
