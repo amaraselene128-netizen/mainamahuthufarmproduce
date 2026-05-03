@@ -1,204 +1,190 @@
-import { Link } from "react-router-dom";
+import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Smartphone, Cpu, Shirt, Home, Sparkles,
-  Monitor, Dumbbell, Car, ShoppingBasket, Baby,
-  ChevronRight, Instagram, Facebook, Twitter, Youtube, 
-  Linkedin, Tag, Store, HelpCircle, MapPin
+  ChevronRight, Smartphone, Cpu, Shirt, Home, Sparkles,
+  Monitor, Dumbbell, Car, ShoppingBasket, Baby, Grid3x3,
+  Percent, Store, Headphones, ArrowRight,
+  ShieldCheck, Truck, RotateCcw, Star, Flame,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
+import { useListings } from "@/hooks/useListings";
+import { useShops } from "@/hooks/useShops";
+import { parseImages, cn } from "@/lib/utils";
+
+/* 🔥 LAZY COMPONENTS */
+const Button = lazy(() => import("@/components/ui/button").then(m => ({ default: m.Button })));
+const OptimizedImage = lazy(() => import("@/components/ui/optimized-image").then(m => ({ default: m.OptimizedImage })));
+
+/* 🔹 SAFE NAVIGATION */
+function useSafeNavigate() {
+  try {
+    const nav = useNavigate();
+    return (url: string) => nav(url);
+  } catch {
+    return (url: string) => (window.location.href = url);
+  }
+}
+
+/* 🔹 DATA */
 const sidebarCategories = [
-  { icon: Smartphone, label: "Phones & Tablets" },
-  { icon: Cpu, label: "Electronics" },
-  { icon: Shirt, label: "Fashion" },
-  { icon: Home, label: "Home & Living" },
-  { icon: Sparkles, label: "Beauty & Health" },
-  { icon: Monitor, label: "Computing" },
-  { icon: Dumbbell, label: "Sports & Outdoors" },
-  { icon: Car, label: "Automotive" },
-  { icon: ShoppingBasket, label: "Groceries" },
-  { icon: Baby, label: "Baby & Kids" },
+  { icon: Smartphone, label: "Phones & Tablets", href: "/products?category=electronics" },
+  { icon: Cpu, label: "Electronics", href: "/products?category=electronics" },
+  { icon: Shirt, label: "Fashion", href: "/products?category=fashion" },
+  { icon: Home, label: "Home & Living", href: "/products?category=home" },
+  { icon: Sparkles, label: "Beauty & Health", href: "/products?category=beauty" },
+  { icon: Monitor, label: "Computing", href: "/products?category=computing" },
+  { icon: Dumbbell, label: "Sports & Outdoors", href: "/products?category=sports" },
+  { icon: Car, label: "Automotive", href: "/products?category=vehicles" },
+  { icon: ShoppingBasket, label: "Groceries", href: "/products?category=groceries" },
+  { icon: Baby, label: "Baby & Kids", href: "/products?category=baby" },
 ];
 
-const socialIcons = [
-  { icon: Instagram, label: "Instagram", color: "hover:text-pink-600" },
-  { icon: Facebook, label: "Facebook", color: "hover:text-blue-600" },
-  { icon: Twitter, label: "Twitter", color: "hover:text-sky-500" },
-  { icon: Youtube, label: "YouTube", color: "hover:text-red-600" },
-  { icon: MapPin, label: "Pinterest", color: "hover:text-red-500" }, // Using MapPin as fallback for Pinterest
-  { icon: Linkedin, label: "LinkedIn", color: "hover:text-blue-700" },
-];
+function shuffle<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
 
-export function HeroSection() {
+type BannerItem = {
+  id: string;
+  title: string;
+  price?: number | null;
+  listing_type: "product" | "service" | "event";
+  image: string;
+};
+
+/* 🔹 MINI BANNER */
+function MiniBanner({ label, items, accent, fallbackHref }: any) {
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setI(p => (p + 1) % items.length), 3000);
+    return () => clearInterval(t);
+  }, [items.length]);
+
+  const cur = items[i];
+  const path = cur?.listing_type === "product" ? "products" : "services";
+
   return (
-    <section className="bg-background min-h-screen">
-      <div className="container px-4 py-4">
-        
-        {/* Header / Logo Area */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-primary">SOKONIARENA</h1>
-        </div>
+    <Link
+      to={cur ? `/${path}/${cur.id}` : fallbackHref}
+      className={cn("h-[100px] rounded-xl text-white p-2 flex justify-between items-center", accent)}
+    >
+      <div>
+        <p className="text-[10px] font-bold">{label}</p>
+        <p className="text-xs line-clamp-2">{cur?.title}</p>
+      </div>
 
-        {/* All Categories Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold">All Categories</h2>
-            <Link to="/products" className="text-sm text-primary flex items-center gap-1">
-              View All Categories <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            {sidebarCategories.map((category) => (
-              <Link
-                key={category.label}
-                to={`/products?category=${category.label.toLowerCase()}`}
-                className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted transition-colors"
-              >
-                <category.icon className="h-5 w-5 text-primary" />
-                <span className="text-sm">{category.label}</span>
+      {cur && (
+        <img src={cur.image} className="w-14 h-14 rounded-full object-cover" />
+      )}
+    </Link>
+  );
+}
+
+/* 🔥 MAIN COMPONENT */
+export function HeroSection() {
+  const navigate = useSafeNavigate();
+  const { listings } = useListings({ limit: 50 });
+  const { shops } = useShops(10);
+
+  const banners = useMemo(() => {
+    return shuffle(
+      listings
+        .map((l: any) => {
+          const img = parseImages(l.images)?.[0];
+          if (!img) return null;
+          return {
+            id: l.id,
+            title: l.title,
+            price: l.price,
+            listing_type: l.listing_type,
+            image: img,
+          };
+        })
+        .filter(Boolean)
+    );
+  }, [listings]);
+
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setIndex(i => (i + 1) % banners.length), 3500);
+    return () => clearInterval(t);
+  }, [banners.length]);
+
+  const current = banners[index];
+
+  return (
+    <section className="border-b">
+      <div className="container py-4">
+        <div className="grid grid-cols-12 gap-3">
+
+          {/* 🔹 MOBILE CATEGORY STRIP */}
+          <div className="col-span-12 lg:hidden flex gap-2 overflow-x-auto">
+            {sidebarCategories.map(c => (
+              <Link key={c.label} to={c.href} className="px-3 py-2 bg-card border rounded-lg text-xs flex gap-1">
+                <c.icon className="h-4 w-4" />
+                {c.label}
               </Link>
             ))}
           </div>
-        </div>
 
-        {/* Mega Deals Hero Section */}
-        <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-6 mb-6 text-white">
-          <div className="mb-2">
-            <span className="inline-block bg-white/20 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full">
-              Mega Deals
-            </span>
-          </div>
-          
-          <h2 className="text-2xl font-bold mb-2">
-            Discover Amazing Deals in Your Community
-          </h2>
-          
-          <p className="text-sm text-white/90 mb-4 leading-relaxed">
-            Buy, sell, and connect with trusted sellers — quick, services and events, all on SOKONIARENA.
-          </p>
-          
-          <div className="flex gap-3">
-            <Button className="bg-white text-primary hover:bg-white/90 font-semibold">
-              Shop Now
-            </Button>
-            <Button 
-              variant="outline" 
-              className="bg-transparent text-white border-white hover:bg-white/10"
-              asChild
-            >
-              <Link to="/shops">Explore Shops</Link>
-            </Button>
-          </div>
-        </div>
+          {/* 🔹 DESKTOP SIDEBAR */}
+          <aside className="hidden lg:block col-span-3 border rounded-xl p-2">
+            {sidebarCategories.map(c => (
+              <Link key={c.label} to={c.href} className="flex justify-between py-2 text-sm">
+                <span className="flex gap-2">
+                  <c.icon className="h-4 w-4" />
+                  {c.label}
+                </span>
+                <ChevronRight />
+              </Link>
+            ))}
+          </aside>
 
-        {/* Info Cards Grid */}
-        <div className="grid grid-cols-1 gap-3 mb-6">
-          {/* Daily Deals */}
-          <Link 
-            to="/products?sort=deals"
-            className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all"
-          >
-            <div>
-              <h3 className="font-semibold text-base">Daily Deals</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">New deals every day</p>
-              <span className="text-primary text-xs font-medium inline-flex items-center gap-1 mt-1">
-                View All <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center">
-              <Tag className="h-6 w-6" />
-            </div>
-          </Link>
+          {/* 🔥 HERO */}
+          <div className="col-span-12 lg:col-span-6">
+            <div className="h-[260px] md:h-[420px] bg-green-600 text-white rounded-xl flex justify-between p-4">
 
-          {/* Become a Seller */}
-          <Link 
-            to="/dashboard"
-            className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all"
-          >
-            <div>
-              <h3 className="font-semibold text-base">Become a Seller</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Grow your business with us</p>
-              <span className="text-primary text-xs font-medium inline-flex items-center gap-1 mt-1">
-                Start Selling <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-accent/10 text-accent inline-flex items-center justify-center">
-              <Store className="h-6 w-6" />
-            </div>
-          </Link>
+              <div className="max-w-[55%]">
+                <h1 className="text-lg md:text-3xl font-bold">
+                  Discover Deals
+                </h1>
 
-          {/* Need Help */}
-          <Link 
-            to="/help"
-            className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all"
-          >
-            <div>
-              <h3 className="font-semibold text-base">Need Help?</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">We're here to help you</p>
-              <span className="text-primary text-xs font-medium inline-flex items-center gap-1 mt-1">
-                Contact Support <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-            <div className="h-12 w-12 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center">
-              <HelpCircle className="h-6 w-6" />
-            </div>
-          </Link>
-        </div>
-
-        {/* Featured Products Section */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Featured Products</h2>
-          
-          <div className="space-y-3">
-            {/* NEW PRODUCTS */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="bg-muted px-4 py-2 border-b border-border">
-                <h3 className="font-semibold text-sm">NEW PRODUCTS</h3>
-              </div>
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Small East African goat...</p>
-                  <p className="text-primary font-bold mt-1">KES 4,000</p>
+                <div className="flex gap-2 mt-3">
+                  <Suspense fallback={<div />}>
+                    <Button onClick={() => navigate("/products")}>
+                      Shop
+                    </Button>
+                  </Suspense>
                 </div>
-                <Button size="sm" variant="outline">View</Button>
               </div>
+
+              {current && (
+                <Suspense fallback={<div />}>
+                  <OptimizedImage
+                    src={current.image}
+                    className="w-[45%] object-contain"
+                  />
+                </Suspense>
+              )}
             </div>
 
-            {/* SERVICES & EVENTS */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="bg-muted px-4 py-2 border-b border-border">
-                <h3 className="font-semibold text-sm">SERVICES & EVENTS</h3>
-              </div>
-              <div className="p-4">
-                <p className="font-medium">Stuck in sales and marketing...</p>
-                <Button size="sm" variant="outline" className="mt-3">
-                  Learn More
-                </Button>
-              </div>
+            {/* MINI */}
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <MiniBanner label="Shops" items={banners} accent="bg-orange-500" fallbackHref="/shops" />
+              <MiniBanner label="Products" items={banners} accent="bg-green-500" fallbackHref="/products" />
+              <MiniBanner label="Services" items={banners} accent="bg-purple-500" fallbackHref="/services" />
             </div>
           </div>
-        </div>
 
-        {/* Social Media Section */}
-        <div className="pt-4 border-t border-border">
-          <h3 className="text-sm font-semibold text-center mb-3 text-muted-foreground">
-            Follow Us
-          </h3>
-          <div className="flex justify-center gap-4">
-            {socialIcons.map((social) => (
-              <Link
-                key={social.label}
-                to="#"
-                className={`p-2 rounded-full bg-muted text-muted-foreground transition-colors ${social.color}`}
-                aria-label={social.label}
-              >
-                <social.icon className="h-5 w-5" />
-              </Link>
-            ))}
-          </div>
-        </div>
+          {/* 🔹 RIGHT */}
+          <aside className="col-span-12 lg:col-span-3 grid grid-cols-3 lg:grid-cols-1 gap-2">
+            <Link className="border p-2 rounded-lg text-xs">Deals</Link>
+            <Link className="border p-2 rounded-lg text-xs">Sell</Link>
+            <Link className="border p-2 rounded-lg text-xs">Help</Link>
+          </aside>
 
+        </div>
       </div>
     </section>
   );
