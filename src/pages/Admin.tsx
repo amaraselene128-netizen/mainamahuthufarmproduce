@@ -16,6 +16,7 @@ import { SponsorRequestsManager } from "@/components/admin/SponsorRequestsManage
 import { ShopRequestsManager } from "@/components/admin/ShopRequestsManager";
 import { ShopPromotionsManager } from "@/components/admin/ShopPromotionsManager";
 import { FeaturedRequestsManager } from "@/components/admin/FeaturedRequestsManager";
+import { ShopFeaturedRequestsManager } from "@/components/admin/ShopFeaturedRequestsManager";
 import { AdminCreateShop } from "@/components/admin/AdminCreateShop";
 import { AdminShopEditor } from "@/components/admin/AdminShopEditor";
 import { AdminUserEditor } from "@/components/admin/AdminUserEditor";
@@ -165,6 +166,7 @@ export default function Admin() {
               <TabsTrigger value="featured">Featured</TabsTrigger>
               <TabsTrigger value="shop-requests"><Store className="h-4 w-4 mr-1" />Shop Requests</TabsTrigger>
               <TabsTrigger value="shop-promos"><Crown className="h-4 w-4 mr-1" />Shop Promos</TabsTrigger>
+              <TabsTrigger value="shop-featured"><Crown className="h-4 w-4 mr-1" />Featured Shops</TabsTrigger>
               <TabsTrigger value="shops"><Store className="h-4 w-4 mr-1" />Shops</TabsTrigger>
               <TabsTrigger value="shop-ads">Shop Ads</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
@@ -226,6 +228,7 @@ export default function Admin() {
             {activeTab === "featured" && <FeaturedRequestsManager />}
             {activeTab === "shop-requests" && <ShopRequestsManager />}
             {activeTab === "shop-promos" && <ShopPromotionsManager />}
+            {activeTab === "shop-featured" && <ShopFeaturedRequestsManager />}
             {activeTab === "shops" && <AdminShopEditor />}
             {activeTab === "shop-ads" && <ShopAdsManager isAdmin />}
 
