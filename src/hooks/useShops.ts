@@ -58,18 +58,41 @@ export function useShops(limit?: number) {
   return { shops, isLoading };
 }
 
+/** Featured shops: admin-approved via shop_featured_requests, surfaced through is_featured flag. */
+export function useFeaturedShops(limit: number = 18) {
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      const { data, error } = await supabase
+        .from("shops")
+        .select("*")
+        .eq("is_active", true)
+        .eq("is_featured", true)
+        .order("followers_count", { ascending: false })
+        .limit(limit);
+      if (!error && data) setShops(data as Shop[]);
+      setIsLoading(false);
+    };
+    fetchShops();
+  }, [limit]);
+
+  return { shops, isLoading };
+}
+
 export function usePromotedShops(limit: number = 10) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchShops = async () => {
-      // First try promoted shops, then fill with top shops by followers
+      // Only show shops that have been promoted (admin-approved)
       const { data, error } = await supabase
         .from("shops")
         .select("*")
         .eq("is_active", true)
-        .order("is_promoted", { ascending: false })
+        .eq("is_promoted", true)
         .order("followers_count", { ascending: false })
         .limit(limit);
       if (!error && data) setShops(data as Shop[]);

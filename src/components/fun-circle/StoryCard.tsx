@@ -75,7 +75,7 @@ export const StoryCard = memo(function StoryCard({ story, onReact, onDelete, onS
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="font-medium text-sm truncate">{story.profile?.username || "Unknown"}</p>
+              <p className="font-medium text-sm truncate">{story.profile?.username || "User"}</p>
               <p className="text-xs text-muted-foreground">{postedAt}</p>
             </div>
           </Link>

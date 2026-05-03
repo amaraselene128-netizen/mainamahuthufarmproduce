@@ -5,6 +5,7 @@ import { useMyShop } from "@/hooks/useShops";
 import { CreateShopForm } from "@/components/shops/CreateShopForm";
 import { ShopPromotionButton } from "@/components/dashboard/ShopPromotionButton";
 import { ShopListingsManager } from "@/components/dashboard/ShopListingsManager";
+import { FeaturedShopRequestButton } from "@/components/dashboard/FeaturedShopRequestButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -124,6 +125,7 @@ export function MyShopPanel() {
                 </Link>
               </Button>
               <ShopPromotionButton shopId={shop.id} shopName={shop.name} />
+              <FeaturedShopRequestButton shopId={shop.id} shopName={shop.name} />
               <Button variant="outline" onClick={() => setShowAds(!showAds)}>
                 <Megaphone className="h-4 w-4 mr-1" />
                 {showAds ? "Hide Listings" : "Manage Listings & Ads"}

@@ -276,10 +276,10 @@
     @apply bg-muted text-muted-foreground;
   }
 
-  /* Grid Layouts — 3 cols on mobile, more on larger screens */
+  /* Grid Layouts — 4 cols on mobile, more on larger screens */
   .listing-grid {
-    @apply grid gap-2 sm:gap-3 md:gap-4;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    @apply grid gap-1.5 sm:gap-3 md:gap-4;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   @media (min-width: 640px) {
