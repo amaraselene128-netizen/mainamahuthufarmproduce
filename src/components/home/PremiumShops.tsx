@@ -8,7 +8,7 @@ import { usePromotedShops } from "@/hooks/useShops";
 import "@/styles/featured-shops.css";
 
 export const PremiumShops = memo(function PremiumShops() {
-  const { shops, isLoading } = usePromotedShops(10);
+  const { shops, isLoading } = usePromotedShops(24);
 
   if (!isLoading && shops.length === 0) return null;
 
@@ -65,8 +65,8 @@ export const PremiumShops = memo(function PremiumShops() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {Array.from({ length: 5 }).map((_, i) => (
+          <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="h-24 rounded-xl" />
                 <Skeleton className="h-3 w-3/4 mx-auto" />
@@ -74,7 +74,7 @@ export const PremiumShops = memo(function PremiumShops() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
             {shops.map((shop) => (
               <div key={shop.id} className="featured-shop-card">
                 {/* Scrolling welcome banner */}
