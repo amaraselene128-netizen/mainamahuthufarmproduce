@@ -243,7 +243,7 @@ export function HeroSection() {
       <div className="container py-4 md:py-6">
         <div className="grid grid-cols-12 gap-4">
           {/* SIDEBAR — categories (hidden on mobile) */}
-          <aside className="hidden lg:block col-span-3 xl:col-span-3">
+          <aside className="block col-span-3">
             <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
               <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-semibold">
                 <Grid3x3 className="h-4 w-4" />
@@ -275,7 +275,7 @@ export function HeroSection() {
           </aside>
 
           {/* CENTER — hero banner */}
-          <div className="col-span-12 lg:col-span-6 xl:col-span-6 space-y-3">
+          <div className="col-span-6 space-y-3">
             <div className="relative h-[300px] sm:h-[380px] md:h-[440px] rounded-2xl overflow-hidden shadow-md
                             bg-[radial-gradient(circle_at_85%_50%,_hsl(var(--primary)/0.55),_transparent_60%),linear-gradient(135deg,_hsl(var(--primary))_0%,_hsl(142_70%_32%)_100%)]">
               {/* Decorative soft swirls */}
@@ -440,7 +440,7 @@ export function HeroSection() {
           </div>
 
           {/* RIGHT — small lively info cards */}
-          <aside className="col-span-12 lg:col-span-3 xl:col-span-3 grid grid-cols-3 lg:grid-cols-1 gap-3">
+          <aside className="col-span-3 grid grid-cols-1 gap-3">
             <Link
               to="/products?sort=deals"
               className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card to-primary/5 p-3 lg:p-4 flex items-center justify-between gap-2 hover:shadow-md hover:-translate-y-0.5 transition-all group"
