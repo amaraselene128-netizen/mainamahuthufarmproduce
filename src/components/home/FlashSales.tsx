@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Zap, ArrowRight } from "lucide-react";
+import { Zap, ArrowRight, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/untyped-client";
@@ -32,32 +32,10 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function useCountdown(hours = 8) {
-  const endRef = useRef(Date.now() + hours * 3600_000);
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  let diff = Math.max(0, endRef.current - now);
-  if (diff === 0) {
-    endRef.current = Date.now() + hours * 3600_000;
-    diff = endRef.current - Date.now();
-  }
-  const h = Math.floor(diff / 3600_000);
-  const m = Math.floor((diff % 3600_000) / 60_000);
-  const s = Math.floor((diff % 60_000) / 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return { h: pad(h), m: pad(m), s: pad(s) };
-}
-
 export const FlashSales = memo(function FlashSales() {
   const [pool, setPool] = useState<PromotedListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [shuffleTick, setShuffleTick] = useState(0);
-  const { h, m, s } = useCountdown(8);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,17 +110,15 @@ export const FlashSales = memo(function FlashSales() {
             <span className="text-sm text-muted-foreground">Limited time offers — Don't miss out!</span>
           </div>
 
+          {/* Animated Hot Deals Badge - replaces timer */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Ends in:</span>
-            <div className="flex items-center gap-1 font-mono">
-              {[h, m, s].map((v, i) => (
-                <span
-                  key={i}
-                  className="bg-foreground text-background text-sm font-bold px-2 py-1 rounded-md min-w-[34px] text-center"
-                >
-                  {v}
-                </span>
-              ))}
+            <div className="relative animate-pulse">
+              <div className="absolute inset-0 bg-red-500 rounded-full blur-md opacity-70 animate-ping"></div>
+              <div className="relative flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-orange-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg animate-bounce">
+                <Flame className="h-4 w-4 animate-pulse" />
+                <span>HOT DEALS</span>
+                <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full">🔥</span>
+              </div>
             </div>
             <Button variant="link" size="sm" asChild className="ml-2 hidden sm:inline-flex">
               <Link to="/products">
