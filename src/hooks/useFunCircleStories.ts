@@ -94,10 +94,14 @@ export function useFunCircleStories() {
       const storyIds = data.map(s => s.id);
 
       // Parallel fetch for profiles, reactions, and mentions
-      const [profilesResult, reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
+      const [profilesResult, profilesFullResult, reactionsResult, mentionsResult, allReactionsResult] = await Promise.all([
         supabase
           .from("profiles_public")
           .select("user_id, username, avatar_url")
+          .in("user_id", userIds),
+        supabase
+          .from("profiles")
+          .select("user_id, username, full_name, avatar_url")
           .in("user_id", userIds),
         user
           ? supabase
@@ -116,7 +120,22 @@ export function useFunCircleStories() {
           .in("story_id", storyIds),
       ]);
 
-      const profiles = profilesResult.data || [];
+      const profilesPublic = profilesResult.data || [];
+      const profilesFull = (profilesFullResult as any)?.data || [];
+      const profileById = new Map<string, { username: string; avatar_url: string | null }>();
+      for (const p of profilesFull as any[]) {
+        profileById.set(p.user_id, {
+          username: p.username || p.full_name || "User",
+          avatar_url: p.avatar_url ?? null,
+        });
+      }
+      for (const p of profilesPublic as any[]) {
+        const existing = profileById.get(p.user_id);
+        profileById.set(p.user_id, {
+          username: p.username || existing?.username || "User",
+          avatar_url: p.avatar_url ?? existing?.avatar_url ?? null,
+        });
+      }
       const userReactions = new Map<string, ReactionType>(
         (reactionsResult.data || []).map(r => [r.story_id, r.reaction_type as ReactionType])
       );
@@ -136,7 +155,7 @@ export function useFunCircleStories() {
           ...story,
           images: Array.isArray(story.images) ? story.images : [],
           reactions_count: reactionCountsByStory.get(story.id) || { ...defaultReactionCounts },
-          profile: profiles.find(p => p.user_id === story.user_id),
+          profile: profileById.get(story.user_id),
           user_reaction: userReactions.get(story.id) || null,
           mentions: mentionsByStory.get(story.id) || [],
         };
