@@ -129,3 +129,42 @@ GRANT EXECUTE ON FUNCTION public.record_view(uuid, text, text, text, text) TO au
 SELECT 'profiles_public rows:' AS check, count(*)::text AS value FROM public.profiles_public
 UNION ALL
 SELECT 'view_history exists:', 'yes' WHERE to_regclass('public.view_history') IS NOT NULL;
+
+-- ============================================================================
+-- Shop Featured Requests (admin-approved promotion to "Elite Storefronts" list)
+-- ============================================================================
+ALTER TABLE public.shops
+  ADD COLUMN IF NOT EXISTS is_featured boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS featured_until timestamptz,
+  ADD COLUMN IF NOT EXISTS whatsapp text;
+
+CREATE TABLE IF NOT EXISTS public.shop_featured_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  shop_id uuid NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+  duration_days integer NOT NULL DEFAULT 7,
+  status text NOT NULL DEFAULT 'pending',
+  admin_notes text,
+  requested_at timestamptz NOT NULL DEFAULT now(),
+  reviewed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_shop_featured_requests_shop ON public.shop_featured_requests(shop_id);
+CREATE INDEX IF NOT EXISTS idx_shop_featured_requests_user ON public.shop_featured_requests(user_id);
+ALTER TABLE public.shop_featured_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users insert own featured requests" ON public.shop_featured_requests;
+CREATE POLICY "Users insert own featured requests"
+  ON public.shop_featured_requests FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users view own or admins all featured requests" ON public.shop_featured_requests;
+CREATE POLICY "Users view own or admins all featured requests"
+  ON public.shop_featured_requests FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'::public.app_role));
+
+DROP POLICY IF EXISTS "Admins manage featured requests" ON public.shop_featured_requests;
+CREATE POLICY "Admins manage featured requests"
+  ON public.shop_featured_requests FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
