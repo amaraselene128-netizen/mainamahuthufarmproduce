@@ -40,28 +40,47 @@ export function useSellerContacts(userIds: string[]) {
     (async () => {
       const next: Record<string, SellerContact> = { ...initial };
 
-      const [{ data: shopRows }, { data: profileRows }] = await Promise.all([
+      const [{ data: shopRows }, { data: profileRows }, { data: profilesTable }] = await Promise.all([
         supabase
           .from("shops")
-          .select("user_id, name, phone, is_active")
+          .select("user_id, name, phone, whatsapp, is_active")
           .in("user_id", missing)
           .eq("is_active", true),
         supabase
           .from("seller_contacts_public")
           .select("user_id, username, phone, whatsapp")
           .in("user_id", missing),
+        supabase
+          .from("profiles")
+          .select("user_id, username, full_name, phone")
+          .in("user_id", missing),
       ]);
 
       if (cancelled) return;
 
-      for (const row of (profileRows as any[]) || []) {
+      // Fallback layer 1: profiles table (richest source for phone)
+      for (const row of (profilesTable as any[]) || []) {
         const phone = row.phone ?? null;
-        const whatsapp = row.whatsapp ?? row.phone ?? null;
+        if (!phone) continue;
+        const contact: SellerContact = {
+          user_id: row.user_id,
+          username: row.username ?? row.full_name ?? null,
+          phone,
+          whatsapp: phone,
+        };
+        cache.set(row.user_id, contact);
+        next[row.user_id] = contact;
+      }
+
+      // Layer 2: seller_contacts_public view (overrides if has explicit whatsapp)
+      for (const row of (profileRows as any[]) || []) {
+        const phone = row.phone ?? next[row.user_id]?.phone ?? null;
+        const whatsapp = row.whatsapp ?? row.phone ?? next[row.user_id]?.whatsapp ?? null;
         if (!phone && !whatsapp) continue;
 
         const contact: SellerContact = {
           user_id: row.user_id,
-          username: row.username ?? null,
+          username: row.username ?? next[row.user_id]?.username ?? null,
           phone,
           whatsapp,
         };
@@ -70,9 +89,10 @@ export function useSellerContacts(userIds: string[]) {
         next[row.user_id] = contact;
       }
 
+      // Layer 3: shop record (highest priority — shop's listed contact wins)
       for (const row of (shopRows as any[]) || []) {
-        const phone = row.phone ?? null;
-        const whatsapp = row.phone ?? null;
+        const phone = row.phone ?? next[row.user_id]?.phone ?? null;
+        const whatsapp = row.whatsapp ?? row.phone ?? next[row.user_id]?.whatsapp ?? null;
         if (!phone && !whatsapp) continue;
 
         const contact: SellerContact = {
