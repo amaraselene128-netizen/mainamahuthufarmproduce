@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db";
 
 export type Profile = {
   id: string;
@@ -38,15 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = async (uid: string) => {
     const [{ data: p }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
+      db.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      db.from("user_roles").select("role").eq("user_id", uid),
     ]);
     setProfile((p as unknown as Profile) ?? null);
     setIsAdmin(Boolean(roles?.some((r: { role: string }) => r.role === "admin")));
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = db.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (s?.user) {
         setTimeout(() => loadProfile(s.user.id), 0);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
       }
     });
-    supabase.auth.getSession().then(({ data }) => {
+    db.auth.getSession().then(({ data }) => {
       setSession(data.session);
       if (data.session?.user) loadProfile(data.session.user.id).finally(() => setLoading(false));
       else setLoading(false);
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     window.location.href = "/";
   };
 
