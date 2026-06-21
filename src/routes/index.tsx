@@ -194,7 +194,7 @@ function Stats() {
 function HowItWorks() {
   const steps = [
     { n: "01", title: "Create your account", desc: "Sign up in 60 seconds. Choose between Worker or Hiring Party — switch anytime from your dashboard." },
-    { n: "02", title: "Apply or post a task", desc: "Workers browse Bronze, Silver and Gold-tier jobs. Hiring parties post with budget, deadline and instructions." },
+    { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Hiring parties post with budget, deadline and instructions." },
     { n: "03", title: "Deliver & get reviewed", desc: "Submit proof — screenshots, files, URLs. Admin reviews and approves." },
     { n: "04", title: "Get paid on the 28th", desc: "Approved earnings settle to your wallet and pay out automatically on the 28th of each month." },
   ];
@@ -234,7 +234,7 @@ function WhyChooseUs() {
     { icon: Globe2, title: "Truly global", desc: "Workers in 100+ countries, jobs in 7+ categories, multilingual support." },
     { icon: Zap, title: "Lightning UX", desc: "Premium SaaS interface, real-time notifications, optimized for any device." },
     { icon: Briefcase, title: "Built for hiring parties", desc: "Post in minutes, get up to 20 verified workers per task, review and rate." },
-    { icon: Sparkles, title: "Referrals that reward", desc: "Bronze, Silver and Gold referral tiers with conversion analytics and monthly commissions." },
+    { icon: Sparkles, title: "Referrals that reward", desc: "Invite friends and earn monthly commissions with conversion analytics built in." },
   ];
   return (
     <section className="py-24 bg-muted/30">
@@ -285,7 +285,7 @@ function MarketWithUs() {
             </h2>
             <p className="mt-5 text-muted-foreground text-lg">
               Promote videos, websites, products, social handles and apps with a global workforce.
-              Submit your link, choose a tier, and watch the engagement roll in.
+              Submit your link and watch the engagement roll in.
             </p>
             <ul className="mt-6 space-y-3">
               {["Video links", "Website links", "Social media links", "Product links"].map((l) => (
