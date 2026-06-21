@@ -18,7 +18,7 @@ export const Route = createFileRoute("/auth/register")({
 function Register() {
   const [accountType, setAccountType] = useState<"worker" | "hiring">("worker");
   return (
-    <AuthShell title="Create your account" sub="Choose Worker or Hiring Party — switch anytime from your dashboard.">
+    <AuthShell title="Create your account" sub="Choose Worker or Client — switch anytime from your dashboard.">
       <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-xl mb-5">
         {(["worker", "hiring"] as const).map((t) => (
           <button
@@ -29,7 +29,7 @@ function Register() {
               accountType === t ? "bg-card shadow-card text-foreground" : "text-muted-foreground"
             }`}
           >
-            {t === "worker" ? "Worker" : "Hiring Party"}
+            {t === "worker" ? "Worker" : "Client"}
           </button>
         ))}
       </div>

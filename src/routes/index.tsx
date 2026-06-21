@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Join 1,000,000+ workers across 100+ countries earning from microtasks, social engagement, and freelance jobs on EGRATASKS." },
       { name: "keywords", content: "egratasks, freelance jobs, online jobs, remote jobs, microtasks, earn money online, social media marketing, freelancer platform, hire freelancers, task marketplace, work from home jobs" },
       { property: "og:title", content: "EGRATASKS — Earn from microtasks worldwide" },
-      { property: "og:description", content: "A premium marketplace connecting workers and hiring parties across 100+ countries." },
+      { property: "og:description", content: "A premium marketplace connecting workers and clients across 100+ countries." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -97,7 +97,7 @@ function Hero() {
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
             EGRATASKS is the premium global marketplace for micro-tasks, social engagement, and
-            freelance projects — connecting hiring parties with verified workers in seconds.
+            freelance projects — connecting clients with verified workers in seconds.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -193,8 +193,8 @@ function Stats() {
 /* ---------------- HOW IT WORKS ---------------- */
 function HowItWorks() {
   const steps = [
-    { n: "01", title: "Create your account", desc: "Sign up in 60 seconds. Choose between Worker or Hiring Party — switch anytime from your dashboard." },
-    { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Hiring parties post with budget, deadline and instructions." },
+    { n: "01", title: "Create your account", desc: "Sign up in 60 seconds. Choose between Worker or Client — switch anytime from your dashboard." },
+    { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Clients post with budget, deadline and instructions." },
     { n: "03", title: "Deliver & get reviewed", desc: "Submit proof — screenshots, files, URLs. Admin reviews and approves." },
     { n: "04", title: "Get paid on the 28th", desc: "Approved earnings settle to your wallet and pay out automatically on the 28th of each month." },
   ];
@@ -233,7 +233,7 @@ function WhyChooseUs() {
     { icon: Wallet, title: "Predictable payouts", desc: "Settle every month on the 28th to PayPal — Stripe, Payoneer, Wise and M-Pesa coming next." },
     { icon: Globe2, title: "Truly global", desc: "Workers in 100+ countries, jobs in 7+ categories, multilingual support." },
     { icon: Zap, title: "Lightning UX", desc: "Premium SaaS interface, real-time notifications, optimized for any device." },
-    { icon: Briefcase, title: "Built for hiring parties", desc: "Post in minutes, get up to 20 verified workers per task, review and rate." },
+    { icon: Briefcase, title: "Built for clients", desc: "Post in minutes, get up to 20 verified workers per task, review and rate." },
     { icon: Sparkles, title: "Referrals that reward", desc: "Invite friends and earn monthly commissions with conversion analytics built in." },
   ];
   return (
@@ -363,13 +363,13 @@ function Categories() {
 function Testimonials() {
   const quotes = [
     { quote: "I earned my first $300 in two weeks. The interface feels like a luxury app, not a task board.", name: "Amara O.", role: "Worker · Nigeria" },
-    { quote: "We launched a TikTok campaign and got 14,000 verified engagements in 48 hours.", name: "Diego R.", role: "Hiring Party · Mexico" },
+    { quote: "We launched a TikTok campaign and got 14,000 verified engagements in 48 hours.", name: "Diego R.", role: "Client · Mexico" },
     { quote: "Finally a marketplace that pays on time. The 28th payout is sacred — and it works.", name: "Priya S.", role: "Worker · India" },
   ];
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader eyebrow="Loved globally" title="Stories from our community" sub="Real workers, real hiring parties, real outcomes." />
+        <SectionHeader eyebrow="Loved globally" title="Stories from our community" sub="Real workers, real clients, real outcomes." />
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {quotes.map((q, i) => (
             <motion.figure
@@ -408,7 +408,7 @@ function FAQ() {
     { q: "Is registration available worldwide?", a: "EGRATASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
     { q: "How many workers can join one task?", a: "Each task accepts up to 20 workers on a first-come-first-served basis. Once full, the task is marked TAKEN." },
     { q: "What stops fake submissions?", a: "Our AI fraud engine combines duplicate-detection, screenshot similarity, device fingerprinting, and risk scoring (Low → Critical) with admin review." },
-    { q: "Can I switch between Worker and Hiring Party?", a: "Yes — switch account modes anytime from your dashboard settings." },
+    { q: "Can I switch between Worker and Client?", a: "Yes — switch account modes anytime from your dashboard settings." },
   ];
   const [open, setOpen] = useState<number | null>(0);
   return (
@@ -462,7 +462,7 @@ function CTA() {
               Your next paycheck starts today.
             </h2>
             <p className="mt-4 text-secondary-foreground/85 max-w-xl mx-auto">
-              Join a million-strong community of workers and hiring parties on the world's most premium task marketplace.
+              Join a million-strong community of workers and clients on the world's most premium task marketplace.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
