@@ -194,7 +194,7 @@ function Stats() {
 function HowItWorks() {
   const steps = [
     { n: "01", title: "Create your account", desc: "Sign up in 60 seconds. Choose between Worker or Client — switch anytime from your dashboard." },
-    { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Hiring parties post with budget, deadline and instructions." },
+    { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Clients post with budget, deadline and instructions." },
     { n: "03", title: "Deliver & get reviewed", desc: "Submit proof — screenshots, files, URLs. Admin reviews and approves." },
     { n: "04", title: "Get paid on the 28th", desc: "Approved earnings settle to your wallet and pay out automatically on the 28th of each month." },
   ];
