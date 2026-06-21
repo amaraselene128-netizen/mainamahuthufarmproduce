@@ -13,10 +13,14 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardWorkerRouteImport } from './routes/dashboard.worker'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
+import { Route as DashboardWorkerRejectedRouteImport } from './routes/dashboard.worker.rejected'
+import { Route as DashboardWorkerCompletedRouteImport } from './routes/dashboard.worker.completed'
+import { Route as DashboardWorkerAppliedRouteImport } from './routes/dashboard.worker.applied'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -36,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardWorkerRoute = DashboardWorkerRouteImport.update({
+  id: '/worker',
+  path: '/worker',
   getParentRoute: () => DashboardRoute,
 } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
@@ -58,6 +67,22 @@ const AuthForgotRoute = AuthForgotRouteImport.update({
   path: '/auth/forgot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardWorkerRejectedRoute = DashboardWorkerRejectedRouteImport.update({
+  id: '/rejected',
+  path: '/rejected',
+  getParentRoute: () => DashboardWorkerRoute,
+} as any)
+const DashboardWorkerCompletedRoute =
+  DashboardWorkerCompletedRouteImport.update({
+    id: '/completed',
+    path: '/completed',
+    getParentRoute: () => DashboardWorkerRoute,
+  } as any)
+const DashboardWorkerAppliedRoute = DashboardWorkerAppliedRouteImport.update({
+  id: '/applied',
+  path: '/applied',
+  getParentRoute: () => DashboardWorkerRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,7 +92,11 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/worker/applied': typeof DashboardWorkerAppliedRoute
+  '/dashboard/worker/completed': typeof DashboardWorkerCompletedRoute
+  '/dashboard/worker/rejected': typeof DashboardWorkerRejectedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,7 +105,11 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/worker/applied': typeof DashboardWorkerAppliedRoute
+  '/dashboard/worker/completed': typeof DashboardWorkerCompletedRoute
+  '/dashboard/worker/rejected': typeof DashboardWorkerRejectedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,7 +120,11 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/worker/applied': typeof DashboardWorkerAppliedRoute
+  '/dashboard/worker/completed': typeof DashboardWorkerCompletedRoute
+  '/dashboard/worker/rejected': typeof DashboardWorkerRejectedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,7 +136,11 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/dashboard/worker'
     | '/dashboard/'
+    | '/dashboard/worker/applied'
+    | '/dashboard/worker/completed'
+    | '/dashboard/worker/rejected'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,7 +149,11 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/dashboard/worker'
     | '/dashboard'
+    | '/dashboard/worker/applied'
+    | '/dashboard/worker/completed'
+    | '/dashboard/worker/rejected'
   id:
     | '__root__'
     | '/'
@@ -118,7 +163,11 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/dashboard/worker'
     | '/dashboard/'
+    | '/dashboard/worker/applied'
+    | '/dashboard/worker/completed'
+    | '/dashboard/worker/rejected'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -161,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/worker': {
+      id: '/dashboard/worker'
+      path: '/worker'
+      fullPath: '/dashboard/worker'
+      preLoaderRoute: typeof DashboardWorkerRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/auth/reset-password': {
       id: '/auth/reset-password'
       path: '/auth/reset-password'
@@ -189,14 +245,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/worker/rejected': {
+      id: '/dashboard/worker/rejected'
+      path: '/rejected'
+      fullPath: '/dashboard/worker/rejected'
+      preLoaderRoute: typeof DashboardWorkerRejectedRouteImport
+      parentRoute: typeof DashboardWorkerRoute
+    }
+    '/dashboard/worker/completed': {
+      id: '/dashboard/worker/completed'
+      path: '/completed'
+      fullPath: '/dashboard/worker/completed'
+      preLoaderRoute: typeof DashboardWorkerCompletedRouteImport
+      parentRoute: typeof DashboardWorkerRoute
+    }
+    '/dashboard/worker/applied': {
+      id: '/dashboard/worker/applied'
+      path: '/applied'
+      fullPath: '/dashboard/worker/applied'
+      preLoaderRoute: typeof DashboardWorkerAppliedRouteImport
+      parentRoute: typeof DashboardWorkerRoute
+    }
   }
 }
 
+interface DashboardWorkerRouteChildren {
+  DashboardWorkerAppliedRoute: typeof DashboardWorkerAppliedRoute
+  DashboardWorkerCompletedRoute: typeof DashboardWorkerCompletedRoute
+  DashboardWorkerRejectedRoute: typeof DashboardWorkerRejectedRoute
+}
+
+const DashboardWorkerRouteChildren: DashboardWorkerRouteChildren = {
+  DashboardWorkerAppliedRoute: DashboardWorkerAppliedRoute,
+  DashboardWorkerCompletedRoute: DashboardWorkerCompletedRoute,
+  DashboardWorkerRejectedRoute: DashboardWorkerRejectedRoute,
+}
+
+const DashboardWorkerRouteWithChildren = DashboardWorkerRoute._addFileChildren(
+  DashboardWorkerRouteChildren,
+)
+
 interface DashboardRouteChildren {
+  DashboardWorkerRoute: typeof DashboardWorkerRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardWorkerRoute: DashboardWorkerRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
