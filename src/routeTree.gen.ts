@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as DashboardWorkerRouteImport } from './routes/dashboard.worker'
 import { Route as DashboardWalletRouteImport } from './routes/dashboard.wallet'
 import { Route as DashboardSupportRouteImport } from './routes/dashboard.support'
@@ -26,6 +28,13 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-passw
 import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
+import { Route as AdminWithdrawalsRouteImport } from './routes/admin.withdrawals'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTasksRouteImport } from './routes/admin.tasks'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
+import { Route as AdminReferralsRouteImport } from './routes/admin.referrals'
+import { Route as AdminFraudRouteImport } from './routes/admin.fraud'
+import { Route as AdminCountriesRouteImport } from './routes/admin.countries'
 import { Route as DashboardWorkerRejectedRouteImport } from './routes/dashboard.worker.rejected'
 import { Route as DashboardWorkerCompletedRouteImport } from './routes/dashboard.worker.completed'
 import { Route as DashboardWorkerAppliedRouteImport } from './routes/dashboard.worker.applied'
@@ -44,6 +53,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -53,6 +67,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DashboardRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const DashboardWorkerRoute = DashboardWorkerRouteImport.update({
   id: '/worker',
@@ -119,6 +138,41 @@ const AuthForgotRoute = AuthForgotRouteImport.update({
   path: '/auth/forgot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWithdrawalsRoute = AdminWithdrawalsRouteImport.update({
+  id: '/withdrawals',
+  path: '/withdrawals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTasksRoute = AdminTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReferralsRoute = AdminReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFraudRoute = AdminFraudRouteImport.update({
+  id: '/fraud',
+  path: '/fraud',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCountriesRoute = AdminCountriesRouteImport.update({
+  id: '/countries',
+  path: '/countries',
+  getParentRoute: () => AdminRoute,
+} as any)
 const DashboardWorkerRejectedRoute = DashboardWorkerRejectedRouteImport.update({
   id: '/rejected',
   path: '/rejected',
@@ -159,8 +213,16 @@ const DashboardHiringIdRoute = DashboardHiringIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/countries': typeof AdminCountriesRoute
+  '/admin/fraud': typeof AdminFraudRoute
+  '/admin/referrals': typeof AdminReferralsRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/admin/tasks': typeof AdminTasksRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -174,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
   '/dashboard/hiring/analytics': typeof DashboardHiringAnalyticsRoute
@@ -186,6 +249,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/countries': typeof AdminCountriesRoute
+  '/admin/fraud': typeof AdminFraudRoute
+  '/admin/referrals': typeof AdminReferralsRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/admin/tasks': typeof AdminTasksRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -199,6 +269,7 @@ export interface FileRoutesByTo {
   '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
+  '/admin': typeof AdminIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
   '/dashboard/hiring/analytics': typeof DashboardHiringAnalyticsRoute
@@ -211,8 +282,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/countries': typeof AdminCountriesRoute
+  '/admin/fraud': typeof AdminFraudRoute
+  '/admin/referrals': typeof AdminReferralsRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/admin/tasks': typeof AdminTasksRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/withdrawals': typeof AdminWithdrawalsRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -226,6 +305,7 @@ export interface FileRoutesById {
   '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
   '/dashboard/hiring/analytics': typeof DashboardHiringAnalyticsRoute
@@ -239,8 +319,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/dashboard'
     | '/sitemap.xml'
+    | '/admin/countries'
+    | '/admin/fraud'
+    | '/admin/referrals'
+    | '/admin/support'
+    | '/admin/tasks'
+    | '/admin/users'
+    | '/admin/withdrawals'
     | '/auth/forgot'
     | '/auth/login'
     | '/auth/register'
@@ -254,6 +342,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/wallet'
     | '/dashboard/worker'
+    | '/admin/'
     | '/dashboard/'
     | '/dashboard/hiring/$id'
     | '/dashboard/hiring/analytics'
@@ -266,6 +355,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/sitemap.xml'
+    | '/admin/countries'
+    | '/admin/fraud'
+    | '/admin/referrals'
+    | '/admin/support'
+    | '/admin/tasks'
+    | '/admin/users'
+    | '/admin/withdrawals'
     | '/auth/forgot'
     | '/auth/login'
     | '/auth/register'
@@ -279,6 +375,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/wallet'
     | '/dashboard/worker'
+    | '/admin'
     | '/dashboard'
     | '/dashboard/hiring/$id'
     | '/dashboard/hiring/analytics'
@@ -290,8 +387,16 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/dashboard'
     | '/sitemap.xml'
+    | '/admin/countries'
+    | '/admin/fraud'
+    | '/admin/referrals'
+    | '/admin/support'
+    | '/admin/tasks'
+    | '/admin/users'
+    | '/admin/withdrawals'
     | '/auth/forgot'
     | '/auth/login'
     | '/auth/register'
@@ -305,6 +410,7 @@ export interface FileRouteTypes {
     | '/dashboard/support'
     | '/dashboard/wallet'
     | '/dashboard/worker'
+    | '/admin/'
     | '/dashboard/'
     | '/dashboard/hiring/$id'
     | '/dashboard/hiring/analytics'
@@ -317,6 +423,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AuthForgotRoute: typeof AuthForgotRoute
@@ -341,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -354,6 +468,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/dashboard/worker': {
       id: '/dashboard/worker'
@@ -446,6 +567,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/withdrawals': {
+      id: '/admin/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AdminWithdrawalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tasks': {
+      id: '/admin/tasks'
+      path: '/tasks'
+      fullPath: '/admin/tasks'
+      preLoaderRoute: typeof AdminTasksRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/referrals': {
+      id: '/admin/referrals'
+      path: '/referrals'
+      fullPath: '/admin/referrals'
+      preLoaderRoute: typeof AdminReferralsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/fraud': {
+      id: '/admin/fraud'
+      path: '/fraud'
+      fullPath: '/admin/fraud'
+      preLoaderRoute: typeof AdminFraudRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/countries': {
+      id: '/admin/countries'
+      path: '/countries'
+      fullPath: '/admin/countries'
+      preLoaderRoute: typeof AdminCountriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/dashboard/worker/rejected': {
       id: '/dashboard/worker/rejected'
       path: '/rejected'
@@ -497,6 +667,30 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminCountriesRoute: typeof AdminCountriesRoute
+  AdminFraudRoute: typeof AdminFraudRoute
+  AdminReferralsRoute: typeof AdminReferralsRoute
+  AdminSupportRoute: typeof AdminSupportRoute
+  AdminTasksRoute: typeof AdminTasksRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminWithdrawalsRoute: typeof AdminWithdrawalsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCountriesRoute: AdminCountriesRoute,
+  AdminFraudRoute: AdminFraudRoute,
+  AdminReferralsRoute: AdminReferralsRoute,
+  AdminSupportRoute: AdminSupportRoute,
+  AdminTasksRoute: AdminTasksRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminWithdrawalsRoute: AdminWithdrawalsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface DashboardHiringRouteChildren {
   DashboardHiringIdRoute: typeof DashboardHiringIdRoute
@@ -564,6 +758,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AuthForgotRoute: AuthForgotRoute,
