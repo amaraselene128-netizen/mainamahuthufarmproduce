@@ -6,9 +6,9 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       <img
         src={logo.url}
         alt="EGRATASKS"
-        width={compact ? 32 : 480}
-        height={compact ? 32 : 120}
-        className={compact ? "size-8 object-contain" : "h-[120px] w-auto object-contain"}
+        width={compact ? 32 : 720}
+        height={compact ? 32 : 180}
+        className={compact ? "size-8 object-contain" : "h-[180px] w-auto object-contain"}
         loading="eager"
         decoding="async"
       />
