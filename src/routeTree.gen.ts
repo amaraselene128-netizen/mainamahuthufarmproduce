@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardWorkerRouteImport } from './routes/dashboard.worker'
+import { Route as DashboardHiringRouteImport } from './routes/dashboard.hiring'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
@@ -21,6 +22,10 @@ import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as DashboardWorkerRejectedRouteImport } from './routes/dashboard.worker.rejected'
 import { Route as DashboardWorkerCompletedRouteImport } from './routes/dashboard.worker.completed'
 import { Route as DashboardWorkerAppliedRouteImport } from './routes/dashboard.worker.applied'
+import { Route as DashboardHiringReviewsRouteImport } from './routes/dashboard.hiring.reviews'
+import { Route as DashboardHiringNewRouteImport } from './routes/dashboard.hiring.new'
+import { Route as DashboardHiringAnalyticsRouteImport } from './routes/dashboard.hiring.analytics'
+import { Route as DashboardHiringIdRouteImport } from './routes/dashboard.hiring.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -45,6 +50,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 const DashboardWorkerRoute = DashboardWorkerRouteImport.update({
   id: '/worker',
   path: '/worker',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardHiringRoute = DashboardHiringRouteImport.update({
+  id: '/hiring',
+  path: '/hiring',
   getParentRoute: () => DashboardRoute,
 } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
@@ -83,6 +93,27 @@ const DashboardWorkerAppliedRoute = DashboardWorkerAppliedRouteImport.update({
   path: '/applied',
   getParentRoute: () => DashboardWorkerRoute,
 } as any)
+const DashboardHiringReviewsRoute = DashboardHiringReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => DashboardHiringRoute,
+} as any)
+const DashboardHiringNewRoute = DashboardHiringNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => DashboardHiringRoute,
+} as any)
+const DashboardHiringAnalyticsRoute =
+  DashboardHiringAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => DashboardHiringRoute,
+  } as any)
+const DashboardHiringIdRoute = DashboardHiringIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DashboardHiringRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -92,8 +123,13 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/dashboard/hiring': typeof DashboardHiringRouteWithChildren
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
+  '/dashboard/hiring/analytics': typeof DashboardHiringAnalyticsRoute
+  '/dashboard/hiring/new': typeof DashboardHiringNewRoute
+  '/dashboard/hiring/reviews': typeof DashboardHiringReviewsRoute
   '/dashboard/worker/applied': typeof DashboardWorkerAppliedRoute
   '/dashboard/worker/completed': typeof DashboardWorkerCompletedRoute
   '/dashboard/worker/rejected': typeof DashboardWorkerRejectedRoute
@@ -105,8 +141,13 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/dashboard/hiring': typeof DashboardHiringRouteWithChildren
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
+  '/dashboard/hiring/analytics': typeof DashboardHiringAnalyticsRoute
+  '/dashboard/hiring/new': typeof DashboardHiringNewRoute
+  '/dashboard/hiring/reviews': typeof DashboardHiringReviewsRoute
   '/dashboard/worker/applied': typeof DashboardWorkerAppliedRoute
   '/dashboard/worker/completed': typeof DashboardWorkerCompletedRoute
   '/dashboard/worker/rejected': typeof DashboardWorkerRejectedRoute
@@ -120,8 +161,13 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/dashboard/hiring': typeof DashboardHiringRouteWithChildren
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
+  '/dashboard/hiring/analytics': typeof DashboardHiringAnalyticsRoute
+  '/dashboard/hiring/new': typeof DashboardHiringNewRoute
+  '/dashboard/hiring/reviews': typeof DashboardHiringReviewsRoute
   '/dashboard/worker/applied': typeof DashboardWorkerAppliedRoute
   '/dashboard/worker/completed': typeof DashboardWorkerCompletedRoute
   '/dashboard/worker/rejected': typeof DashboardWorkerRejectedRoute
@@ -136,8 +182,13 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/dashboard/hiring'
     | '/dashboard/worker'
     | '/dashboard/'
+    | '/dashboard/hiring/$id'
+    | '/dashboard/hiring/analytics'
+    | '/dashboard/hiring/new'
+    | '/dashboard/hiring/reviews'
     | '/dashboard/worker/applied'
     | '/dashboard/worker/completed'
     | '/dashboard/worker/rejected'
@@ -149,8 +200,13 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/dashboard/hiring'
     | '/dashboard/worker'
     | '/dashboard'
+    | '/dashboard/hiring/$id'
+    | '/dashboard/hiring/analytics'
+    | '/dashboard/hiring/new'
+    | '/dashboard/hiring/reviews'
     | '/dashboard/worker/applied'
     | '/dashboard/worker/completed'
     | '/dashboard/worker/rejected'
@@ -163,8 +219,13 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/reset-password'
+    | '/dashboard/hiring'
     | '/dashboard/worker'
     | '/dashboard/'
+    | '/dashboard/hiring/$id'
+    | '/dashboard/hiring/analytics'
+    | '/dashboard/hiring/new'
+    | '/dashboard/hiring/reviews'
     | '/dashboard/worker/applied'
     | '/dashboard/worker/completed'
     | '/dashboard/worker/rejected'
@@ -217,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardWorkerRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/hiring': {
+      id: '/dashboard/hiring'
+      path: '/hiring'
+      fullPath: '/dashboard/hiring'
+      preLoaderRoute: typeof DashboardHiringRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/auth/reset-password': {
       id: '/auth/reset-password'
       path: '/auth/reset-password'
@@ -266,8 +334,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardWorkerAppliedRouteImport
       parentRoute: typeof DashboardWorkerRoute
     }
+    '/dashboard/hiring/reviews': {
+      id: '/dashboard/hiring/reviews'
+      path: '/reviews'
+      fullPath: '/dashboard/hiring/reviews'
+      preLoaderRoute: typeof DashboardHiringReviewsRouteImport
+      parentRoute: typeof DashboardHiringRoute
+    }
+    '/dashboard/hiring/new': {
+      id: '/dashboard/hiring/new'
+      path: '/new'
+      fullPath: '/dashboard/hiring/new'
+      preLoaderRoute: typeof DashboardHiringNewRouteImport
+      parentRoute: typeof DashboardHiringRoute
+    }
+    '/dashboard/hiring/analytics': {
+      id: '/dashboard/hiring/analytics'
+      path: '/analytics'
+      fullPath: '/dashboard/hiring/analytics'
+      preLoaderRoute: typeof DashboardHiringAnalyticsRouteImport
+      parentRoute: typeof DashboardHiringRoute
+    }
+    '/dashboard/hiring/$id': {
+      id: '/dashboard/hiring/$id'
+      path: '/$id'
+      fullPath: '/dashboard/hiring/$id'
+      preLoaderRoute: typeof DashboardHiringIdRouteImport
+      parentRoute: typeof DashboardHiringRoute
+    }
   }
 }
+
+interface DashboardHiringRouteChildren {
+  DashboardHiringIdRoute: typeof DashboardHiringIdRoute
+  DashboardHiringAnalyticsRoute: typeof DashboardHiringAnalyticsRoute
+  DashboardHiringNewRoute: typeof DashboardHiringNewRoute
+  DashboardHiringReviewsRoute: typeof DashboardHiringReviewsRoute
+}
+
+const DashboardHiringRouteChildren: DashboardHiringRouteChildren = {
+  DashboardHiringIdRoute: DashboardHiringIdRoute,
+  DashboardHiringAnalyticsRoute: DashboardHiringAnalyticsRoute,
+  DashboardHiringNewRoute: DashboardHiringNewRoute,
+  DashboardHiringReviewsRoute: DashboardHiringReviewsRoute,
+}
+
+const DashboardHiringRouteWithChildren = DashboardHiringRoute._addFileChildren(
+  DashboardHiringRouteChildren,
+)
 
 interface DashboardWorkerRouteChildren {
   DashboardWorkerAppliedRoute: typeof DashboardWorkerAppliedRoute
@@ -286,11 +400,13 @@ const DashboardWorkerRouteWithChildren = DashboardWorkerRoute._addFileChildren(
 )
 
 interface DashboardRouteChildren {
+  DashboardHiringRoute: typeof DashboardHiringRouteWithChildren
   DashboardWorkerRoute: typeof DashboardWorkerRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardHiringRoute: DashboardHiringRouteWithChildren,
   DashboardWorkerRoute: DashboardWorkerRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
 }
