@@ -15,7 +15,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardWorkerRouteImport } from './routes/dashboard.worker'
 import { Route as DashboardWalletRouteImport } from './routes/dashboard.wallet'
+import { Route as DashboardSupportRouteImport } from './routes/dashboard.support'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardReferralsRouteImport } from './routes/dashboard.referrals'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
 import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
@@ -62,9 +64,19 @@ const DashboardWalletRoute = DashboardWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardSupportRoute = DashboardSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReferralsRoute = DashboardReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProfileRoute = DashboardProfileRouteImport.update({
@@ -157,7 +169,9 @@ export interface FileRoutesByFullPath {
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/referrals': typeof DashboardReferralsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
@@ -180,7 +194,9 @@ export interface FileRoutesByTo {
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/referrals': typeof DashboardReferralsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
@@ -205,7 +221,9 @@ export interface FileRoutesById {
   '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/notifications': typeof DashboardNotificationsRoute
   '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/referrals': typeof DashboardReferralsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/support': typeof DashboardSupportRoute
   '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
@@ -231,7 +249,9 @@ export interface FileRouteTypes {
     | '/dashboard/messages'
     | '/dashboard/notifications'
     | '/dashboard/profile'
+    | '/dashboard/referrals'
     | '/dashboard/settings'
+    | '/dashboard/support'
     | '/dashboard/wallet'
     | '/dashboard/worker'
     | '/dashboard/'
@@ -254,7 +274,9 @@ export interface FileRouteTypes {
     | '/dashboard/messages'
     | '/dashboard/notifications'
     | '/dashboard/profile'
+    | '/dashboard/referrals'
     | '/dashboard/settings'
+    | '/dashboard/support'
     | '/dashboard/wallet'
     | '/dashboard/worker'
     | '/dashboard'
@@ -278,7 +300,9 @@ export interface FileRouteTypes {
     | '/dashboard/messages'
     | '/dashboard/notifications'
     | '/dashboard/profile'
+    | '/dashboard/referrals'
     | '/dashboard/settings'
+    | '/dashboard/support'
     | '/dashboard/wallet'
     | '/dashboard/worker'
     | '/dashboard/'
@@ -345,11 +369,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardWalletRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/support': {
+      id: '/dashboard/support'
+      path: '/support'
+      fullPath: '/dashboard/support'
+      preLoaderRoute: typeof DashboardSupportRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/settings': {
       id: '/dashboard/settings'
       path: '/settings'
       fullPath: '/dashboard/settings'
       preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/referrals': {
+      id: '/dashboard/referrals'
+      path: '/referrals'
+      fullPath: '/dashboard/referrals'
+      preLoaderRoute: typeof DashboardReferralsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/profile': {
@@ -499,7 +537,9 @@ interface DashboardRouteChildren {
   DashboardMessagesRoute: typeof DashboardMessagesRoute
   DashboardNotificationsRoute: typeof DashboardNotificationsRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardReferralsRoute: typeof DashboardReferralsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardSupportRoute: typeof DashboardSupportRoute
   DashboardWalletRoute: typeof DashboardWalletRoute
   DashboardWorkerRoute: typeof DashboardWorkerRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -510,7 +550,9 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardMessagesRoute: DashboardMessagesRoute,
   DashboardNotificationsRoute: DashboardNotificationsRoute,
   DashboardProfileRoute: DashboardProfileRoute,
+  DashboardReferralsRoute: DashboardReferralsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardSupportRoute: DashboardSupportRoute,
   DashboardWalletRoute: DashboardWalletRoute,
   DashboardWorkerRoute: DashboardWorkerRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
