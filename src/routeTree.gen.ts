@@ -14,6 +14,11 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardWorkerRouteImport } from './routes/dashboard.worker'
+import { Route as DashboardWalletRouteImport } from './routes/dashboard.wallet'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
+import { Route as DashboardNotificationsRouteImport } from './routes/dashboard.notifications'
+import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
 import { Route as DashboardHiringRouteImport } from './routes/dashboard.hiring'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthRegisterRouteImport } from './routes/auth.register'
@@ -50,6 +55,31 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 const DashboardWorkerRoute = DashboardWorkerRouteImport.update({
   id: '/worker',
   path: '/worker',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardWalletRoute = DashboardWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardNotificationsRoute = DashboardNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMessagesRoute = DashboardMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardHiringRoute = DashboardHiringRouteImport.update({
@@ -124,6 +154,11 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/dashboard/hiring': typeof DashboardHiringRouteWithChildren
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/notifications': typeof DashboardNotificationsRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
@@ -142,6 +177,11 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/dashboard/hiring': typeof DashboardHiringRouteWithChildren
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/notifications': typeof DashboardNotificationsRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
@@ -162,6 +202,11 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/dashboard/hiring': typeof DashboardHiringRouteWithChildren
+  '/dashboard/messages': typeof DashboardMessagesRoute
+  '/dashboard/notifications': typeof DashboardNotificationsRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/wallet': typeof DashboardWalletRoute
   '/dashboard/worker': typeof DashboardWorkerRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/hiring/$id': typeof DashboardHiringIdRoute
@@ -183,6 +228,11 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/dashboard/hiring'
+    | '/dashboard/messages'
+    | '/dashboard/notifications'
+    | '/dashboard/profile'
+    | '/dashboard/settings'
+    | '/dashboard/wallet'
     | '/dashboard/worker'
     | '/dashboard/'
     | '/dashboard/hiring/$id'
@@ -201,6 +251,11 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/dashboard/hiring'
+    | '/dashboard/messages'
+    | '/dashboard/notifications'
+    | '/dashboard/profile'
+    | '/dashboard/settings'
+    | '/dashboard/wallet'
     | '/dashboard/worker'
     | '/dashboard'
     | '/dashboard/hiring/$id'
@@ -220,6 +275,11 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/auth/reset-password'
     | '/dashboard/hiring'
+    | '/dashboard/messages'
+    | '/dashboard/notifications'
+    | '/dashboard/profile'
+    | '/dashboard/settings'
+    | '/dashboard/wallet'
     | '/dashboard/worker'
     | '/dashboard/'
     | '/dashboard/hiring/$id'
@@ -276,6 +336,41 @@ declare module '@tanstack/react-router' {
       path: '/worker'
       fullPath: '/dashboard/worker'
       preLoaderRoute: typeof DashboardWorkerRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/wallet': {
+      id: '/dashboard/wallet'
+      path: '/wallet'
+      fullPath: '/dashboard/wallet'
+      preLoaderRoute: typeof DashboardWalletRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/notifications': {
+      id: '/dashboard/notifications'
+      path: '/notifications'
+      fullPath: '/dashboard/notifications'
+      preLoaderRoute: typeof DashboardNotificationsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/messages': {
+      id: '/dashboard/messages'
+      path: '/messages'
+      fullPath: '/dashboard/messages'
+      preLoaderRoute: typeof DashboardMessagesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/hiring': {
@@ -401,12 +496,22 @@ const DashboardWorkerRouteWithChildren = DashboardWorkerRoute._addFileChildren(
 
 interface DashboardRouteChildren {
   DashboardHiringRoute: typeof DashboardHiringRouteWithChildren
+  DashboardMessagesRoute: typeof DashboardMessagesRoute
+  DashboardNotificationsRoute: typeof DashboardNotificationsRoute
+  DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardWalletRoute: typeof DashboardWalletRoute
   DashboardWorkerRoute: typeof DashboardWorkerRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardHiringRoute: DashboardHiringRouteWithChildren,
+  DashboardMessagesRoute: DashboardMessagesRoute,
+  DashboardNotificationsRoute: DashboardNotificationsRoute,
+  DashboardProfileRoute: DashboardProfileRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardWalletRoute: DashboardWalletRoute,
   DashboardWorkerRoute: DashboardWorkerRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
 }
