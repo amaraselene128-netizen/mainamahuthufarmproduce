@@ -194,7 +194,7 @@ function Stats() {
 function HowItWorks() {
   const steps = [
     { n: "01", title: "Create your account", desc: "Sign up in 60 seconds. Choose between Worker or Hiring Party — switch anytime from your dashboard." },
-    { n: "02", title: "Apply or post a task", desc: "Workers browse Bronze, Silver and Gold-tier jobs. Hiring parties post with budget, deadline and instructions." },
+    { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Hiring parties post with budget, deadline and instructions." },
     { n: "03", title: "Deliver & get reviewed", desc: "Submit proof — screenshots, files, URLs. Admin reviews and approves." },
     { n: "04", title: "Get paid on the 28th", desc: "Approved earnings settle to your wallet and pay out automatically on the 28th of each month." },
   ];
@@ -234,7 +234,7 @@ function WhyChooseUs() {
     { icon: Globe2, title: "Truly global", desc: "Workers in 100+ countries, jobs in 7+ categories, multilingual support." },
     { icon: Zap, title: "Lightning UX", desc: "Premium SaaS interface, real-time notifications, optimized for any device." },
     { icon: Briefcase, title: "Built for hiring parties", desc: "Post in minutes, get up to 20 verified workers per task, review and rate." },
-    { icon: Sparkles, title: "Referrals that reward", desc: "Bronze, Silver and Gold referral tiers with conversion analytics and monthly commissions." },
+    { icon: Sparkles, title: "Referrals that reward", desc: "Invite friends and earn monthly commissions with conversion analytics built in." },
   ];
   return (
     <section className="py-24 bg-muted/30">
@@ -285,7 +285,7 @@ function MarketWithUs() {
             </h2>
             <p className="mt-5 text-muted-foreground text-lg">
               Promote videos, websites, products, social handles and apps with a global workforce.
-              Submit your link, choose a tier, and watch the engagement roll in.
+              Submit your link and watch the engagement roll in.
             </p>
             <ul className="mt-6 space-y-3">
               {["Video links", "Website links", "Social media links", "Product links"].map((l) => (
@@ -325,53 +325,32 @@ function MarketWithUs() {
 
 /* ---------------- CATEGORIES ---------------- */
 function Categories() {
-  const tiers = [
-    { name: "Bronze", price: "Entry", perks: ["Standard visibility", "Open to all workers", "Basic analytics"], featured: false },
-    { name: "Silver", price: "Pro", perks: ["Boosted visibility", "Verified workers only", "Priority review queue"], featured: true },
-    { name: "Gold", price: "Elite", perks: ["Top-of-feed placement", "Elite workers only", "Dedicated success manager"], featured: false },
+  const cats = [
+    { icon: Youtube, label: "YouTube", desc: "Views, watch-time, subscribes." },
+    { icon: Music2, label: "TikTok", desc: "Views, likes, follows, shares." },
+    { icon: Instagram, label: "Instagram", desc: "Followers, likes, story views." },
+    { icon: Facebook, label: "Facebook", desc: "Page likes, post engagement." },
+    { icon: Globe, label: "Websites", desc: "Traffic, sign-ups, surveys." },
+    { icon: Smartphone, label: "Mobile Apps", desc: "Installs, reviews, testing." },
+    { icon: Briefcase, label: "Services", desc: "Microtasks, data, content." },
   ];
   return (
     <section id="categories" className="py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeader eyebrow="Task tiers" title="Three tiers. Infinite reach." sub="Choose the tier that matches your ambition." />
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {tiers.map((t, i) => (
+        <SectionHeader eyebrow="Available categories" title="Work across every channel that matters." sub="A global catalogue of tasks spanning the world's biggest platforms." />
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {cats.map((c, i) => (
             <motion.div
-              key={t.name}
+              key={c.label}
               {...fadeUp}
-              transition={{ ...fadeUp.transition, delay: i * 0.08 }}
-              className={`relative rounded-3xl p-8 border shadow-card transition-all ${
-                t.featured
-                  ? "bg-card hairline shadow-luxe scale-[1.02] lg:scale-105"
-                  : "bg-card hairline hover:-translate-y-1"
-              }`}
+              transition={{ ...fadeUp.transition, delay: i * 0.05 }}
+              className="rounded-2xl bg-card p-7 border hairline shadow-card hover:shadow-luxe hover:-translate-y-1 transition-all"
             >
-              {t.featured && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-gold px-3 py-1 text-xs font-bold text-primary-foreground shadow-glow">
-                  Most popular
-                </span>
-              )}
-              <div className="font-display text-4xl font-semibold">{t.name}</div>
-              <div className="text-sm text-muted-foreground">{t.price} tier</div>
-              <div className="my-6 h-px bg-border" />
-              <ul className="space-y-3">
-                {t.perks.map((p) => (
-                  <li key={p} className="flex gap-3 text-sm">
-                    <CheckCircle2 className={`size-5 shrink-0 ${t.featured ? "text-primary" : "text-secondary"}`} />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/auth/register"
-                className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
-                  t.featured
-                    ? "bg-gradient-gold text-primary-foreground shadow-card hover:shadow-glow"
-                    : "border hairline hover:bg-accent"
-                }`}
-              >
-                Choose {t.name} <ArrowRight className="size-4" />
-              </Link>
+              <div className="size-12 rounded-xl bg-gradient-gold shadow-glow grid place-items-center">
+                <c.icon className="size-6 text-primary-foreground" />
+              </div>
+              <h3 className="mt-5 font-display text-xl font-semibold">{c.label}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{c.desc}</p>
             </motion.div>
           ))}
         </div>
