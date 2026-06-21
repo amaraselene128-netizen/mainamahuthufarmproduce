@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import logo from "@/assets/egratasks-logo.png.asset.json";
 
 function NotFoundComponent() {
   return (
@@ -83,11 +84,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#D4AF37" },
       { property: "og:site_name", content: "EGRATASKS" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: logo.url },
+      { name: "twitter:image", content: logo.url },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@egratasks" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: logo.url },
+      { rel: "apple-touch-icon", href: logo.url },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" },
