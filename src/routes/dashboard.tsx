@@ -44,7 +44,7 @@ function Dashboard() {
           />
           <ModeCard
             icon={Users}
-            title="Hiring Party Dashboard"
+            title="Client Dashboard"
             sub="Post tasks, review submissions, leave reviews."
             to="/dashboard/hiring"
             accent="emerald"
