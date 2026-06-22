@@ -165,9 +165,13 @@ export default function MarketWithUs() {
                 disabled={submitting}
                 className="w-full rounded-xl bg-gradient-emerald px-5 py-3 text-sm font-semibold text-secondary-foreground shadow-card hover:shadow-glow disabled:opacity-60"
               >
-                {submitting ? "Submitting…" : "Submit campaign"}
+                {submitting ? "Submitting…" : "Submit campaign for approval"}
               </button>
-              {!user && (
+              {user ? (
+                <p className="text-xs text-center text-muted-foreground">
+                  Submitting as <strong>{user.email}</strong>. Track status under your dashboard.
+                </p>
+              ) : (
                 <p className="text-xs text-center text-muted-foreground">
                   You can submit without an account, but signing in lets you track campaign status.
                 </p>

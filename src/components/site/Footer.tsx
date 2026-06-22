@@ -1,8 +1,29 @@
 import { Link } from "react-router-dom";
 import { Brand } from "./Brand";
 import { Mail, MapPin } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export function Footer() {
+  const { user } = useAuth();
+
+  const platformLinks = [
+    { label: "How it works", href: "/#how" },
+    { label: "Categories", href: "/categories" },
+    { label: "Market with us", href: "/market-with-us" },
+    user
+      ? { label: "Referral program", href: "/dashboard/referrals" }
+      : { label: "Become a referrer", href: "/auth/register" },
+  ];
+
+  const companyLinks = [
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
+    { label: "Careers", href: "/about#careers" },
+    user
+      ? { label: "Help center", href: "/dashboard/support" }
+      : { label: "FAQ", href: "/#faq" },
+  ];
+
   return (
     <footer className="border-t hairline bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
@@ -16,19 +37,17 @@ export function Footer() {
               <div className="flex items-center gap-2"><MapPin className="size-4 text-primary" /> Nairobi, Kenya — HQ</div>
               <div className="flex items-center gap-2"><Mail className="size-4 text-primary" /> support@egratasks.com</div>
             </div>
+            {user && (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-4 py-2 text-xs font-semibold text-primary-foreground shadow-card hover:shadow-glow"
+              >
+                Go to dashboard
+              </Link>
+            )}
           </div>
-          <FooterCol title="Platform" links={[
-            { label: "How it works", href: "/#how" },
-            { label: "Categories", href: "/categories" },
-            { label: "Market with us", href: "/market-with-us" },
-            { label: "Referral program", href: "/dashboard/referrals" },
-          ]} />
-          <FooterCol title="Company" links={[
-            { label: "About", href: "/about" },
-            { label: "Contact", href: "/contact" },
-            { label: "Careers", href: "/about#careers" },
-            { label: "Help center", href: "/support" },
-          ]} />
+          <FooterCol title="Platform" links={platformLinks} />
+          <FooterCol title="Company" links={companyLinks} />
           <FooterCol title="Legal" links={[
             { label: "Terms & Conditions", href: "/legal/terms" },
             { label: "Privacy Policy", href: "/legal/privacy" },
@@ -51,7 +70,7 @@ function FooterCol({ title, links }: { title: string; links: { label: string; hr
       <h4 className="font-display text-sm font-semibold tracking-wide uppercase text-foreground/80">{title}</h4>
       <ul className="mt-4 space-y-2">
         {links.map((l) => (
-          <li key={l.href}>
+          <li key={l.href + l.label}>
             <Link to={l.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
               {l.label}
             </Link>

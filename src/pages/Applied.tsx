@@ -15,6 +15,7 @@ type Row = {
 function Applied() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const [subs, setSubs] = useState<Record<string, any>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
 
   async function load() {
@@ -25,6 +26,13 @@ function Applied() {
       .order("applied_at", { ascending: false });
     if (error) return toast.error(error.message);
     setRows((data as any) ?? []);
+
+    const { data: ss } = await db.from("task_submissions")
+      .select("application_id,status,admin_comment,reviewed_at")
+      .eq("worker_id", user.id);
+    const map: Record<string, any> = {};
+    (ss ?? []).forEach((s: any) => { map[s.application_id] = s; });
+    setSubs(map);
   }
   useEffect(() => { load(); }, [user]);
 
@@ -33,26 +41,34 @@ function Applied() {
       <h1 className="font-display text-3xl font-semibold">My applications</h1>
       <div className="rounded-2xl border hairline bg-card divide-y divide-border">
         {rows.length === 0 && <div className="p-8 text-muted-foreground text-center">No applications yet. Browse <a href="/dashboard/worker" className="text-primary hover:underline">available tasks</a>.</div>}
-        {rows.map((r) => (
-          <div key={r.id} className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="font-medium">{r.tasks.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">Applied {new Date(r.applied_at).toLocaleString()} · {r.tasks.tier.toUpperCase()}</div>
+        {rows.map((r) => {
+          const sub = subs[r.id];
+          return (
+            <div key={r.id} className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="font-medium">{r.tasks.title}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Applied {new Date(r.applied_at).toLocaleString()} · {r.tasks.tier.toUpperCase()}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${badge(r.status)}`}>{r.status.toUpperCase()}</span>
+                  <span className="font-display text-lg text-gradient-gold">${Number(r.tasks.payment_amount).toFixed(2)}</span>
+                  <button onClick={() => setActiveId(activeId === r.id ? null : r.id)} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent">
+                    {activeId === r.id ? "Close" : r.status === "approved" ? "View" : "Submit work"}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${badge(r.status)}`}>{r.status.toUpperCase()}</span>
-                <span className="font-display text-lg text-gradient-gold">${Number(r.tasks.payment_amount).toFixed(2)}</span>
-                <button onClick={() => setActiveId(activeId === r.id ? null : r.id)} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent">
-                  {activeId === r.id ? "Close" : r.status === "approved" ? "View" : "Submit work"}
-                </button>
-              </div>
+              {sub?.admin_comment && (
+                <div className="mt-3 text-sm rounded-lg bg-muted p-3">
+                  <strong className="capitalize">{sub.status} · Reviewer:</strong> {sub.admin_comment}
+                </div>
+              )}
+              {activeId === r.id && (
+                <SubmissionPanel application={r} onDone={() => { setActiveId(null); load(); }} />
+              )}
             </div>
-            {activeId === r.id && (
-              <SubmissionPanel application={r} onDone={() => { setActiveId(null); load(); }} />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -580,3 +580,81 @@ drop policy if exists "Task attachments public read" on storage.objects;
 create policy "Task attachments public read" on storage.objects for select using (bucket_id = 'task-attachments');
 drop policy if exists "Task attachments owner upload" on storage.objects;
 create policy "Task attachments owner upload" on storage.objects for insert to authenticated with check (bucket_id = 'task-attachments' and (storage.foldername(name))[1] = auth.uid()::text);
+-- ============================================================
+-- Additions (June 2026): support attachments, market_campaigns,
+-- admin update policy for campaigns, submission-approval trigger
+-- to credit worker wallets.
+-- ============================================================
+
+alter table public.support_messages add column if not exists attachments jsonb not null default '[]';
+alter table public.support_tickets  add column if not exists attachments jsonb not null default '[]';
+
+create table if not exists public.market_campaigns (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  category text not null,
+  title text not null,
+  description text not null,
+  website_url text,
+  video_url text,
+  social_url text,
+  budget numeric(12,2),
+  target_countries text[] not null default '{}',
+  start_date date,
+  end_date date,
+  instructions text,
+  contact_email text,
+  attachments jsonb not null default '[]',
+  status text not null default 'pending',
+  admin_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+grant select, insert on public.market_campaigns to anon, authenticated;
+grant select, insert, update, delete on public.market_campaigns to authenticated;
+grant all on public.market_campaigns to service_role;
+alter table public.market_campaigns enable row level security;
+drop policy if exists "Anyone submit campaign" on public.market_campaigns;
+create policy "Anyone submit campaign" on public.market_campaigns
+  for insert to anon, authenticated with check (true);
+drop policy if exists "Owner or admin read campaign" on public.market_campaigns;
+create policy "Owner or admin read campaign" on public.market_campaigns
+  for select to authenticated using (user_id = auth.uid() or public.has_role(auth.uid(),'admin'));
+drop policy if exists "Admin update campaign" on public.market_campaigns;
+create policy "Admin update campaign" on public.market_campaigns
+  for update to authenticated using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
+drop policy if exists "Admin delete campaign" on public.market_campaigns;
+create policy "Admin delete campaign" on public.market_campaigns
+  for delete to authenticated using (public.has_role(auth.uid(),'admin'));
+
+-- Auto-credit worker wallet + log transaction when a submission is approved.
+create or replace function public.on_submission_status_change()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  pay numeric(12,2);
+begin
+  if new.status = 'approved' and (old.status is null or old.status <> 'approved') then
+    select payment_amount into pay from public.tasks where id = new.task_id;
+    if pay is not null then
+      insert into public.wallets (user_id, available, total_earned)
+      values (new.worker_id, pay, pay)
+      on conflict (user_id) do update
+        set available    = public.wallets.available    + excluded.available,
+            total_earned = public.wallets.total_earned + excluded.total_earned,
+            updated_at   = now();
+      insert into public.transactions (user_id, type, amount, status, reference, details)
+      values (new.worker_id, 'task_earning', pay, 'completed', new.id::text,
+              jsonb_build_object('task_id', new.task_id, 'submission_id', new.id));
+    end if;
+    update public.task_applications set status = 'approved' where id = new.application_id;
+  elsif new.status = 'rejected' and (old.status is null or old.status <> 'rejected') then
+    update public.task_applications set status = 'rejected' where id = new.application_id;
+  elsif new.status = 'revision' and (old.status is null or old.status <> 'revision') then
+    update public.task_applications set status = 'revision' where id = new.application_id;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists on_submission_status_change on public.task_submissions;
+create trigger on_submission_status_change
+  after insert or update of status on public.task_submissions
+  for each row execute function public.on_submission_status_change();

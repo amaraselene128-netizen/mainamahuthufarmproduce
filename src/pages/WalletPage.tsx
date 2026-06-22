@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Wallet, ArrowDownCircle } from "lucide-react";
+import { Wallet, ArrowDownCircle, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { isWithdrawalOpen, windowStatus } from "@/lib/withdrawal-window";
 
 function WalletPage() {
   const { user } = useAuth();
@@ -10,9 +11,17 @@ function WalletPage() {
   const [tx, setTx] = useState<any[]>([]);
   const [reqs, setReqs] = useState<any[]>([]);
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("paypal");
+  const [method, setMethod] = useState("mpesa");
   const [details, setDetails] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const winStatus = windowStatus();
+  const open = winStatus.open;
+  const numericAmount = Number(amount);
+  const insufficient = numericAmount > Number(w?.available ?? 0);
+  const tooLow = !numericAmount || numericAmount < 10;
+  const noDetails = !details.trim();
+  const submitDisabled = loading || !open || insufficient || tooLow || noDetails;
 
   async function load() {
     if (!user) return;
@@ -28,21 +37,34 @@ function WalletPage() {
   async function withdraw(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    const n = Number(amount);
-    if (!n || n < 10) return toast.error("Minimum withdrawal is $10");
-    if (n > Number(w?.available ?? 0)) return toast.error("Insufficient available balance");
+    if (!open) return toast.error("Withdrawals are closed. Window: 28th — 5th of next month.");
+    if (tooLow) return toast.error("Minimum withdrawal is $10");
+    if (insufficient) return toast.error("Insufficient available balance");
+
     setLoading(true);
-    const { error } = await db.from("withdrawal_requests").insert({ user_id: user.id, amount: n, method, details: { account: details } });
+    const { data, error } = await db.functions.invoke("request-withdrawal", {
+      body: { amount: numericAmount, method, details: { account: details } },
+    });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Withdrawal requested — payouts on the 28th");
+    if (error || (data as any)?.error) {
+      return toast.error(error?.message ?? (data as any).error);
+    }
+    toast.success("Paid instantly to your account 🎉");
     setAmount(""); setDetails("");
     load();
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-3xl font-semibold">Wallet</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-semibold">Wallet</h1>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+          open ? "bg-secondary/15 text-secondary" : "bg-muted text-muted-foreground"
+        }`}>
+          {open ? <CheckCircle2 className="size-3.5" /> : <Clock className="size-3.5" />}
+          Withdrawals · {winStatus.label}
+        </span>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card label="Available" value={`$${Number(w?.available ?? 0).toFixed(2)}`} />
@@ -53,19 +75,67 @@ function WalletPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <form onSubmit={withdraw} className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
-          <div className="flex items-center gap-2"><ArrowDownCircle className="size-5 text-primary" /><h2 className="font-display text-xl">Request withdrawal</h2></div>
-          <label className="block"><span className="text-sm font-medium">Amount (USD)</span><input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" step="0.01" min="10" className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm" /></label>
-          <label className="block"><span className="text-sm font-medium">Method</span>
+          <div className="flex items-center gap-2">
+            <ArrowDownCircle className="size-5 text-primary" />
+            <h2 className="font-display text-xl">Request withdrawal</h2>
+          </div>
+
+          {!open && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
+              <AlertCircle className="size-4 mt-0.5 text-amber-500 shrink-0" />
+              <span>
+                Payouts are open <strong>28th — 5th</strong> of each month. {winStatus.label}.
+                During the window, withdrawals are instant.
+              </span>
+            </div>
+          )}
+
+          <label className="block">
+            <span className="text-sm font-medium">Amount (USD)</span>
+            <input
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              type="number" step="0.01" min="10"
+              className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
+            />
+            {amount && insufficient && (
+              <span className="text-xs text-destructive mt-1 block">
+                Exceeds available balance (${Number(w?.available ?? 0).toFixed(2)})
+              </span>
+            )}
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">Method</span>
             <select value={method} onChange={(e) => setMethod(e.target.value)} className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm">
-              <option value="paypal">PayPal</option>
               <option value="mpesa">M-Pesa</option>
+              <option value="paypal">PayPal</option>
               <option value="wise">Wise</option>
               <option value="crypto">Crypto</option>
             </select>
           </label>
-          <label className="block"><span className="text-sm font-medium">Account details</span><input value={details} onChange={(e) => setDetails(e.target.value)} placeholder="PayPal email, M-Pesa number, wallet address…" className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm" /></label>
-          <button disabled={loading} className="rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow disabled:opacity-60">{loading ? "Submitting…" : "Submit request"}</button>
-          <p className="text-xs text-muted-foreground">Payments processed monthly on the 28th after admin approval.</p>
+          <label className="block">
+            <span className="text-sm font-medium">Account details</span>
+            <input
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder="M-Pesa number, PayPal email, wallet address…"
+              className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm"
+            />
+          </label>
+          <button
+            disabled={submitDisabled}
+            className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Processing…" :
+              !open ? "Withdrawals closed" :
+              tooLow ? "Enter at least $10" :
+              insufficient ? "Insufficient balance" :
+              noDetails ? "Enter account details" :
+              `Withdraw $${numericAmount.toFixed(2)} instantly`}
+          </button>
+          <p className="text-xs text-muted-foreground">
+            Inside the 28th → 5th window, payouts settle instantly. Outside it, the system is closed.
+          </p>
         </form>
 
         <div className="rounded-2xl border hairline bg-card p-6 shadow-card">

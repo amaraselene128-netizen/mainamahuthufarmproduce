@@ -289,12 +289,7 @@ function MarketWithUs() {
                 </li>
               ))}
             </ul>
-            <Link
-              to="/auth/register"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-emerald px-6 py-3.5 text-sm font-semibold text-secondary-foreground shadow-card hover:shadow-glow transition-shadow"
-            >
-              Start a campaign <ArrowRight className="size-4" />
-            </Link>
+            <MarketCta />
           </motion.div>
 
           <motion.div {...fadeUp} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -443,6 +438,7 @@ function FAQ() {
 
 /* ---------------- CTA ---------------- */
 function CTA() {
+  const { user, profile } = useAuth();
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -454,24 +450,33 @@ function CTA() {
           <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{ background: "var(--gradient-gold)" }} />
           <div className="relative">
             <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold text-secondary-foreground tracking-tight">
-              Your next paycheck starts today.
+              {user ? `Welcome back, ${profile?.username ?? "friend"}.` : "Your next paycheck starts today."}
             </h2>
             <p className="mt-4 text-secondary-foreground/85 max-w-xl mx-auto">
-              Join a million-strong community of workers and clients on the world's most premium task marketplace.
+              {user
+                ? "Jump back into your dashboard, browse new tasks, or check your wallet."
+                : "Join a million-strong community of workers and clients on the world's most premium task marketplace."}
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Link
-                to="/auth/register"
-                className="inline-flex items-center gap-2 rounded-xl bg-background px-6 py-3.5 text-sm font-semibold text-foreground shadow-luxe hover:shadow-glow transition-all"
-              >
-                Create your free account <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                to="/auth/login"
-                className="inline-flex items-center gap-2 rounded-xl border border-secondary-foreground/30 bg-transparent px-6 py-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary-foreground/10 transition-colors"
-              >
-                Login
-              </Link>
+              {user ? (
+                <>
+                  <Link to="/dashboard" className="inline-flex items-center gap-2 rounded-xl bg-background px-6 py-3.5 text-sm font-semibold text-foreground shadow-luxe hover:shadow-glow transition-all">
+                    <LayoutDashboard className="size-4" /> Go to dashboard
+                  </Link>
+                  <Link to="/dashboard/worker" className="inline-flex items-center gap-2 rounded-xl border border-secondary-foreground/30 bg-transparent px-6 py-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary-foreground/10 transition-colors">
+                    Browse tasks <ArrowRight className="size-4" />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth/register" className="inline-flex items-center gap-2 rounded-xl bg-background px-6 py-3.5 text-sm font-semibold text-foreground shadow-luxe hover:shadow-glow transition-all">
+                    Create your free account <ArrowRight className="size-4" />
+                  </Link>
+                  <Link to="/auth/login" className="inline-flex items-center gap-2 rounded-xl border border-secondary-foreground/30 bg-transparent px-6 py-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary-foreground/10 transition-colors">
+                    Login
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </motion.div>
@@ -481,6 +486,18 @@ function CTA() {
 }
 
 /* ---------------- shared ---------------- */
+function MarketCta() {
+  const { user } = useAuth();
+  return (
+    <Link
+      to={user ? "/market-with-us" : "/auth/register"}
+      className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-emerald px-6 py-3.5 text-sm font-semibold text-secondary-foreground shadow-card hover:shadow-glow transition-shadow"
+    >
+      Start a campaign <ArrowRight className="size-4" />
+    </Link>
+  );
+}
+
 function SectionHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
