@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import {
   LayoutDashboard, ListChecks, ClipboardList, CheckCircle2, XCircle,
@@ -38,10 +38,10 @@ const sharedNav = [
 export function DashLayout() {
   const { user, profile, loading, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
-  const path = useRouterState({ select: (s) => s.location.pathname });
+  const path = useLocation().pathname;
 
   useEffect(() => {
-    if (!loading && !user) nav({ to: "/auth/login" });
+    if (!loading && !user) nav("/auth/login");
   }, [loading, user, nav]);
 
   if (loading || !profile) {
