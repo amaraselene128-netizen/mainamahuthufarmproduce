@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, ShieldCheck, Wallet, Globe2, Zap,
   Youtube, Music2, Instagram, Facebook, Globe, Smartphone, Briefcase,
-  CheckCircle2, Star, ChevronDown,
+  CheckCircle2, Star, ChevronDown, LayoutDashboard,
 } from "lucide-react";
 import { useState } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { useAuth } from "@/lib/auth-context";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -39,6 +40,7 @@ function Home() {
 
 /* ---------------- HERO ---------------- */
 function Hero() {
+  const { user, profile } = useAuth();
   return (
     <section className="relative overflow-hidden pt-32 pb-24 sm:pt-40 sm:pb-32">
       <div className="absolute inset-0 -z-10 bg-gradient-hero" />
@@ -61,7 +63,9 @@ function Hero() {
         >
           <span className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium tracking-wide text-foreground/80">
             <Sparkles className="size-3.5 text-primary" />
-            Trusted by 1M+ workers across 100+ countries
+            {user
+              ? `Welcome back, ${profile?.username ?? "friend"}`
+              : "Trusted by 1M+ workers across 100+ countries"}
           </span>
           <h1 className="mt-6 font-display text-5xl sm:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight">
             Earn from work that <span className="text-gradient-gold">moves the world.</span>
@@ -71,25 +75,45 @@ function Hero() {
             freelance projects — connecting clients with verified workers in seconds.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              to="/auth/register"
-              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-luxe hover:shadow-glow transition-all"
-            >
-              Get Started
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              to="/auth/login"
-              className="inline-flex items-center gap-2 rounded-xl glass px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              to="/auth/register"
-              className="inline-flex items-center gap-2 rounded-xl border hairline px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
-            >
-              Register
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-luxe hover:shadow-glow transition-all"
+                >
+                  <LayoutDashboard className="size-4" /> Go to dashboard
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  to="/dashboard/worker"
+                  className="inline-flex items-center gap-2 rounded-xl glass px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
+                >
+                  Browse tasks
+                </Link>
+                <Link
+                  to="/categories"
+                  className="inline-flex items-center gap-2 rounded-xl border hairline px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
+                >
+                  Explore categories
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/auth/register"
+                  className="group inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-luxe hover:shadow-glow transition-all"
+                >
+                  Get Started
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  to="/auth/login"
+                  className="inline-flex items-center gap-2 rounded-xl glass px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
+                >
+                  Login
+                </Link>
+              </>
+            )}
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">
