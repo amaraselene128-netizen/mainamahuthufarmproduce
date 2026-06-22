@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import { ScrollToTop } from "@/components/site/ScrollToTop";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("@/pages/Home"));
@@ -40,11 +41,15 @@ const AdminLayout = lazy(() => import("@/pages/AdminLayout"));
 const AdminOverview = lazy(() => import("@/pages/AdminOverview"));
 const AdminUsers = lazy(() => import("@/pages/Users"));
 const AdminTasks = lazy(() => import("@/pages/Tasks"));
+const AdminNewTask = lazy(() => import("@/pages/AdminNewTask"));
+const AdminTaskReview = lazy(() => import("@/pages/AdminTaskReview"));
+const AdminCampaigns = lazy(() => import("@/pages/AdminCampaigns"));
 const AdminWithdrawals = lazy(() => import("@/pages/Withdrawals"));
 const AdminCountries = lazy(() => import("@/pages/Countries"));
 const AdminReferrals = lazy(() => import("@/pages/Refs"));
 const AdminFraud = lazy(() => import("@/pages/Fraud"));
 const AdminSupport = lazy(() => import("@/pages/AdminSupport"));
+const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
 
 function PageFallback() {
   return (
