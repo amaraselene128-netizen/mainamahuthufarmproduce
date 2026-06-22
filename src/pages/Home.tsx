@@ -486,6 +486,18 @@ function CTA() {
 }
 
 /* ---------------- shared ---------------- */
+function MarketCta() {
+  const { user } = useAuth();
+  return (
+    <Link
+      to={user ? "/market-with-us" : "/auth/register"}
+      className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-emerald px-6 py-3.5 text-sm font-semibold text-secondary-foreground shadow-card hover:shadow-glow transition-shadow"
+    >
+      Start a campaign <ArrowRight className="size-4" />
+    </Link>
+  );
+}
+
 function SectionHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
