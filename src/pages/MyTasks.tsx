@@ -45,7 +45,7 @@ function MyTasks() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link to="/dashboard/hiring/$id" params={{ id: t.id }} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent inline-flex items-center gap-1">
+              <Link to={`/dashboard/hiring/${t.id}`} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent inline-flex items-center gap-1">
                 <Eye className="size-3.5" /> Review
               </Link>
               {t.status === "active" && (
