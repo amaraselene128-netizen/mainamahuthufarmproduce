@@ -10,14 +10,18 @@ function Tasks() {
   }
   useEffect(() => { load(); }, []);
   async function setStatus(id: string, status: string) {
-    const { error } = await db.from("tasks").update({ status }).eq("id", id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await db.functions.invoke("admin-tasks", {
+      body: { action: "set_status", id, status },
+    });
+    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any).error);
     load();
   }
   async function del(id: string) {
     if (!confirm("Delete this task?")) return;
-    const { error } = await db.from("tasks").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await db.functions.invoke("admin-tasks", {
+      body: { action: "delete", id },
+    });
+    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any).error);
     load();
   }
   return (

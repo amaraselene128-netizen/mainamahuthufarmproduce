@@ -10,8 +10,10 @@ function Countries() {
   }
   useEffect(() => { load(); }, []);
   async function toggle(code: string, restricted: boolean) {
-    const { error } = await db.from("countries").update({ restricted }).eq("code", code);
-    if (error) return toast.error(error.message);
+    const { data, error } = await db.functions.invoke("admin-countries", {
+      body: { code, restricted },
+    });
+    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any).error);
     setRows((arr) => arr.map((r) => (r.code === code ? { ...r, restricted } : r)));
   }
   return (
