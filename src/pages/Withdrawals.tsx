@@ -10,11 +10,10 @@ function Withdrawals() {
   }
   useEffect(() => { load(); }, []);
   async function setStatus(id: string, status: string) {
-    const patch: any = { status };
-    if (status === "approved") patch.approved_at = new Date().toISOString();
-    if (status === "paid") patch.paid_at = new Date().toISOString();
-    const { error } = await db.from("withdrawal_requests").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await db.functions.invoke("admin-withdrawals", {
+      body: { id, status },
+    });
+    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any).error);
     toast.success("Updated"); load();
   }
   return (

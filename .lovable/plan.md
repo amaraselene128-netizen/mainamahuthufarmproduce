@@ -40,8 +40,14 @@ This is a structural rewrite. I will execute it in phases and stop after each ph
 ### Phase 2 — Port every route file
 For each file under `src/routes/`, move the component out, drop the `createFileRoute` wrapper, replace `<Link to=...>` import source from `@tanstack/react-router` → `react-router-dom`, replace `useNavigate`/`useParams` imports likewise, swap route `head()` blocks for `<Helmet>` components. Land the file under `src/pages/`. Delete `src/routes/`.
 
-### Phase 3 — Edge functions for privileged ops
-Audit the routes for anything that needs service-role access (admin user suspend/ban, withdrawal approve/reject, role grants). Create one Supabase Edge Function per concern (`admin-users`, `admin-withdrawals`, `admin-fraud`). Each verifies the caller's JWT, checks `has_role(auth.uid(), 'admin')`, then performs the privileged work with the service-role key. Update admin pages to call `supabase.functions.invoke(...)` instead of direct `db.from(...).update(...)`.
+### Phase 3 — Edge functions for privileged ops *(done)*
+Created four Supabase Edge Functions, all gated by JWT verification + `has_role(auth.uid(), 'admin')` using the service-role key:
+- `admin-users` — suspend/ban/unsuspend/unban a profile
+- `admin-withdrawals` — set status (approved / paid / rejected), stamps `approved_at` / `paid_at`
+- `admin-tasks` — set status, delete
+- `admin-countries` — toggle `restricted`
+
+Shared auth/CORS in `supabase/functions/_shared/admin.ts`. All four registered in `supabase/config.toml`. Admin pages (`Users.tsx`, `Withdrawals.tsx`, `Tasks.tsx`, `Countries.tsx`) now call `db.functions.invoke(...)` instead of writing to tables directly. `Fraud.tsx` stays read-only.
 
 ### Phase 4 — Verify
 Build locally (`bun run build`), preview, click through key flows: auth → register → dashboard → admin → publish task → apply. Fix anything broken. Then you upload `dist/` to Netlify (or connect the repo) and it works.

@@ -1,1 +1,13 @@
 project_id = "iycbpeujxgwcsmelvwdw"
+
+[functions.admin-users]
+verify_jwt = true
+
+[functions.admin-withdrawals]
+verify_jwt = true
+
+[functions.admin-tasks]
+verify_jwt = true
+
+[functions.admin-countries]
+verify_jwt = true

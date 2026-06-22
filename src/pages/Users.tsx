@@ -13,9 +13,12 @@ function Users() {
   }
   useEffect(() => { load(); }, [q]);
 
-  async function toggle(id: string, field: string, value: boolean) {
-    const { error } = await db.from("profiles").update({ [field]: value }).eq("id", id);
-    if (error) return toast.error(error.message);
+  async function toggle(id: string, field: "suspended" | "banned", value: boolean) {
+    const action = field === "suspended" ? "set_suspended" : "set_banned";
+    const { data, error } = await db.functions.invoke("admin-users", {
+      body: { action, user_id: id, value },
+    });
+    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any).error);
     toast.success("Updated"); load();
   }
 
