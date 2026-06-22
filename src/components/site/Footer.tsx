@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Brand } from "./Brand";
 import { Mail, MapPin } from "lucide-react";
 
