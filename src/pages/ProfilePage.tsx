@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { db, supabase } from "@/lib/db";
+import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 function ProfilePage() {
   const { profile, user, refreshProfile } = useAuth();
@@ -48,13 +49,15 @@ function ProfilePage() {
   async function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    const path = `${user.id}/avatar-${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (error) return toast.error(error.message);
-    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-    await db.from("profiles").update({ avatar_url: pub.publicUrl }).eq("id", user.id);
-    await refreshProfile();
-    toast.success("Avatar updated");
+    try {
+      const up = await uploadToCloudinary(file, { folder: `avatars/${user.id}` });
+      const { error } = await db.from("profiles").update({ avatar_url: up.secure_url }).eq("id", user.id);
+      if (error) throw error;
+      await refreshProfile();
+      toast.success("Avatar updated");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Avatar upload failed");
+    }
   }
 
   return (

@@ -7,6 +7,8 @@ const About = lazy(() => import("@/pages/About"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
+const CategoriesPage = lazy(() => import("@/pages/CategoriesPage"));
+const MarketWithUs = lazy(() => import("@/pages/MarketWithUs"));
 
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
@@ -74,6 +76,9 @@ export default function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/legal/privacy" element={<Privacy />} />
         <Route path="/legal/terms" element={<Terms />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/market-with-us" element={<MarketWithUs />} />
+
 
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/register" element={<Register />} />

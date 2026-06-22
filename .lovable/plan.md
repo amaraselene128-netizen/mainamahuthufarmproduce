@@ -1,68 +1,90 @@
-
 ## Goal
 
-Convert EGRATASKS from TanStack Start (SSR on Cloudflare Workers) to a **static Vite + React SPA** deployable to Netlify CDN. All server-side logic moves to **Supabase Edge Functions**. DB + Auth + Storage stay on Supabase.
+Make EGRATASKS feel "logged-in aware" across the entire site, expand the task category catalog to your full list, add Cloudinary uploads for avatars + task submissions, and make sure the admin pages and referral program actually fetch and work.
 
-This is a structural rewrite. I will execute it in phases and stop after each phase so you can verify before I continue.
+The home page layout stays as it is — only the header CTAs change based on auth state, and new pages are added for the expanded categories.
 
-## What changes
+---
 
-- No more SSR. Routes render client-side; SEO meta is set via `react-helmet-async`.
-- No more `createServerFn`, no `requireSupabaseAuth` middleware, no `src/start.ts`, no `vite.config.ts` wrapped in `@lovable.dev/vite-tanstack-config`, no `src/routes/__root.tsx` shell.
-- Routing switches to `react-router-dom` (industry standard for SPAs, simplest for Netlify). Each existing `src/routes/*.tsx` becomes a `src/pages/*.tsx` mounted in a central `<Routes>` table.
-- A real `index.html` lives at project root.
-- `public/_redirects` (`/*  /index.html  200`) + `netlify.toml` handle SPA deep links.
-- All current DB calls already use the browser `db` client → those keep working. Anything privileged (admin role grants, fraud actions, etc.) moves to a Supabase Edge Function called via `supabase.functions.invoke(...)`.
+## 1. Auth-aware navigation (whole site, not just dashboard)
 
-## What you keep
+- Update `src/components/site/Header.tsx` to use `useAuth()`:
+  - When **logged out** → show "Login" + "Get Started" (current behavior).
+  - When **logged in** → hide Login/Register/Get Started. Show: avatar + username, "Dashboard" link, "Admin" link if `isAdmin`, and a "Sign out" button.
+- Same logic for the mobile menu drawer (everything stays inside the hamburger — no stretched buttons).
+- Hero section in `src/pages/Home.tsx`:
+  - When logged in, replace the "Get Started / Login / Register" cluster with a single "Go to dashboard" CTA + "Browse tasks" secondary.
+- Add a public "Categories" page and "Market With Us" page (linked from header + footer) so logged-in users can keep exploring.
 
-- All existing UI components (`src/components/**`), styles, shadcn/ui, Tailwind theme.
-- The full Supabase schema and RLS policies (no DB changes needed).
-- Auth context, page bodies, dashboard layout, admin layout, brand assets.
+## 2. Full freelance category catalog
 
-## What you lose (be aware)
+- Create `src/data/categories.ts` exporting the full grouped list you provided (Programming & Tech → Data Verification, organized by the emoji-headed groups).
+- Create `src/data/market-categories.ts` for the "Market With Us" catalog (Social Media Promotion → Other Digital Services).
+- `src/pages/NewTask.tsx` (admin/client task creator):
+  - Replace the flat DB-fetched `category_id` dropdown with a **grouped select** (optgroup per group) sourced from `categories.ts`. Store the chosen string in `tasks.category_id` (kept as text/free-form) — we will not migrate DB on your behalf.
+- Create a new public page `/categories` listing all groups + sub-categories.
+- Create a new public page `/market-with-us` listing the market promotion catalog with the submission form fields you described (campaign category, title, description, URLs, budget, dates, contact, etc.). For now the form posts to a `market_campaigns` table (SQL provided below) — if you don't run the SQL, the page still renders the catalog read-only.
 
-- **Server-rendered SEO**: Crawlers that don't execute JS (rare in 2026) won't see meta tags. `react-helmet-async` handles modern crawlers fine.
-- **Per-route share preview cards** on first paint — they're client-set. Acceptable for a freelancing app.
-- All `createServerFn` files I previously wrote get deleted; replacement logic lives in edge functions or direct client RLS calls.
+## 3. Cloudinary upload integration
 
-## Phases (I will pause between each)
+Credentials go in `.env`:
 
-### Phase 1 — Scaffold the SPA shell *(this turn if you approve)*
-1. `bun add react-router-dom react-helmet-async` ; remove TanStack Start packages.
-2. Replace `vite.config.ts` with plain `@vitejs/plugin-react` + path aliases.
-3. Create `index.html` at root with `<div id="root">` + Vite entry.
-4. Create `src/main.tsx` mounting `<App />` with `<BrowserRouter>`, `<QueryClientProvider>`, `<HelmetProvider>`, `<AuthProvider>`, `<Toaster>`.
-5. Create `src/App.tsx` with the central `<Routes>` table mirroring the current routes.
-6. Add `public/_redirects` and `netlify.toml` (`[build] command="bun run build"  publish="dist"`).
-7. Delete `src/start.ts`, `src/server.ts`, `src/router.tsx`, `src/routeTree.gen.ts`, `src/lib/error-page.ts`, `src/integrations/supabase/auth-middleware.ts`, `src/integrations/supabase/auth-attacher.ts`, `src/integrations/supabase/client.server.ts`.
+```
+VITE_CLOUDINARY_CLOUD_NAME=dpboreqsc
+VITE_CLOUDINARY_UPLOAD_PRESET=egrotasks
+```
 
-### Phase 2 — Port every route file
-For each file under `src/routes/`, move the component out, drop the `createFileRoute` wrapper, replace `<Link to=...>` import source from `@tanstack/react-router` → `react-router-dom`, replace `useNavigate`/`useParams` imports likewise, swap route `head()` blocks for `<Helmet>` components. Land the file under `src/pages/`. Delete `src/routes/`.
+(API Key/Secret are **not** needed for unsigned uploads from the browser and must not be exposed — we use the unsigned preset only.)
 
-### Phase 3 — Edge functions for privileged ops *(done)*
-Created four Supabase Edge Functions, all gated by JWT verification + `has_role(auth.uid(), 'admin')` using the service-role key:
-- `admin-users` — suspend/ban/unsuspend/unban a profile
-- `admin-withdrawals` — set status (approved / paid / rejected), stamps `approved_at` / `paid_at`
-- `admin-tasks` — set status, delete
-- `admin-countries` — toggle `restricted`
+- Add `src/lib/cloudinary.ts` with a single `uploadToCloudinary(file)` helper that POSTs to `https://api.cloudinary.com/v1_1/dpboreqsc/image/upload` using the `egrotasks` preset and returns `{ secure_url, public_id }`.
+- Wire it into:
+  - `src/pages/ProfilePage.tsx` → avatar upload (writes URL to `profiles.avatar_url`).
+  - `src/pages/NewTask.tsx` → optional task cover image / attachments (stored on the task row in a new `attachments jsonb` column — see SQL below).
+  - Task submission flow (worker submitting proof screenshots) → array of Cloudinary URLs stored on `task_applications.proof_urls`.
 
-Shared auth/CORS in `supabase/functions/_shared/admin.ts`. All four registered in `supabase/config.toml`. Admin pages (`Users.tsx`, `Withdrawals.tsx`, `Tasks.tsx`, `Countries.tsx`) now call `db.functions.invoke(...)` instead of writing to tables directly. `Fraud.tsx` stays read-only.
+## 4. Admin pages — make fetching work
 
-### Phase 4 — Verify *(done)*
-Removed the remaining TanStack router import from the public header, removed TanStack/SSR packages from the build, added the missing favicon, and kept Netlify SPA fallback in place. Netlify should now build only the static React SPA.
+- Audit each admin page and ensure it uses the right query / edge function:
+  - `Users.tsx`, `Tasks.tsx`, `Withdrawals.tsx`, `Countries.tsx`, `Refs.tsx`, `Fraud.tsx`, `AdminSupport.tsx`.
+- For pages that currently rely only on RLS and may return empty arrays for admins, switch them to call their corresponding `admin-*` edge function (already in `supabase/functions/`) for the privileged listing. Add minimal listing endpoints where missing (e.g. `admin-users` list).
+- Make `AdminOverview.tsx` show real counts (users, active tasks, pending withdrawals, open tickets) by calling `count: "exact", head: true` queries.
 
-### Phase 5 — Finish missing pages *(ready)*
-The SPA migration is stable enough to continue filling specific empty/broken pages as they are identified.
+## 5. Referral program structure
 
-## Technical notes for the curious
+- `Referrals.tsx` rewrite:
+  - Show the user's permanent referral code (a short slug, not the raw UUID) — generated on first visit and stored on `profiles.referral_code`.
+  - Link format: `${origin}/auth/register?ref=<code>`.
+  - Plans section unchanged but properly fetched; subscription button disabled if no wallet balance (for paid tiers).
+  - Stats cards: clicks, signups, verified, earnings — already in code, but switch the `referral_clicks` query to use `code = profile.referral_code` instead of `user.id`.
+  - Add a referred-users table view (username, country, status, your earnings) sourced from `referrals` joined with `profiles`.
+- `Register.tsx`: when `?ref=<code>` is present, look up the referrer, store `referred_by` on the new profile, and insert a row in `referrals`.
 
-- Vite build output → `dist/`. Netlify publish dir = `dist`. Build command = `bun run build`.
-- `_redirects` is the canonical Netlify SPA fallback (also works on Cloudflare Pages, Render).
-- Auth flow stays identical: `supabase.auth.signInWithPassword`, session persisted in `localStorage`, `onAuthStateChange` listener in `AuthProvider`.
-- Edge functions deployed via `supabase functions deploy`. Lovable's Supabase integration handles deployment when I create files under `supabase/functions/<name>/index.ts`.
-- Env vars needed at build time: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Set in Netlify dashboard under Site settings → Environment variables.
+## 6. SQL you need to run
 
-## What I need from you to start
+Provided as one block at the end of the response. It will:
 
-Just approve. I'll execute Phase 1 only, you reload the preview, confirm the app still mounts, then I move to Phase 2.
+- Add `profiles.referral_code text unique` + backfill + trigger.
+- Add `profiles.referred_by uuid references profiles(id)`.
+- Add `tasks.attachments jsonb default '[]'::jsonb` and `tasks.category_group text`.
+- Add `task_applications.proof_urls text[] default '{}'`.
+- Create `public.market_campaigns` table with proper grants + RLS + status enum.
+- Indexes on `referrals.referrer_id`, `referral_clicks.code`, `market_campaigns.user_id`.
+
+---
+
+## Technical notes
+
+- All new pages get a `<Header />` + `<Footer />` so logged-in users can navigate them.
+- No backend code outside Supabase — Cloudinary is browser-only via unsigned preset.
+- Hero/home content stays visually identical except for the auth CTA swap.
+- The category catalog lives in TS files (not the DB) so you can edit them without migrations.
+
+---
+
+## Out of scope (tell me if you want them next)
+
+- Migrating existing `tasks.category_id` foreign keys to the new grouped catalog.
+- Building campaign analytics dashboards (views/clicks/conversions per campaign).
+- A separate worker "Market" feed for paid social-engagement tasks.
+
+Approve and I will implement all six sections in one pass and hand you the SQL.
