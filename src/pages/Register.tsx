@@ -58,9 +58,21 @@ function Register() {
     setLoading(false);
     if (error) return toast.error(error.message);
 
-    // If referral code present, record the relationship after the trigger creates profile.
+    // If referral code present, resolve referrer by code and record the relationship.
     if (ref && data.user) {
-      await db.from("referrals").insert({ referrer_id: ref, referred_id: data.user.id, code: ref }).then(() => undefined);
+      const { data: refProfile } = await db
+        .from("profiles")
+        .select("id")
+        .eq("referral_code", ref)
+        .maybeSingle();
+      if (refProfile?.id) {
+        await db.from("referrals").insert({
+          referrer_id: refProfile.id,
+          referred_id: data.user.id,
+          code: ref,
+        }).then(() => undefined);
+        await db.from("profiles").update({ referred_by: refProfile.id }).eq("id", data.user.id).then(() => undefined);
+      }
     }
 
     toast.success("Account created! Check your email to verify.");

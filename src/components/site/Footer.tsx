@@ -19,9 +19,9 @@ export function Footer() {
           </div>
           <FooterCol title="Platform" links={[
             { label: "How it works", href: "/#how" },
-            { label: "Categories", href: "/#categories" },
-            { label: "Market with us", href: "/#market" },
-            { label: "Referral program", href: "/#referrals" },
+            { label: "Categories", href: "/categories" },
+            { label: "Market with us", href: "/market-with-us" },
+            { label: "Referral program", href: "/dashboard/referrals" },
           ]} />
           <FooterCol title="Company" links={[
             { label: "About", href: "/about" },
