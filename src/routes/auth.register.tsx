@@ -78,7 +78,7 @@ function Register() {
     }
 
     toast.success("Account created! Check your email to verify.");
-    navigate({ to: "/auth/login" });
+    navigate("/auth/login");
   }
 
   return (

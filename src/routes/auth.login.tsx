@@ -30,7 +30,7 @@ function Login() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
-    navigate({ to: "/dashboard" });
+    navigate("/dashboard");
   }
 
   return (

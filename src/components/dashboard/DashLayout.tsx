@@ -38,10 +38,10 @@ const sharedNav = [
 export function DashLayout() {
   const { user, profile, loading, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
-  const path = useLocation({ select: (s) => s.location.pathname });
+  const path = useLocation().pathname;
 
   useEffect(() => {
-    if (!loading && !user) nav({ to: "/auth/login" });
+    if (!loading && !user) nav("/auth/login");
   }, [loading, user, nav]);
 
   if (loading || !profile) {

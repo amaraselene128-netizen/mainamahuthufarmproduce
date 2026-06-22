@@ -42,7 +42,7 @@ function NewTask() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Task posted");
-    nav({ to: "/dashboard/hiring" });
+    nav("/dashboard/hiring");
   }
 
   return (

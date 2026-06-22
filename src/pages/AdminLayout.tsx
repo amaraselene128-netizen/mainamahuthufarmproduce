@@ -22,8 +22,8 @@ function AdminLayout() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) nav({ to: "/auth/login" });
-    else if (!isAdmin) nav({ to: "/dashboard" });
+    if (!user) nav("/auth/login");
+    else if (!isAdmin) nav("/dashboard");
   }, [loading, user, isAdmin, nav]);
 
   if (loading || !isAdmin) return <div className="min-h-screen grid place-items-center text-muted-foreground">Verifying admin access…</div>;
