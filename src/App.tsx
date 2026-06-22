@@ -75,6 +75,7 @@ function NotFound() {
 export default function App() {
   return (
     <Suspense fallback={<PageFallback />}>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashLayout />}>
           <Route index element={<DashOverview />} />
           <Route path="worker" element={<AvailableTasks />} />
+          <Route path="worker/:id" element={<TaskDetail />} />
           <Route path="worker/applied" element={<Applied />} />
           <Route path="worker/completed" element={<Completed />} />
           <Route path="worker/rejected" element={<Rejected />} />
@@ -114,6 +116,9 @@ export default function App() {
           <Route index element={<AdminOverview />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="tasks" element={<AdminTasks />} />
+          <Route path="tasks/new" element={<AdminNewTask />} />
+          <Route path="tasks/:id" element={<AdminTaskReview />} />
+          <Route path="campaigns" element={<AdminCampaigns />} />
           <Route path="withdrawals" element={<AdminWithdrawals />} />
           <Route path="countries" element={<AdminCountries />} />
           <Route path="referrals" element={<AdminReferrals />} />
