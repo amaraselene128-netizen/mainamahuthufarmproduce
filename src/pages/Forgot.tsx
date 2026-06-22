@@ -13,7 +13,7 @@ function Forgot() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      To: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     setLoading(false);
     if (error) return toast.error(error.message);

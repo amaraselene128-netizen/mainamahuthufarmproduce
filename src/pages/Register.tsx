@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearch } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { AuthShell, Field } from "@/components/auth/AuthShell";
 import { supabase, db } from "@/lib/db";
@@ -9,7 +9,7 @@ type Country = { code: string; name: string; restricted: boolean };
 
 function Register() {
   const navigate = useNavigate();
-  const { ref } = useSearch({ from: "/auth/register" });
+  const [searchParams] = useSearchParams(); const ref = searchParams.get("ref") ?? undefined;
   const [accountMode, setAccountMode] = useState<"worker" | "hiring">("worker");
   const [countries, setCountries] = useState<Country[]>([]);
   const [form, setForm] = useState({

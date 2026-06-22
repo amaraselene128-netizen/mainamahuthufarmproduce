@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { ExternalLink } from "lucide-react";
 
 function ReviewTask() {
-  const { id } = useParams({ from: "/dashboard/hiring/$id" });
+  const { id } = useParams<{ id: string }>();
   const [task, setTask] = useState<any | null>(null);
   const [subs, setSubs] = useState<any[]>([]);
 

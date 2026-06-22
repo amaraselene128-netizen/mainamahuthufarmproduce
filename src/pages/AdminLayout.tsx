@@ -18,7 +18,7 @@ const items = [
 function AdminLayout() {
   const { user, isAdmin, loading } = useAuth();
   const nav = useNavigate();
-  const path = ({ select: (s) => s.location.pathname });
+  const path = useLocation().pathname;
 
   useEffect(() => {
     if (loading) return;
