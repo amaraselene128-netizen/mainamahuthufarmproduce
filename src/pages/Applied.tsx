@@ -15,6 +15,7 @@ type Row = {
 function Applied() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const [subs, setSubs] = useState<Record<string, any>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
 
   async function load() {
@@ -25,6 +26,13 @@ function Applied() {
       .order("applied_at", { ascending: false });
     if (error) return toast.error(error.message);
     setRows((data as any) ?? []);
+
+    const { data: ss } = await db.from("task_submissions")
+      .select("application_id,status,admin_comment,reviewed_at")
+      .eq("worker_id", user.id);
+    const map: Record<string, any> = {};
+    (ss ?? []).forEach((s: any) => { map[s.application_id] = s; });
+    setSubs(map);
   }
   useEffect(() => { load(); }, [user]);
 
