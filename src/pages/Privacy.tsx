@@ -1,4 +1,4 @@
-import import { StaticShell } from "@/components/site/StaticShell";
+import { StaticShell } from "@/components/site/StaticShell";
 
 function Privacy() {
   return (

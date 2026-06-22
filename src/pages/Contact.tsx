@@ -1,4 +1,4 @@
-import import { useState } from "react";
+import { useState } from "react";
 import { StaticShell } from "@/components/site/StaticShell";
 import { Mail, MapPin } from "lucide-react";
 import { db } from "@/lib/db";

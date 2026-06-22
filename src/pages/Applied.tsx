@@ -1,4 +1,4 @@
-import import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { db, supabase } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";

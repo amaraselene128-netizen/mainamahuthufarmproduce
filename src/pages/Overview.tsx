@@ -1,4 +1,4 @@
-import import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Wallet, Briefcase, CheckCircle2, Clock, Plus, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { db } from "@/lib/db";

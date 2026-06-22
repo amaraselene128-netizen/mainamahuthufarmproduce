@@ -1,4 +1,4 @@
-import import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { BarChart3, CheckCircle2, Users } from "lucide-react";
