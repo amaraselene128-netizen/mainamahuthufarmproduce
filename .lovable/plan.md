@@ -1,90 +1,99 @@
 ## Goal
 
-Make EGRATASKS feel "logged-in aware" across the entire site, expand the task category catalog to your full list, add Cloudinary uploads for avatars + task submissions, and make sure the admin pages and referral program actually fetch and work.
-
-The home page layout stays as it is — only the header CTAs change based on auth state, and new pages are added for the expanded categories.
+Tighten EGRATASKS end-to-end: admin can create tasks and review worker submissions; workers see + download task attachments; support tickets accept files; withdrawals enforce balance and the 28th→5th payout window (instant during window for tasks completed inside it); the whole site reacts to login state; navigation always scrolls to top; campaigns flow into the admin queue; and "How it works" / FAQ anchors actually scroll to those sections.
 
 ---
 
-## 1. Auth-aware navigation (whole site, not just dashboard)
+## 1. Scroll-to-top on every navigation
 
-- Update `src/components/site/Header.tsx` to use `useAuth()`:
-  - When **logged out** → show "Login" + "Get Started" (current behavior).
-  - When **logged in** → hide Login/Register/Get Started. Show: avatar + username, "Dashboard" link, "Admin" link if `isAdmin`, and a "Sign out" button.
-- Same logic for the mobile menu drawer (everything stays inside the hamburger — no stretched buttons).
-- Hero section in `src/pages/Home.tsx`:
-  - When logged in, replace the "Get Started / Login / Register" cluster with a single "Go to dashboard" CTA + "Browse tasks" secondary.
-- Add a public "Categories" page and "Market With Us" page (linked from header + footer) so logged-in users can keep exploring.
+- Add `src/components/site/ScrollToTop.tsx` that listens to `useLocation()` and scrolls window to top on path change. If the URL has a hash (`#how`, `#faq`), scroll the element with `scrollIntoView({ behavior: "smooth" })` instead.
+- Mount it once inside `src/App.tsx`, above `<Routes>`.
+- Replace plain `<a href="/#how">` with a `<HashLink>`-style `<Link to="/#how">` everywhere; the scroller handles the scroll-into-view.
 
-## 2. Full freelance category catalog
+## 2. Auth-aware site (Header, Footer, MarketWithUs, Home CTAs)
 
-- Create `src/data/categories.ts` exporting the full grouped list you provided (Programming & Tech → Data Verification, organized by the emoji-headed groups).
-- Create `src/data/market-categories.ts` for the "Market With Us" catalog (Social Media Promotion → Other Digital Services).
-- `src/pages/NewTask.tsx` (admin/client task creator):
-  - Replace the flat DB-fetched `category_id` dropdown with a **grouped select** (optgroup per group) sourced from `categories.ts`. Store the chosen string in `tasks.category_id` (kept as text/free-form) — we will not migrate DB on your behalf.
-- Create a new public page `/categories` listing all groups + sub-categories.
-- Create a new public page `/market-with-us` listing the market promotion catalog with the submission form fields you described (campaign category, title, description, URLs, budget, dates, contact, etc.). For now the form posts to a `market_campaigns` table (SQL provided below) — if you don't run the SQL, the page still renders the catalog read-only.
+- **Footer**: when `useAuth().user` is present, swap "Help center → /support" for `/dashboard/support`, hide "Referral program" only if signed out, and replace any login/register links with a single "Dashboard" link.
+- **MarketWithUs**: keep the form public, but show "Submit as <username>" + a "Back to dashboard" link when logged in. Remove the trailing "sign in to track" hint when logged in.
+- **Home → CTA section** (bottom of `Home.tsx`): when logged in, show "Go to dashboard" + "Browse tasks" instead of "Get Started / Login".
+- Make every "Get Started / Login / Register" button across pages (`About`, `Contact`, `Categories`, `MarketWithUs`, `Privacy`, `Terms`) use the same auth-aware helper — extract `src/components/site/AuthCta.tsx`.
 
-## 3. Cloudinary upload integration
+## 3. "How it works" + FAQ deep links
 
-Credentials go in `.env`:
+- Header nav already points to `/#how` and `/#faq`. Add IDs (`id="how"` already exists; add `id="faq"` to FAQ section). With the ScrollToTop hash handler the click will scroll correctly from any page.
+- Footer + Home buttons updated to use the same anchor targets.
 
-```
-VITE_CLOUDINARY_CLOUD_NAME=dpboreqsc
-VITE_CLOUDINARY_UPLOAD_PRESET=egrotasks
-```
+## 4. Admin task creation + submissions review
 
-(API Key/Secret are **not** needed for unsigned uploads from the browser and must not be exposed — we use the unsigned preset only.)
+- New admin page `src/pages/AdminNewTask.tsx` (route `/admin/tasks/new`) that reuses the same form as `NewTask.tsx` but inserts with `hiring_id = admin user id` (still satisfies RLS via admin policy). Add "+ New task" button on `Tasks.tsx`.
+- New admin page `src/pages/AdminTaskReview.tsx` (route `/admin/tasks/:id`) that mirrors `ReviewTask.tsx` (list all submissions, approve / revision / reject with comments). Existing RLS already lets admins update via `has_role`. Tasks list rows link to this page.
+- After approval, the existing trigger should credit the worker wallet. Add SQL trigger `on_submission_approved` that, when `task_submissions.status` flips to `approved`, inserts a `transactions` row, bumps `wallets.available` (or instant payout — see section 6), and updates the application status. After rejection it just marks the application rejected.
 
-- Add `src/lib/cloudinary.ts` with a single `uploadToCloudinary(file)` helper that POSTs to `https://api.cloudinary.com/v1_1/dpboreqsc/image/upload` using the `egrotasks` preset and returns `{ secure_url, public_id }`.
-- Wire it into:
-  - `src/pages/ProfilePage.tsx` → avatar upload (writes URL to `profiles.avatar_url`).
-  - `src/pages/NewTask.tsx` → optional task cover image / attachments (stored on the task row in a new `attachments jsonb` column — see SQL below).
-  - Task submission flow (worker submitting proof screenshots) → array of Cloudinary URLs stored on `task_applications.proof_urls`.
+## 5. Worker downloads + dashboard submission status
 
-## 4. Admin pages — make fetching work
+- `AvailableTasks.tsx` cards: show an "Attachments" chip when `tasks.attachments` is non-empty; clicking opens a modal that lists each `{ url, name }` with a Download button (anchor `download` attr pointing to Cloudinary URL).
+- New `src/pages/TaskDetail.tsx` (`/dashboard/worker/:id`) so workers can see full description + downloads + an apply / submit flow in one place.
+- `Applied.tsx` already shows applications — extend the row to render `admin_comment` and a colored status pill (approved / rejected / revision) so the worker sees the response.
+- `Completed.tsx` / `Rejected.tsx` updated to surface the same `admin_comment` block.
 
-- Audit each admin page and ensure it uses the right query / edge function:
-  - `Users.tsx`, `Tasks.tsx`, `Withdrawals.tsx`, `Countries.tsx`, `Refs.tsx`, `Fraud.tsx`, `AdminSupport.tsx`.
-- For pages that currently rely only on RLS and may return empty arrays for admins, switch them to call their corresponding `admin-*` edge function (already in `supabase/functions/`) for the privileged listing. Add minimal listing endpoints where missing (e.g. `admin-users` list).
-- Make `AdminOverview.tsx` show real counts (users, active tasks, pending withdrawals, open tickets) by calling `count: "exact", head: true` queries.
+## 6. Withdrawal flow
 
-## 5. Referral program structure
+- Add `src/lib/withdrawal-window.ts` exporting `isWithdrawalOpen(now = new Date())` → true if day ≥ 28 of month, or day ≤ 5 of next month. Also `nextOpenDate()` for UI messaging.
+- `WalletPage.tsx`:
+  - Disable submit when amount ≤ 0, amount > available, or window is closed. Show inline reasons under the button ("Insufficient balance", "Withdrawals open Mar 28 → Apr 5").
+  - On submit during open window, call new edge function `request-withdrawal` which: validates window + balance server-side, debits `wallets.available`, creates `withdrawal_requests` with `status='paid'` (instant) + `paid_at=now()`, inserts a `transactions` row. Outside the window the function rejects.
+  - Show a "Window status" pill at the top of Wallet ("Open · closes Apr 5" / "Closed · opens in 12 days").
+- Admin `Withdrawals.tsx` keeps approve / reject for any legacy `pending` rows but most flows now auto-pay.
 
-- `Referrals.tsx` rewrite:
-  - Show the user's permanent referral code (a short slug, not the raw UUID) — generated on first visit and stored on `profiles.referral_code`.
-  - Link format: `${origin}/auth/register?ref=<code>`.
-  - Plans section unchanged but properly fetched; subscription button disabled if no wallet balance (for paid tiers).
-  - Stats cards: clicks, signups, verified, earnings — already in code, but switch the `referral_clicks` query to use `code = profile.referral_code` instead of `user.id`.
-  - Add a referred-users table view (username, country, status, your earnings) sourced from `referrals` joined with `profiles`.
-- `Register.tsx`: when `?ref=<code>` is present, look up the referrer, store `referred_by` on the new profile, and insert a row in `referrals`.
+## 7. Support tickets with uploads
 
-## 6. SQL you need to run
+- `db/schema.sql` adds `support_messages.attachments jsonb default '[]'` (only if missing). The migration tool will run an `alter table ... add column if not exists`.
+- `Support.tsx`: new ticket form gets a file picker that uploads to Cloudinary (`uploadManyToCloudinary`) and stores the URLs on the first message + the ticket. Reply input gets an attach button too.
+- `AdminSupport.tsx`: render attachments as thumbnails / download links per message and let the admin upload screenshots in replies.
 
-Provided as one block at the end of the response. It will:
+## 8. Campaign approvals
 
-- Add `profiles.referral_code text unique` + backfill + trigger.
-- Add `profiles.referred_by uuid references profiles(id)`.
-- Add `tasks.attachments jsonb default '[]'::jsonb` and `tasks.category_group text`.
-- Add `task_applications.proof_urls text[] default '{}'`.
-- Create `public.market_campaigns` table with proper grants + RLS + status enum.
-- Indexes on `referrals.referrer_id`, `referral_clicks.code`, `market_campaigns.user_id`.
+- `MarketWithUs.tsx` already inserts into `market_campaigns` with `status: 'pending'`. Add new admin route `/admin/campaigns` (page `src/pages/AdminCampaigns.tsx`) listing pending → approved / rejected with notes. Add nav entry in `AdminLayout`.
+- RLS already grants admins update via `has_role` (verify in SQL — add if missing).
+
+## 9. Functional dashboard sweep
+
+Quick pass to wire any remaining stub pages to real data:
+- `Notifs.tsx`, `Messages.tsx`, `Analytics.tsx`, `Reviews.tsx`, `Referrals.tsx`, `Settings.tsx` — ensure each fetches its table (creating empty-state UI if no data) and removes any "coming soon" placeholders. No new features beyond what the tables already support.
 
 ---
 
 ## Technical notes
 
-- All new pages get a `<Header />` + `<Footer />` so logged-in users can navigate them.
-- No backend code outside Supabase — Cloudinary is browser-only via unsigned preset.
-- Hero/home content stays visually identical except for the auth CTA swap.
-- The category catalog lives in TS files (not the DB) so you can edit them without migrations.
+```text
+Routes added
+  /admin/tasks/new            → AdminNewTask
+  /admin/tasks/:id            → AdminTaskReview
+  /admin/campaigns            → AdminCampaigns
+  /dashboard/worker/:id       → TaskDetail
+
+New files
+  src/components/site/ScrollToTop.tsx
+  src/components/site/AuthCta.tsx
+  src/lib/withdrawal-window.ts
+  src/pages/AdminNewTask.tsx
+  src/pages/AdminTaskReview.tsx
+  src/pages/AdminCampaigns.tsx
+  src/pages/TaskDetail.tsx
+  supabase/functions/request-withdrawal/index.ts
+
+Schema additions (migration tool)
+  alter table support_messages add column if not exists attachments jsonb default '[]'
+  alter table support_tickets  add column if not exists attachments jsonb default '[]'
+  create trigger on_submission_approved → credit wallet + insert transaction
+  policy: admins update market_campaigns (if missing)
+```
 
 ---
 
-## Out of scope (tell me if you want them next)
+## Out of scope
 
-- Migrating existing `tasks.category_id` foreign keys to the new grouped catalog.
-- Building campaign analytics dashboards (views/clicks/conversions per campaign).
-- A separate worker "Market" feed for paid social-engagement tasks.
+- Push/email notifications for ticket replies and review outcomes
+- Recurring/automated payout cron on the 28th (we make it instant during window instead)
+- Worker chat threads with the admin reviewer beyond the existing `admin_comment` text
 
-Approve and I will implement all six sections in one pass and hand you the SQL.
+Approve and I'll implement all nine sections in one pass.
