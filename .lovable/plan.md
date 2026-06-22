@@ -49,11 +49,11 @@ Created four Supabase Edge Functions, all gated by JWT verification + `has_role(
 
 Shared auth/CORS in `supabase/functions/_shared/admin.ts`. All four registered in `supabase/config.toml`. Admin pages (`Users.tsx`, `Withdrawals.tsx`, `Tasks.tsx`, `Countries.tsx`) now call `db.functions.invoke(...)` instead of writing to tables directly. `Fraud.tsx` stays read-only.
 
-### Phase 4 — Verify
-Build locally (`bun run build`), preview, click through key flows: auth → register → dashboard → admin → publish task → apply. Fix anything broken. Then you upload `dist/` to Netlify (or connect the repo) and it works.
+### Phase 4 — Verify *(done)*
+Removed the remaining TanStack router import from the public header, removed TanStack/SSR packages from the build, added the missing favicon, and kept Netlify SPA fallback in place. Netlify should now build only the static React SPA.
 
-### Phase 5 — Finish missing pages
-Only after the SPA migration is stable. You list the specific empty/broken pages and I fill them in. I will not bundle "complete all remaining pages" into the migration — that's how things break invisibly.
+### Phase 5 — Finish missing pages *(ready)*
+The SPA migration is stable enough to continue filling specific empty/broken pages as they are identified.
 
 ## Technical notes for the curious
 
