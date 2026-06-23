@@ -658,3 +658,199 @@ drop trigger if exists on_submission_status_change on public.task_submissions;
 create trigger on_submission_status_change
   after insert or update of status on public.task_submissions
   for each row execute function public.on_submission_status_change();
+
+-- ============================================================
+-- REWARDED ADS PROGRAM
+-- ============================================================
+
+do $$ begin create type public.ad_status as enum ('pending','active','paused','rejected','depleted'); exception when duplicate_object then null; end $$;
+
+create table if not exists public.advertisements (
+  id uuid primary key default gen_random_uuid(),
+  advertiser_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  description text,
+  video_url text not null,
+  video_public_id text,
+  destination_url text not null,
+  button_text text not null default 'Install Now',
+  duration_seconds int not null check (duration_seconds in (15,30,45,60)),
+  country_targeting text[] not null default '{}',
+  budget_cents int not null check (budget_cents >= 0),
+  spent_cents int not null default 0 check (spent_cents >= 0),
+  views_purchased int not null default 0,
+  views_completed int not null default 0,
+  status public.ad_status not null default 'pending',
+  admin_notes text,
+  approved_at timestamptz,
+  created_at timestamptz not null default now()
+);
+grant select, insert, update on public.advertisements to authenticated;
+grant all on public.advertisements to service_role;
+alter table public.advertisements enable row level security;
+drop policy if exists "Ads viewable: active to all, own to advertiser, all to admin" on public.advertisements;
+create policy "Ads viewable: active to all, own to advertiser, all to admin"
+  on public.advertisements for select to authenticated
+  using (status = 'active' or advertiser_id = auth.uid() or public.has_role(auth.uid(),'admin'));
+drop policy if exists "Advertiser inserts own ad" on public.advertisements;
+create policy "Advertiser inserts own ad" on public.advertisements for insert to authenticated
+  with check (advertiser_id = auth.uid());
+drop policy if exists "Advertiser updates own ad metadata" on public.advertisements;
+create policy "Advertiser updates own ad metadata" on public.advertisements for update to authenticated
+  using (advertiser_id = auth.uid() or public.has_role(auth.uid(),'admin'))
+  with check (advertiser_id = auth.uid() or public.has_role(auth.uid(),'admin'));
+
+create table if not exists public.ad_views (
+  id uuid primary key default gen_random_uuid(),
+  ad_id uuid not null references public.advertisements(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  watched_seconds int not null,
+  completed boolean not null default false,
+  reward_cents int not null default 0,
+  ip text,
+  user_agent text,
+  fingerprint text,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists ad_views_one_completed_per_user
+  on public.ad_views (ad_id, user_id) where completed;
+grant select on public.ad_views to authenticated;
+grant all on public.ad_views to service_role;
+alter table public.ad_views enable row level security;
+drop policy if exists "User reads own ad views" on public.ad_views;
+create policy "User reads own ad views" on public.ad_views for select to authenticated
+  using (user_id = auth.uid() or public.has_role(auth.uid(),'admin')
+         or exists (select 1 from public.advertisements a where a.id = ad_id and a.advertiser_id = auth.uid()));
+
+create table if not exists public.ad_clicks (
+  id uuid primary key default gen_random_uuid(),
+  ad_id uuid not null references public.advertisements(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  destination_url text not null,
+  clicked_at timestamptz not null default now()
+);
+grant select, insert on public.ad_clicks to authenticated;
+grant all on public.ad_clicks to service_role;
+alter table public.ad_clicks enable row level security;
+drop policy if exists "User inserts own click" on public.ad_clicks;
+create policy "User inserts own click" on public.ad_clicks for insert to authenticated
+  with check (user_id = auth.uid());
+drop policy if exists "Click visible to clicker, advertiser, admin" on public.ad_clicks;
+create policy "Click visible to clicker, advertiser, admin" on public.ad_clicks for select to authenticated
+  using (user_id = auth.uid() or public.has_role(auth.uid(),'admin')
+         or exists (select 1 from public.advertisements a where a.id = ad_id and a.advertiser_id = auth.uid()));
+
+create table if not exists public.tier_credits (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  balance_cents int not null default 0 check (balance_cents >= 0),
+  updated_at timestamptz not null default now()
+);
+grant select on public.tier_credits to authenticated;
+grant all on public.tier_credits to service_role;
+alter table public.tier_credits enable row level security;
+drop policy if exists "User reads own credits" on public.tier_credits;
+create policy "User reads own credits" on public.tier_credits for select to authenticated
+  using (user_id = auth.uid() or public.has_role(auth.uid(),'admin'));
+
+create table if not exists public.tier_credit_ledger (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  delta_cents int not null,
+  source text not null,
+  ref_id text,
+  created_at timestamptz not null default now()
+);
+grant select on public.tier_credit_ledger to authenticated;
+grant all on public.tier_credit_ledger to service_role;
+alter table public.tier_credit_ledger enable row level security;
+drop policy if exists "User reads own ledger" on public.tier_credit_ledger;
+create policy "User reads own ledger" on public.tier_credit_ledger for select to authenticated
+  using (user_id = auth.uid() or public.has_role(auth.uid(),'admin'));
+
+-- SECURITY DEFINER: credit a completed ad view, enforce fraud rules + budget cap.
+create or replace function public.credit_ad_view(
+  p_ad_id uuid, p_user_id uuid, p_watched int,
+  p_fingerprint text, p_user_agent text, p_ip text
+) returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_ad public.advertisements%rowtype;
+  v_reward int;
+  v_advertiser_cost int;
+  v_balance int;
+begin
+  select * into v_ad from public.advertisements where id = p_ad_id for update;
+  if not found then raise exception 'Ad not found'; end if;
+  if v_ad.status <> 'active' then raise exception 'Ad is not active'; end if;
+  if p_watched < v_ad.duration_seconds then raise exception 'Watch incomplete'; end if;
+  if exists (select 1 from public.ad_views where ad_id = p_ad_id and user_id = p_user_id and completed) then
+    raise exception 'Already credited for this ad';
+  end if;
+
+  v_reward := case v_ad.duration_seconds
+    when 15 then 1 when 30 then 2 when 45 then 3 when 60 then 4 end;
+  v_advertiser_cost := case v_ad.duration_seconds
+    when 15 then 5 when 30 then 6 when 45 then 7 when 60 then 8 end;
+
+  if v_ad.spent_cents + v_advertiser_cost > v_ad.budget_cents then
+    update public.advertisements set status = 'depleted' where id = p_ad_id;
+    raise exception 'Ad budget exhausted';
+  end if;
+
+  insert into public.ad_views (ad_id, user_id, watched_seconds, completed, reward_cents, ip, user_agent, fingerprint)
+  values (p_ad_id, p_user_id, p_watched, true, v_reward, p_ip, p_user_agent, p_fingerprint);
+
+  update public.advertisements
+    set spent_cents = spent_cents + v_advertiser_cost,
+        views_completed = views_completed + 1,
+        status = case when spent_cents + v_advertiser_cost >= budget_cents then 'depleted'::public.ad_status else status end
+    where id = p_ad_id;
+
+  insert into public.tier_credits (user_id, balance_cents)
+  values (p_user_id, v_reward)
+  on conflict (user_id) do update
+    set balance_cents = public.tier_credits.balance_cents + excluded.balance_cents,
+        updated_at = now()
+  returning balance_cents into v_balance;
+
+  insert into public.tier_credit_ledger (user_id, delta_cents, source, ref_id)
+  values (p_user_id, v_reward, 'ad_view', p_ad_id::text);
+
+  return jsonb_build_object('balance_cents', v_balance, 'reward_cents', v_reward);
+end; $$;
+revoke all on function public.credit_ad_view(uuid, uuid, int, text, text, text) from public, anon, authenticated;
+grant execute on function public.credit_ad_view(uuid, uuid, int, text, text, text) to service_role;
+
+-- SECURITY DEFINER: spend tier credits to unlock a referral subscription.
+create or replace function public.unlock_tier_from_credits(p_tier text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_uid uuid := auth.uid();
+  v_price int;
+  v_plan_id uuid;
+  v_balance int;
+  v_existing uuid;
+begin
+  if v_uid is null then raise exception 'Not authenticated'; end if;
+  v_price := case lower(p_tier)
+    when 'bronze' then 500 when 'silver' then 1000 when 'gold' then 1500
+    else null end;
+  if v_price is null then raise exception 'Invalid tier'; end if;
+
+  select id into v_plan_id from public.referral_plans where tier = lower(p_tier)::public.referral_tier and active limit 1;
+  if v_plan_id is null then raise exception 'Plan not found'; end if;
+
+  select id into v_existing from public.referral_subscriptions where user_id = v_uid;
+  if v_existing is not null then raise exception 'Already subscribed'; end if;
+
+  select balance_cents into v_balance from public.tier_credits where user_id = v_uid for update;
+  if v_balance is null or v_balance < v_price then raise exception 'Insufficient tier credits'; end if;
+
+  update public.tier_credits set balance_cents = balance_cents - v_price, updated_at = now() where user_id = v_uid;
+  insert into public.referral_subscriptions (user_id, plan_id) values (v_uid, v_plan_id);
+  insert into public.tier_credit_ledger (user_id, delta_cents, source, ref_id)
+  values (v_uid, -v_price, 'tier_unlock', v_plan_id::text);
+
+  return jsonb_build_object('tier', p_tier, 'balance_cents', v_balance - v_price);
+end; $$;
+revoke all on function public.unlock_tier_from_credits(text) from public, anon;
+grant execute on function public.unlock_tier_from_credits(text) to authenticated;
