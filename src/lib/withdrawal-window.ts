@@ -1,9 +1,9 @@
-// Withdrawal window: open from the 28th of every month through the 5th of the next month (inclusive).
-// During this window, approved earnings are paid out instantly.
+// Withdrawal window: open from the 1st through the 5th of every month (inclusive).
+// Approved earnings settle on the 5th of each month.
 
 export function isWithdrawalOpen(now: Date = new Date()): boolean {
   const day = now.getDate();
-  return day >= 28 || day <= 5;
+  return day >= 1 && day <= 5;
 }
 
 export function windowStatus(now: Date = new Date()): {
@@ -21,16 +21,14 @@ export function windowStatus(now: Date = new Date()): {
   let closesAt: Date;
 
   if (open) {
-    // window opened on 28th of either this month or last month
-    if (day >= 28) {
-      opensAt = new Date(y, m, 28);
-      closesAt = new Date(y, m + 1, 5, 23, 59, 59);
-    } else {
-      opensAt = new Date(y, m - 1, 28);
-      closesAt = new Date(y, m, 5, 23, 59, 59);
-    }
+    opensAt = new Date(y, m, 1);
+    closesAt = new Date(y, m, 5, 23, 59, 59);
+  } else if (day < 1) {
+    opensAt = new Date(y, m, 1);
+    closesAt = new Date(y, m, 5, 23, 59, 59);
   } else {
-    opensAt = new Date(y, m, 28);
+    // after the 5th — next window is the 1st of next month
+    opensAt = new Date(y, m + 1, 1);
     closesAt = new Date(y, m + 1, 5, 23, 59, 59);
   }
 

@@ -71,7 +71,7 @@ function Hero() {
             Earn from work that <span className="text-gradient-gold">moves the world.</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            EGRATASKS is the premium global marketplace for micro-tasks, social engagement, and
+            EGMTASKS is the premium global marketplace for micro-tasks, social engagement, and
             freelance projects — connecting clients with verified workers in seconds.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -117,7 +117,7 @@ function Hero() {
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">
-            No credit card required · Email-verified accounts · Monthly payouts on the 28th
+            No credit card required · Email-verified accounts · Monthly payouts on the 5th
           </p>
         </motion.div>
       </div>
@@ -191,7 +191,7 @@ function HowItWorks() {
     { n: "01", title: "Create your account", desc: "Sign up in 60 seconds. Choose between Worker or Client — switch anytime from your dashboard." },
     { n: "02", title: "Apply or post a task", desc: "Workers browse available jobs across every category. Clients post with budget, deadline and instructions." },
     { n: "03", title: "Deliver & get reviewed", desc: "Submit proof — screenshots, files, URLs. Admin reviews and approves." },
-    { n: "04", title: "Get paid on the 28th", desc: "Approved earnings settle to your wallet and pay out automatically on the 28th of each month." },
+    { n: "04", title: "Get paid on the 5th", desc: "Approved earnings settle to your wallet and pay out automatically on the 5th of each month." },
   ];
   return (
     <section id="how" className="py-24">
@@ -225,7 +225,7 @@ function HowItWorks() {
 function WhyChooseUs() {
   const items = [
     { icon: ShieldCheck, title: "Enterprise-grade trust", desc: "AI fraud detection, device fingerprinting, RLS-protected data and KYC verification." },
-    { icon: Wallet, title: "Predictable payouts", desc: "Settle every month on the 28th to PayPal — Stripe, Payoneer, Wise and M-Pesa coming next." },
+    { icon: Wallet, title: "Predictable payouts", desc: "Settle every month on the 5th to PayPal — Stripe, Payoneer, Wise and M-Pesa coming next." },
     { icon: Globe2, title: "Truly global", desc: "Workers in 100+ countries, jobs in 7+ categories, multilingual support." },
     { icon: Zap, title: "Lightning UX", desc: "Premium SaaS interface, real-time notifications, optimized for any device." },
     { icon: Briefcase, title: "Built for clients", desc: "Post in minutes, get up to 20 verified workers per task, review and rate." },
@@ -354,7 +354,7 @@ function Testimonials() {
   const quotes = [
     { quote: "I earned my first $300 in two weeks. The interface feels like a luxury app, not a task board.", name: "Amara O.", role: "Worker · Nigeria" },
     { quote: "We launched a TikTok campaign and got 14,000 verified engagements in 48 hours.", name: "Diego R.", role: "Client · Mexico" },
-    { quote: "Finally a marketplace that pays on time. The 28th payout is sacred — and it works.", name: "Priya S.", role: "Worker · India" },
+    { quote: "Finally a marketplace that pays on time. The 5th payout is sacred — and it works.", name: "Priya S.", role: "Worker · India" },
   ];
   return (
     <section className="py-24">
@@ -394,8 +394,8 @@ function Testimonials() {
 /* ---------------- FAQ ---------------- */
 function FAQ() {
   const faqs = [
-    { q: "How do I get paid?", a: "All approved earnings settle to your in-app wallet and pay out monthly on the 28th via PayPal. Stripe, Payoneer, Wise and M-Pesa are on the roadmap." },
-    { q: "Is registration available worldwide?", a: "EGRATASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
+    { q: "How do I get paid?", a: "All approved earnings settle to your in-app wallet and pay out monthly on the 5th via PayPal. Stripe, Payoneer, Wise and M-Pesa are on the roadmap." },
+    { q: "Is registration available worldwide?", a: "EGMTASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
     { q: "How many workers can join one task?", a: "Each task accepts up to 20 workers on a first-come-first-served basis. Once full, the task is marked TAKEN." },
     { q: "What stops fake submissions?", a: "Our AI fraud engine combines duplicate-detection, screenshot similarity, device fingerprinting, and risk scoring (Low → Critical) with admin review." },
     { q: "Can I switch between Worker and Client?", a: "Yes — switch account modes anytime from your dashboard settings." },

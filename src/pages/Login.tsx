@@ -21,7 +21,7 @@ function Login() {
   }
 
   return (
-    <AuthShell title="Welcome back" sub="Sign in to continue earning, hiring or marketing on EGRATASKS.">
+    <AuthShell title="Welcome back" sub="Sign in to continue earning, hiring or marketing on EGMTASKS.">
       <form className="space-y-4" onSubmit={submit}>
         <Field label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         <Field label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
@@ -35,7 +35,7 @@ function Login() {
           {loading ? "Signing in…" : "Sign in"}
         </button>
         <p className="text-center text-sm text-muted-foreground">
-          New to EGRATASKS?{" "}
+          New to EGMTASKS?{" "}
           <Link to="/auth/register" className="text-primary font-medium hover:underline">Create an account</Link>
         </p>
       </form>

@@ -18,7 +18,7 @@ export function AuthShell({ title, sub, children }: { title: string; sub: string
               1M+ users · 100+ countries · 1B+ social engagements.
             </p>
           </div>
-          <div className="text-xs opacity-70">© {new Date().getFullYear()} EGRATASKS · Nairobi, Kenya</div>
+          <div className="text-xs opacity-70">© {new Date().getFullYear()} EGMTASKS · Nairobi, Kenya</div>
         </div>
       </div>
       <div className="flex items-center justify-center p-6 bg-background">

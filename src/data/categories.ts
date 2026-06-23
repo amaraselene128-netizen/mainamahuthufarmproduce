@@ -1,4 +1,4 @@
-// Full freelance / micro-task category catalog for EGRATASKS.
+// Full freelance / micro-task category catalog for EGMTASKS.
 // Edit freely — this is the single source of truth for category dropdowns
 // and the public /categories page.
 

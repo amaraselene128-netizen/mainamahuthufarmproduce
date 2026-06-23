@@ -125,7 +125,7 @@ function NewTask() {
 
         <label className="flex gap-2 items-start text-xs text-muted-foreground">
           <input type="checkbox" className="mt-0.5" checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} />
-          <span>I agree to the EGRATASKS Client Terms and confirm this task complies with all applicable laws.</span>
+          <span>I agree to the EGMTASKS Client Terms and confirm this task complies with all applicable laws.</span>
         </label>
         <button disabled={loading} className="rounded-xl bg-gradient-gold px-5 py-3 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow disabled:opacity-60">
           {loading ? "Posting…" : "Post task"}

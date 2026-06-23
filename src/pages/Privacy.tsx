@@ -3,7 +3,7 @@ import { StaticShell } from "@/components/site/StaticShell";
 function Privacy() {
   return (
     <StaticShell title="Privacy Policy" sub={`Last updated ${new Date().toLocaleDateString()}`}>
-      <p>EGRATASKS Headquarters · Nairobi, Kenya. This policy explains how we handle your personal data.</p>
+      <p>EGMTASKS Headquarters · Nairobi, Kenya. This policy explains how we handle your personal data.</p>
       <h2>Data we collect</h2>
       <ul>
         <li>Account: email, username, country, password (hashed).</li>
@@ -15,7 +15,7 @@ function Privacy() {
       <h2>Sharing</h2>
       <p>We share data with hosting/payment providers under contract. We never sell personal data.</p>
       <h2>Your rights</h2>
-      <p>Access, correction, deletion, portability. Contact <a href="mailto:privacy@egratasks.com">privacy@egratasks.com</a>.</p>
+      <p>Access, correction, deletion, portability. Contact <a href="mailto:privacy@egmtasks.com">privacy@egmtasks.com</a>.</p>
     </StaticShell>
   );
 }

@@ -22,8 +22,8 @@ function Contact() {
     <StaticShell title="Get in touch" sub="Email-only support — we respond within 24 hours, Mon-Sun.">
       <div className="grid md:grid-cols-2 gap-10 mt-8 not-prose">
         <div className="space-y-4 text-sm">
-          <div className="flex items-start gap-3"><MapPin className="size-5 text-primary mt-0.5" /><div><div className="font-semibold text-foreground">Headquarters</div><div className="text-muted-foreground">EGRATASKS Headquarters<br />Nairobi, Kenya</div></div></div>
-          <div className="flex items-start gap-3"><Mail className="size-5 text-primary mt-0.5" /><div><div className="font-semibold text-foreground">Email</div><div className="text-muted-foreground">support@egratasks.com</div></div></div>
+          <div className="flex items-start gap-3"><MapPin className="size-5 text-primary mt-0.5" /><div><div className="font-semibold text-foreground">Headquarters</div><div className="text-muted-foreground">EGMTASKS Headquarters<br />Nairobi, Kenya</div></div></div>
+          <div className="flex items-start gap-3"><Mail className="size-5 text-primary mt-0.5" /><div><div className="font-semibold text-foreground">Email</div><div className="text-muted-foreground">support@egmtasks.com</div></div></div>
         </div>
         <form onSubmit={submit} className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-3">
           <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name" className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" />

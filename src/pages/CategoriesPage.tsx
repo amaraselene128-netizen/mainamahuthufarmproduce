@@ -18,7 +18,7 @@ export default function CategoriesPage() {
               Every kind of work, <span className="text-gradient-gold">in one place.</span>
             </h1>
             <p className="mt-4 text-muted-foreground text-lg">
-              Browse the full catalog of freelance and micro-task categories available on EGRATASKS.
+              Browse the full catalog of freelance and micro-task categories available on EGMTASKS.
               Clients can post tasks in any of these — workers can specialize in the ones they love.
             </p>
             <div className="mt-6 flex gap-3 flex-wrap">

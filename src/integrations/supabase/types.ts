@@ -14,6 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_clicks: {
+        Row: {
+          ad_id: string
+          clicked_at: string
+          destination_url: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          ad_id: string
+          clicked_at?: string
+          destination_url: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          ad_id?: string
+          clicked_at?: string
+          destination_url?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_clicks_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_views: {
+        Row: {
+          ad_id: string
+          completed: boolean
+          created_at: string
+          fingerprint: string | null
+          id: string
+          ip: string | null
+          reward_cents: number
+          user_agent: string | null
+          user_id: string
+          watched_seconds: number
+        }
+        Insert: {
+          ad_id: string
+          completed?: boolean
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          reward_cents?: number
+          user_agent?: string | null
+          user_id: string
+          watched_seconds: number
+        }
+        Update: {
+          ad_id?: string
+          completed?: boolean
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          reward_cents?: number
+          user_agent?: string | null
+          user_id?: string
+          watched_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_views_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advertisements: {
+        Row: {
+          admin_notes: string | null
+          advertiser_id: string
+          approved_at: string | null
+          budget_cents: number
+          button_text: string
+          country_targeting: string[]
+          created_at: string
+          description: string | null
+          destination_url: string
+          duration_seconds: number
+          id: string
+          spent_cents: number
+          status: Database["public"]["Enums"]["ad_status"]
+          title: string
+          video_public_id: string | null
+          video_url: string
+          views_completed: number
+          views_purchased: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          advertiser_id: string
+          approved_at?: string | null
+          budget_cents: number
+          button_text?: string
+          country_targeting?: string[]
+          created_at?: string
+          description?: string | null
+          destination_url: string
+          duration_seconds: number
+          id?: string
+          spent_cents?: number
+          status?: Database["public"]["Enums"]["ad_status"]
+          title: string
+          video_public_id?: string | null
+          video_url: string
+          views_completed?: number
+          views_purchased?: number
+        }
+        Update: {
+          admin_notes?: string | null
+          advertiser_id?: string
+          approved_at?: string | null
+          budget_cents?: number
+          button_text?: string
+          country_targeting?: string[]
+          created_at?: string
+          description?: string | null
+          destination_url?: string
+          duration_seconds?: number
+          id?: string
+          spent_cents?: number
+          status?: Database["public"]["Enums"]["ad_status"]
+          title?: string
+          video_public_id?: string | null
+          video_url?: string
+          views_completed?: number
+          views_purchased?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           active: boolean
@@ -122,6 +264,78 @@ export type Database = {
           score?: number
           type?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      market_campaigns: {
+        Row: {
+          attachments: string[]
+          budget: number | null
+          category: string
+          clicks: number
+          contact_email: string | null
+          conversions: number
+          created_at: string
+          description: string
+          end_date: string | null
+          id: string
+          instructions: string | null
+          social_url: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          target_countries: string[]
+          title: string
+          updated_at: string
+          user_id: string | null
+          video_url: string | null
+          views: number
+          website_url: string | null
+        }
+        Insert: {
+          attachments?: string[]
+          budget?: number | null
+          category: string
+          clicks?: number
+          contact_email?: string | null
+          conversions?: number
+          created_at?: string
+          description: string
+          end_date?: string | null
+          id?: string
+          instructions?: string | null
+          social_url?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_countries?: string[]
+          title: string
+          updated_at?: string
+          user_id?: string | null
+          video_url?: string | null
+          views?: number
+          website_url?: string | null
+        }
+        Update: {
+          attachments?: string[]
+          budget?: number | null
+          category?: string
+          clicks?: number
+          contact_email?: string | null
+          conversions?: number
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          id?: string
+          instructions?: string | null
+          social_url?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_countries?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          video_url?: string | null
+          views?: number
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -262,6 +476,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          referral_code: string | null
+          referred_by: string | null
           skills: string[]
           social_links: Json
           suspended: boolean
@@ -279,6 +495,8 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          referral_code?: string | null
+          referred_by?: string | null
           skills?: string[]
           social_links?: Json
           suspended?: boolean
@@ -296,6 +514,8 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          referral_code?: string | null
+          referred_by?: string | null
           skills?: string[]
           social_links?: Json
           suspended?: boolean
@@ -310,6 +530,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "countries"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -552,6 +779,7 @@ export type Database = {
       }
       support_messages: {
         Row: {
+          attachments: Json
           body: string
           created_at: string
           id: string
@@ -560,6 +788,7 @@ export type Database = {
           ticket_id: string
         }
         Insert: {
+          attachments?: Json
           body: string
           created_at?: string
           id?: string
@@ -568,6 +797,7 @@ export type Database = {
           ticket_id: string
         }
         Update: {
+          attachments?: Json
           body?: string
           created_at?: string
           id?: string
@@ -588,6 +818,7 @@ export type Database = {
       support_tickets: {
         Row: {
           assigned_to: string | null
+          attachments: Json
           category: string | null
           created_at: string
           id: string
@@ -598,6 +829,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          attachments?: Json
           category?: string | null
           created_at?: string
           id?: string
@@ -608,6 +840,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          attachments?: Json
           category?: string | null
           created_at?: string
           id?: string
@@ -622,6 +855,7 @@ export type Database = {
         Row: {
           applied_at: string
           id: string
+          proof_urls: string[]
           status: Database["public"]["Enums"]["application_status"]
           task_id: string
           worker_id: string
@@ -629,6 +863,7 @@ export type Database = {
         Insert: {
           applied_at?: string
           id?: string
+          proof_urls?: string[]
           status?: Database["public"]["Enums"]["application_status"]
           task_id: string
           worker_id: string
@@ -636,6 +871,7 @@ export type Database = {
         Update: {
           applied_at?: string
           id?: string
+          proof_urls?: string[]
           status?: Database["public"]["Enums"]["application_status"]
           task_id?: string
           worker_id?: string
@@ -713,6 +949,8 @@ export type Database = {
       tasks: {
         Row: {
           attachments: Json
+          category: string | null
+          category_group: string | null
           category_id: string | null
           created_at: string
           current_workers: number
@@ -731,6 +969,8 @@ export type Database = {
         }
         Insert: {
           attachments?: Json
+          category?: string | null
+          category_group?: string | null
           category_id?: string | null
           created_at?: string
           current_workers?: number
@@ -749,6 +989,8 @@ export type Database = {
         }
         Update: {
           attachments?: Json
+          category?: string | null
+          category_group?: string | null
           category_id?: string | null
           created_at?: string
           current_workers?: number
@@ -774,6 +1016,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tier_credit_ledger: {
+        Row: {
+          created_at: string
+          delta_cents: number
+          id: string
+          ref_id: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta_cents: number
+          id?: string
+          ref_id?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta_cents?: number
+          id?: string
+          ref_id?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tier_credits: {
+        Row: {
+          balance_cents: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_cents?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_cents?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -899,6 +1186,7 @@ export type Database = {
         Returns: {
           applied_at: string
           id: string
+          proof_urls: string[]
           status: Database["public"]["Enums"]["application_status"]
           task_id: string
           worker_id: string
@@ -910,6 +1198,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      credit_ad_view: {
+        Args: {
+          p_ad_id: string
+          p_fingerprint: string
+          p_ip: string
+          p_user_agent: string
+          p_user_id: string
+          p_watched: number
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -917,9 +1216,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      unlock_tier_from_credits: { Args: { p_tier: string }; Returns: Json }
     }
     Enums: {
       account_mode: "worker" | "hiring"
+      ad_status: "pending" | "active" | "paused" | "rejected" | "depleted"
       app_role: "admin" | "moderator" | "user"
       application_status:
         | "joined"
@@ -927,6 +1228,13 @@ export type Database = {
         | "approved"
         | "rejected"
         | "revision"
+      campaign_status:
+        | "draft"
+        | "pending"
+        | "active"
+        | "paused"
+        | "completed"
+        | "rejected"
       fraud_level: "low" | "medium" | "high" | "critical"
       market_link_type:
         | "youtube"
@@ -1070,6 +1378,7 @@ export const Constants = {
   public: {
     Enums: {
       account_mode: ["worker", "hiring"],
+      ad_status: ["pending", "active", "paused", "rejected", "depleted"],
       app_role: ["admin", "moderator", "user"],
       application_status: [
         "joined",
@@ -1077,6 +1386,14 @@ export const Constants = {
         "approved",
         "rejected",
         "revision",
+      ],
+      campaign_status: [
+        "draft",
+        "pending",
+        "active",
+        "paused",
+        "completed",
+        "rejected",
       ],
       fraud_level: ["low", "medium", "high", "critical"],
       market_link_type: [

@@ -37,7 +37,7 @@ function WalletPage() {
   async function withdraw(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (!open) return toast.error("Withdrawals are closed. Window: 28th — 5th of next month.");
+    if (!open) return toast.error("Withdrawals are closed. Window: 1st — 5th of every month.");
     if (tooLow) return toast.error("Minimum withdrawal is $10");
     if (insufficient) return toast.error("Insufficient available balance");
 
@@ -84,7 +84,7 @@ function WalletPage() {
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
               <AlertCircle className="size-4 mt-0.5 text-amber-500 shrink-0" />
               <span>
-                Payouts are open <strong>28th — 5th</strong> of each month. {winStatus.label}.
+                Payouts are open <strong>1st — 5th</strong> of each month. {winStatus.label}.
                 During the window, withdrawals are instant.
               </span>
             </div>
@@ -134,7 +134,7 @@ function WalletPage() {
               `Withdraw $${numericAmount.toFixed(2)} instantly`}
           </button>
           <p className="text-xs text-muted-foreground">
-            Inside the 28th → 5th window, payouts settle instantly. Outside it, the system is closed.
+            Inside the 1st → 5th window, payouts settle instantly. Outside it, the system is closed.
           </p>
         </form>
 
