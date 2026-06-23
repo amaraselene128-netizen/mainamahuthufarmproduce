@@ -21,7 +21,6 @@ const fadeUp = {
 function Home() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <div className="h-16" aria-hidden />
       <Header />
       <main>
         <Hero />
