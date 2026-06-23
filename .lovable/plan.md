@@ -1,99 +1,133 @@
+
 ## Goal
 
-Tighten EGRATASKS end-to-end: admin can create tasks and review worker submissions; workers see + download task attachments; support tickets accept files; withdrawals enforce balance and the 28th→5th payout window (instant during window for tasks completed inside it); the whole site reacts to login state; navigation always scrolls to top; campaigns flow into the admin queue; and "How it works" / FAQ anchors actually scroll to those sections.
+Implement the EGRATASKS rewarded ads program end-to-end:
+
+1. Advertisers upload video campaigns (Cloudinary).
+2. Users watch full videos (countdown only, no skip / no scrubber) to earn **Tier Credits** (non-withdrawable) that unlock Bronze/Silver/Gold referral tiers.
+3. Post-watch CTA opens the destination (Play Store / App Store / URL).
+4. Strict fraud rules (tab-active, one reward per ad per user, full watch only).
+5. Fix mobile layout overlap on the existing site.
+
+PayPal direct-pay path for tiers is out of scope for this turn (link is "already working" per request) — only the **ads earning path** is built. The referral link generation already exists in `Referrals.tsx`.
 
 ---
 
-## 1. Scroll-to-top on every navigation
+## 1. Database (migration)
 
-- Add `src/components/site/ScrollToTop.tsx` that listens to `useLocation()` and scrolls window to top on path change. If the URL has a hash (`#how`, `#faq`), scroll the element with `scrollIntoView({ behavior: "smooth" })` instead.
-- Mount it once inside `src/App.tsx`, above `<Routes>`.
-- Replace plain `<a href="/#how">` with a `<HashLink>`-style `<Link to="/#how">` everywhere; the scroller handles the scroll-into-view.
-
-## 2. Auth-aware site (Header, Footer, MarketWithUs, Home CTAs)
-
-- **Footer**: when `useAuth().user` is present, swap "Help center → /support" for `/dashboard/support`, hide "Referral program" only if signed out, and replace any login/register links with a single "Dashboard" link.
-- **MarketWithUs**: keep the form public, but show "Submit as <username>" + a "Back to dashboard" link when logged in. Remove the trailing "sign in to track" hint when logged in.
-- **Home → CTA section** (bottom of `Home.tsx`): when logged in, show "Go to dashboard" + "Browse tasks" instead of "Get Started / Login".
-- Make every "Get Started / Login / Register" button across pages (`About`, `Contact`, `Categories`, `MarketWithUs`, `Privacy`, `Terms`) use the same auth-aware helper — extract `src/components/site/AuthCta.tsx`.
-
-## 3. "How it works" + FAQ deep links
-
-- Header nav already points to `/#how` and `/#faq`. Add IDs (`id="how"` already exists; add `id="faq"` to FAQ section). With the ScrollToTop hash handler the click will scroll correctly from any page.
-- Footer + Home buttons updated to use the same anchor targets.
-
-## 4. Admin task creation + submissions review
-
-- New admin page `src/pages/AdminNewTask.tsx` (route `/admin/tasks/new`) that reuses the same form as `NewTask.tsx` but inserts with `hiring_id = admin user id` (still satisfies RLS via admin policy). Add "+ New task" button on `Tasks.tsx`.
-- New admin page `src/pages/AdminTaskReview.tsx` (route `/admin/tasks/:id`) that mirrors `ReviewTask.tsx` (list all submissions, approve / revision / reject with comments). Existing RLS already lets admins update via `has_role`. Tasks list rows link to this page.
-- After approval, the existing trigger should credit the worker wallet. Add SQL trigger `on_submission_approved` that, when `task_submissions.status` flips to `approved`, inserts a `transactions` row, bumps `wallets.available` (or instant payout — see section 6), and updates the application status. After rejection it just marks the application rejected.
-
-## 5. Worker downloads + dashboard submission status
-
-- `AvailableTasks.tsx` cards: show an "Attachments" chip when `tasks.attachments` is non-empty; clicking opens a modal that lists each `{ url, name }` with a Download button (anchor `download` attr pointing to Cloudinary URL).
-- New `src/pages/TaskDetail.tsx` (`/dashboard/worker/:id`) so workers can see full description + downloads + an apply / submit flow in one place.
-- `Applied.tsx` already shows applications — extend the row to render `admin_comment` and a colored status pill (approved / rejected / revision) so the worker sees the response.
-- `Completed.tsx` / `Rejected.tsx` updated to surface the same `admin_comment` block.
-
-## 6. Withdrawal flow
-
-- Add `src/lib/withdrawal-window.ts` exporting `isWithdrawalOpen(now = new Date())` → true if day ≥ 28 of month, or day ≤ 5 of next month. Also `nextOpenDate()` for UI messaging.
-- `WalletPage.tsx`:
-  - Disable submit when amount ≤ 0, amount > available, or window is closed. Show inline reasons under the button ("Insufficient balance", "Withdrawals open Mar 28 → Apr 5").
-  - On submit during open window, call new edge function `request-withdrawal` which: validates window + balance server-side, debits `wallets.available`, creates `withdrawal_requests` with `status='paid'` (instant) + `paid_at=now()`, inserts a `transactions` row. Outside the window the function rejects.
-  - Show a "Window status" pill at the top of Wallet ("Open · closes Apr 5" / "Closed · opens in 12 days").
-- Admin `Withdrawals.tsx` keeps approve / reject for any legacy `pending` rows but most flows now auto-pay.
-
-## 7. Support tickets with uploads
-
-- `db/schema.sql` adds `support_messages.attachments jsonb default '[]'` (only if missing). The migration tool will run an `alter table ... add column if not exists`.
-- `Support.tsx`: new ticket form gets a file picker that uploads to Cloudinary (`uploadManyToCloudinary`) and stores the URLs on the first message + the ticket. Reply input gets an attach button too.
-- `AdminSupport.tsx`: render attachments as thumbnails / download links per message and let the admin upload screenshots in replies.
-
-## 8. Campaign approvals
-
-- `MarketWithUs.tsx` already inserts into `market_campaigns` with `status: 'pending'`. Add new admin route `/admin/campaigns` (page `src/pages/AdminCampaigns.tsx`) listing pending → approved / rejected with notes. Add nav entry in `AdminLayout`.
-- RLS already grants admins update via `has_role` (verify in SQL — add if missing).
-
-## 9. Functional dashboard sweep
-
-Quick pass to wire any remaining stub pages to real data:
-- `Notifs.tsx`, `Messages.tsx`, `Analytics.tsx`, `Reviews.tsx`, `Referrals.tsx`, `Settings.tsx` — ensure each fetches its table (creating empty-state UI if no data) and removes any "coming soon" placeholders. No new features beyond what the tables already support.
-
----
-
-## Technical notes
+New tables (with grants + RLS per project rules):
 
 ```text
-Routes added
-  /admin/tasks/new            → AdminNewTask
-  /admin/tasks/:id            → AdminTaskReview
-  /admin/campaigns            → AdminCampaigns
-  /dashboard/worker/:id       → TaskDetail
+advertisements
+  id, advertiser_id (auth.users), title, description,
+  video_url, video_public_id, destination_url, button_text,
+  duration_seconds (15|30|45|60), country_targeting text[],
+  budget_cents, spent_cents, views_purchased, views_completed,
+  status ('pending'|'approved'|'active'|'paused'|'rejected'|'depleted'),
+  created_at, approved_at, admin_notes
 
-New files
-  src/components/site/ScrollToTop.tsx
-  src/components/site/AuthCta.tsx
-  src/lib/withdrawal-window.ts
-  src/pages/AdminNewTask.tsx
-  src/pages/AdminTaskReview.tsx
-  src/pages/AdminCampaigns.tsx
-  src/pages/TaskDetail.tsx
-  supabase/functions/request-withdrawal/index.ts
+ad_views
+  id, ad_id, user_id, watched_seconds, completed bool,
+  reward_cents, ip, user_agent, fingerprint, created_at
+  UNIQUE(ad_id, user_id) WHERE completed = true   -- one reward per ad per user
 
-Schema additions (migration tool)
-  alter table support_messages add column if not exists attachments jsonb default '[]'
-  alter table support_tickets  add column if not exists attachments jsonb default '[]'
-  create trigger on_submission_approved → credit wallet + insert transaction
-  policy: admins update market_campaigns (if missing)
+ad_clicks
+  id, ad_id, user_id, clicked_at, destination_url
+
+tier_credits           -- non-withdrawable ad-earned balance
+  user_id PK, balance_cents int default 0, updated_at
+
+tier_credit_ledger     -- audit trail
+  id, user_id, delta_cents, source ('ad_view'|'tier_unlock'),
+  ref_id (ad_view id or subscription id), created_at
 ```
 
----
+RLS:
+- `advertisements`: advertiser sees own; everyone authenticated can SELECT active rows; admin via `has_role` can update status.
+- `ad_views` / `ad_clicks`: user can insert own; user can read own; admin reads all.
+- `tier_credits` / `tier_credit_ledger`: read own only; writes via SECURITY DEFINER functions.
 
-## Out of scope
+SECURITY DEFINER RPCs:
+- `credit_ad_view(p_ad_id uuid, p_watched int, p_fingerprint text)` → validates duration ≥ ad duration, no prior completed view, ad active + budget left; inserts `ad_views`, increments `tier_credits.balance_cents` by reward (15s→1, 30s→2, 45s→3, 60s→4), inserts ledger row, decrements `advertisements.spent_cents`/increments `views_completed`, sets status='depleted' when spent ≥ budget. Returns new balance.
+- `unlock_tier_from_credits(p_tier text)` → checks `tier_credits.balance_cents >= price`, debits, inserts a `referral_subscriptions` row for the matching tier plan, ledger row. Returns subscription.
 
-- Push/email notifications for ticket replies and review outcomes
-- Recurring/automated payout cron on the 28th (we make it instant during window instead)
-- Worker chat threads with the admin reviewer beyond the existing `admin_comment` text
+## 2. Edge function: `request-credit-ad-view`
 
-Approve and I'll implement all nine sections in one pass.
+Server-side validation layer (Deno, mcp-lite/Hono not needed — plain `Deno.serve` with `corsHeaders` from `npm:@supabase/supabase-js@2/cors`).
+- Validates JWT manually (verify_jwt=false), Zod-validates body `{ ad_id, watched_seconds, fingerprint }`.
+- Pulls ad row with service role, confirms `watched_seconds >= duration_seconds`, calls `credit_ad_view` RPC, returns `{ balance_cents, reward_cents }`.
+- Why edge function: keeps fraud thresholds + fingerprint logging server-side; client cannot self-credit.
+
+## 3. Frontend — viewer
+
+New page `src/pages/EarnAds.tsx` (route `/dashboard/earn`):
+- Lists available ads (filtered by country + budget remaining + not already completed by user).
+- Tier-credit balance card + progress bar toward selected tier (Bronze/Silver/Gold).
+
+New component `src/components/ads/AdPlayer.tsx`:
+- `<video>` with `controls={false}`, `disablePictureInPicture`, `controlsList="nodownload noplaybackrate"`, no seekbar, autoplay+muted-fallback, ref.
+- Overlay shows **countdown only** (e.g. `28s`), no progress, no skip.
+- `onTimeUpdate` recomputes remaining; **`seeking` listener resets `currentTime` to last known max** to block scrubbing.
+- `visibilitychange` + `blur` → pause + flag invalidates reward.
+- On `ended`: call edge function with `watched_seconds = duration` + fingerprint (canvas+UA hash). On success: toast reward, show CTA.
+
+New component `src/components/ads/AdCTA.tsx`:
+- Modal with `button_text` → `window.open(destination_url, '_blank')`, logs `ad_clicks`, plus "Close" button.
+
+New page `src/pages/TierUnlock.tsx` (route `/dashboard/earn/unlock`) to spend credits on Bronze/Silver/Gold (calls `unlock_tier_from_credits`). Hook into existing `Referrals.tsx` so the unlocked subscription shows the link immediately.
+
+## 4. Frontend — advertiser
+
+New page `src/pages/AdvertiserCampaign.tsx` (route `/dashboard/advertise`):
+- Form: title, description, video upload via existing `uploadToCloudinary` (resource_type video), destination_url, button_text (select), duration (15/30/45/60), countries (multi), budget USD.
+- Inserts `advertisements` row with `status='pending'`, `spent_cents=0`, `views_purchased = floor(budget / advertiser_cost)`.
+
+Advertiser dashboard `src/pages/AdvertiserDashboard.tsx` (route `/dashboard/advertise/campaigns`):
+- Views Purchased / Completed / Budget Remaining / Completion Rate / Avg Watch Time / CTR / Status per campaign (aggregates from `ad_views` + `ad_clicks`).
+
+## 5. Admin
+
+New page `src/pages/AdminAds.tsx` (route `/admin/ads`):
+- Pending queue → Approve/Reject; Approve sets `status='active'`.
+- List active + paused with quick pause/resume + spent/budget bars.
+- Link added to `AdminLayout.tsx` sidebar.
+
+## 6. Navigation
+
+- Dashboard sidebar (DashLayout): add **Earn (Ads)**, **Advertise** entries.
+- Admin sidebar: add **Ads**.
+- `Home.tsx` adds a small "Earn by watching ads" CTA in the rewards strip.
+
+## 7. Mobile overlap fix
+
+Audit and fix on `Header.tsx`, `DashLayout.tsx`, dashboard pages:
+- Header: replace fixed grid with flex + `flex-wrap` on `< md`; collapse nav into existing hamburger; ensure `pt-16` body offset.
+- `DashLayout`: switch desktop sidebar `lg:grid-cols-[240px_1fr]` and add `overflow-x-hidden` + `min-w-0` on main column; mobile uses drawer (Sheet) — fix double-stack causing overlap.
+- Home/MarketWithUs hero: `min-h-[100svh]`, `px-4 sm:px-6`, replace `absolute` decorations that overflow with `pointer-events-none overflow-hidden` wrapper.
+- Tables: wrap in `overflow-x-auto` where missing.
+
+## 8. Technical details
+
+- Reward table constant in `src/lib/ads.ts`:
+  ```ts
+  export const AD_DURATIONS = [15,30,45,60] as const;
+  export const REWARD_CENTS = {15:1,30:2,45:3,60:4} as const;
+  export const ADVERTISER_CENTS = {15:5,30:6,45:7,60:8} as const;
+  export const TIER_PRICE_CENTS = { bronze:500, silver:1000, gold:1500 } as const;
+  ```
+- Fingerprint: lightweight hash of `navigator.userAgent + screen + canvas` — no third-party lib.
+- Anti-skip strategy lives both client-side (UX) **and** server-side (RPC rejects partial watches, unique-completed-per-user index).
+- Cloudinary: re-use `uploadToCloudinary` with `folder: "egratasks/ads"` and pass through `resource_type: "video"` (already handled in helper).
+- No new secrets needed (Cloudinary preset already configured, Supabase already connected, no PayPal in this turn).
+
+## Out of scope this turn
+
+- PayPal direct purchase of tiers (you said link path is already working).
+- VPN/bot detection beyond fingerprint + tab-active + unique constraint (can layer later).
+- Country targeting enforcement uses simple `country_code` match from profile; no geo-IP lookup.
+
+## Files
+
+New: `src/pages/EarnAds.tsx`, `TierUnlock.tsx`, `AdvertiserCampaign.tsx`, `AdvertiserDashboard.tsx`, `AdminAds.tsx`; `src/components/ads/AdPlayer.tsx`, `AdCTA.tsx`; `src/lib/ads.ts`; `src/lib/fingerprint.ts`; `supabase/functions/request-credit-ad-view/index.ts`.
+
+Edited: `src/App.tsx` (routes), `src/components/dashboard/DashLayout.tsx` (nav + mobile), `src/pages/AdminLayout.tsx` (nav), `src/components/site/Header.tsx` (mobile), `src/pages/Home.tsx` (entry CTA + mobile), `src/pages/Referrals.tsx` (link to ads-unlock), `db/schema.sql` (appended migration).

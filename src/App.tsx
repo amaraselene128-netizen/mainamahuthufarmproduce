@@ -35,6 +35,11 @@ const Referrals = lazy(() => import("@/pages/Referrals"));
 const Support = lazy(() => import("@/pages/Support"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const Settings = lazy(() => import("@/pages/Settings"));
+const EarnAds = lazy(() => import("@/pages/EarnAds"));
+const TierUnlock = lazy(() => import("@/pages/TierUnlock"));
+const AdvertiserCampaign = lazy(() => import("@/pages/AdvertiserCampaign"));
+const AdvertiserDashboard = lazy(() => import("@/pages/AdvertiserDashboard"));
+const AdminAds = lazy(() => import("@/pages/AdminAds"));
 
 // Admin
 const AdminLayout = lazy(() => import("@/pages/AdminLayout"));
@@ -110,6 +115,10 @@ export default function App() {
           <Route path="support" element={<Support />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="earn" element={<EarnAds />} />
+          <Route path="earn/unlock" element={<TierUnlock />} />
+          <Route path="advertise" element={<AdvertiserCampaign />} />
+          <Route path="advertise/campaigns" element={<AdvertiserDashboard />} />
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>
@@ -124,6 +133,7 @@ export default function App() {
           <Route path="referrals" element={<AdminReferrals />} />
           <Route path="fraud" element={<AdminFraud />} />
           <Route path="support" element={<AdminSupport />} />
+          <Route path="ads" element={<AdminAds />} />
         </Route>
 
         <Route path="/dashboard/overview" element={<Navigate to="/dashboard" replace />} />
