@@ -71,7 +71,7 @@ function Hero() {
             Earn from work that <span className="text-gradient-gold">moves the world.</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-            EGRATASKS is the premium global marketplace for micro-tasks, social engagement, and
+            EGMTASKS is the premium global marketplace for micro-tasks, social engagement, and
             freelance projects — connecting clients with verified workers in seconds.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -395,7 +395,7 @@ function Testimonials() {
 function FAQ() {
   const faqs = [
     { q: "How do I get paid?", a: "All approved earnings settle to your in-app wallet and pay out monthly on the 28th via PayPal. Stripe, Payoneer, Wise and M-Pesa are on the roadmap." },
-    { q: "Is registration available worldwide?", a: "EGRATASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
+    { q: "Is registration available worldwide?", a: "EGMTASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
     { q: "How many workers can join one task?", a: "Each task accepts up to 20 workers on a first-come-first-served basis. Once full, the task is marked TAKEN." },
     { q: "What stops fake submissions?", a: "Our AI fraud engine combines duplicate-detection, screenshot similarity, device fingerprinting, and risk scoring (Low → Critical) with admin review." },
     { q: "Can I switch between Worker and Client?", a: "Yes — switch account modes anytime from your dashboard settings." },

@@ -35,7 +35,7 @@ export function Footer() {
             </p>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><MapPin className="size-4 text-primary" /> Nairobi, Kenya — HQ</div>
-              <div className="flex items-center gap-2"><Mail className="size-4 text-primary" /> support@egratasks.com</div>
+              <div className="flex items-center gap-2"><Mail className="size-4 text-primary" /> support@egmtasks.com</div>
             </div>
             {user && (
               <Link
@@ -56,7 +56,7 @@ export function Footer() {
           ]} />
         </div>
         <div className="mt-12 pt-8 border-t hairline flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} EGRATASKS Headquarters · Nairobi, Kenya · All rights reserved.</p>
+          <p>© {new Date().getFullYear()} EGMTASKS Headquarters · Nairobi, Kenya · All rights reserved.</p>
           <p>Built for a million+ workers across 100+ countries.</p>
         </div>
       </div>

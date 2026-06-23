@@ -1,5 +1,5 @@
 -- ============================================================
--- EGRATASKS — full database schema.
+-- EGMTASKS — full database schema.
 -- Run once in Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/iycbpeujxgwcsmelvwdw/sql/new
 -- ============================================================
@@ -547,7 +547,7 @@ drop policy if exists "Admins write settings" on public.settings;
 create policy "Admins write settings" on public.settings for all to authenticated using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
 insert into public.settings (key, value) values
 ('payouts', '{"min_withdrawal": 10, "monthly_date": 28, "currency": "USD"}'),
-('platform', '{"hq": "Nairobi, Kenya", "support_email": "support@egratasks.com"}')
+('platform', '{"hq": "Nairobi, Kenya", "support_email": "support@egmtasks.com"}')
 on conflict (key) do nothing;
 
 create or replace function public.touch_updated_at()
