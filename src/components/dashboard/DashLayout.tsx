@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import {
   LayoutDashboard, ListChecks, ClipboardList, CheckCircle2, XCircle,
   Wallet, Bell, Settings, UserCircle, Plus, BarChart3, Star, Headphones,
-  Users2, Coins, ShieldCheck, LogOut, MessageSquare,
+  Users2, Coins, ShieldCheck, LogOut, MessageSquare, Tv, Megaphone,
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
@@ -14,6 +14,7 @@ const workerNav = [
   { label: "My applications", to: "/dashboard/worker/applied", icon: ClipboardList },
   { label: "Completed", to: "/dashboard/worker/completed", icon: CheckCircle2 },
   { label: "Rejected", to: "/dashboard/worker/rejected", icon: XCircle },
+  { label: "Earn (Ads)", to: "/dashboard/earn", icon: Tv },
   { label: "Earnings", to: "/dashboard/wallet", icon: Coins },
 ];
 
@@ -21,6 +22,7 @@ const hiringNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "My tasks", to: "/dashboard/hiring", icon: ListChecks },
   { label: "Create task", to: "/dashboard/hiring/new", icon: Plus },
+  { label: "Advertise", to: "/dashboard/advertise/campaigns", icon: Megaphone },
   { label: "Analytics", to: "/dashboard/hiring/analytics", icon: BarChart3 },
   { label: "Reviews", to: "/dashboard/hiring/reviews", icon: Star },
 ];
