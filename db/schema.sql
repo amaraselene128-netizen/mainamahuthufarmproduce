@@ -380,9 +380,9 @@ create policy "Plans public" on public.referral_plans for select to anon, authen
 drop policy if exists "Admins manage plans" on public.referral_plans;
 create policy "Admins manage plans" on public.referral_plans for all to authenticated using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
 insert into public.referral_plans (tier, price, commission_rate, features) values
-('bronze', 9.99, 0.05, '["5% commission","Basic dashboard","Up to 100 referrals/month"]'),
-('silver', 29.99, 0.10, '["10% commission","Advanced analytics","Up to 500 referrals/month","Priority support"]'),
-('gold', 99.99, 0.20, '["20% commission","Premium dashboard","Unlimited referrals","Dedicated manager","Custom branding"]')
+('bronze', 2,    0.10, '["10% commission","Unique referral link","Basic analytics"]'),
+('silver', 500,  0.10, '["10% commission","Advanced analytics","Priority support"]'),
+('gold',   1000, 0.10, '["10% commission","Premium dashboard","Dedicated manager","Custom branding"]')
 on conflict (tier) do nothing;
 
 create table if not exists public.referral_subscriptions (
@@ -608,7 +608,10 @@ create table if not exists public.market_campaigns (
   status text not null default 'pending',
   admin_notes text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  promotion_type text not null default 'external' check (promotion_type in ('on_site','external')),
+  video_file_url text,
+  duration_seconds int check (duration_seconds is null or duration_seconds in (15,30,45,60))
 );
 grant select, insert on public.market_campaigns to anon, authenticated;
 grant select, insert, update, delete on public.market_campaigns to authenticated;
