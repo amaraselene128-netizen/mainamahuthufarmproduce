@@ -122,9 +122,9 @@ function Hero() {
         </motion.div>
       </div>
 
-      {/* floating cards */}
-      <div className="pointer-events-none absolute -bottom-6 inset-x-0 flex justify-center">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl w-full px-6">
+      {/* floating cards — relative on mobile to avoid overlap, absolute on desktop */}
+      <div className="mt-12 sm:mt-0 sm:pointer-events-none sm:absolute sm:-bottom-6 sm:inset-x-0 flex justify-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl w-full px-4 sm:px-6">
           {[
             { icon: ShieldCheck, label: "Verified workers" },
             { icon: Wallet, label: "Monthly payouts" },
@@ -136,12 +136,12 @@ function Hero() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + i * 0.08, duration: 0.6 }}
-              className="glass shadow-card rounded-2xl p-4 flex items-center gap-3"
+              className="glass shadow-card rounded-2xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3 min-w-0"
             >
-              <div className="size-10 rounded-xl bg-gradient-gold grid place-items-center shadow-card">
-                <f.icon className="size-5 text-primary-foreground" />
+              <div className="size-9 sm:size-10 shrink-0 rounded-xl bg-gradient-gold grid place-items-center shadow-card">
+                <f.icon className="size-4 sm:size-5 text-primary-foreground" />
               </div>
-              <span className="text-sm font-medium">{f.label}</span>
+              <span className="text-xs sm:text-sm font-medium truncate">{f.label}</span>
             </motion.div>
           ))}
         </div>
@@ -159,7 +159,7 @@ function Stats() {
     { value: "850K+", label: "Tasks completed" },
   ];
   return (
-    <section className="pt-32 pb-20">
+    <section className="pt-16 sm:pt-32 pb-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border hairline bg-card shadow-card overflow-hidden">
           <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border">
