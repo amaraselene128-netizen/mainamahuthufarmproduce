@@ -101,7 +101,6 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted }: 
         src={videoUrl}
         className="w-full h-full object-contain bg-black"
         playsInline
-        // @ts-expect-error - non-standard attrs
         controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
         disablePictureInPicture
         onTimeUpdate={handleTimeUpdate}
