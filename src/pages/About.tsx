@@ -11,7 +11,7 @@ function About() {
       <ul>
         <li>Clients post tasks across 9+ categories with clear instructions and payment per submission.</li>
         <li>Workers apply on a first-come, first-served basis (max 20 per task).</li>
-        <li>Approved work is paid out monthly on the 28th via PayPal, M-Pesa, Wise or crypto.</li>
+        <li>Approved work is paid out monthly on the 5th via PayPal, M-Pesa, Wise or crypto.</li>
       </ul>
       <h2>Trust & safety</h2>
       <p>We run an AI-assisted fraud detection engine, country-level restrictions, two-factor authentication and verified email accounts on every sign-up.</p>

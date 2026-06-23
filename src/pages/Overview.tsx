@@ -47,7 +47,7 @@ function Overview() {
     <div className="space-y-8">
       <div className="rounded-2xl bg-gradient-emerald p-5 text-sm text-secondary-foreground shadow-card flex items-start gap-3">
         <Wallet className="size-5 mt-0.5 shrink-0" />
-        <p><strong>Payment notice:</strong> Payments are processed monthly on the 28th after task approval.</p>
+        <p><strong>Payment notice:</strong> Payments are processed monthly on the 5th after task approval.</p>
       </div>
 
       <div>
@@ -79,7 +79,7 @@ function Overview() {
           cta={profile?.account_mode === "worker" ? "Browse tasks" : "Create task"}
           icon={profile?.account_mode === "worker" ? Briefcase : Plus}
         />
-        <QuickCard title="Withdraw earnings" desc="Request a payout — processed monthly on the 28th." to="/dashboard/wallet" cta="Open wallet" icon={Wallet} />
+        <QuickCard title="Withdraw earnings" desc="Request a payout — processed monthly on the 5th." to="/dashboard/wallet" cta="Open wallet" icon={Wallet} />
       </div>
     </div>
   );
