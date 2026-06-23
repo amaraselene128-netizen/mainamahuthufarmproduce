@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { db, supabase } from "@/lib/db";
+import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { Crown, Coins, ArrowLeft } from "lucide-react";
@@ -25,7 +25,7 @@ function TierUnlock() {
 
   async function unlock(tier: Tier) {
     setBusy(tier);
-    const { data, error } = await supabase.rpc("unlock_tier_from_credits", { p_tier: tier });
+    const { error } = await db.rpc("unlock_tier_from_credits" as any, { p_tier: tier });
     setBusy(null);
     if (error) return toast.error(error.message);
     toast.success(`${tier.toUpperCase()} tier unlocked`);
