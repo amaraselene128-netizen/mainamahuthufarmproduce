@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, EyeOff } from "lucide-react";
+import { Play, EyeOff, ExternalLink } from "lucide-react";
 
 type Props = {
   videoUrl: string;
   durationSeconds: number;
   onCompleted: () => void;
   onAborted?: (reason: string) => void;
+  /** When provided, the video itself becomes clickable (after it starts) and behaves like the CTA button. */
+  destinationUrl?: string;
+  onCtaClick?: () => void;
 };
 
 /**
@@ -16,7 +19,7 @@ type Props = {
  *  - Blocks any seek attempt (rewind allowed only forward by playback).
  *  - Fires onCompleted when full duration was watched contiguously while visible.
  */
-export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted }: Props) {
+export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, destinationUrl, onCtaClick }: Props) {
   const vidRef = useRef<HTMLVideoElement>(null);
   const lastTimeRef = useRef(0);
   const watchedRef = useRef(0); // accumulated seconds watched while visible
@@ -116,24 +119,36 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted }: 
         </div>
       )}
 
-      {/* Block any native control surface */}
-      <div
-        className="absolute inset-0"
-        style={{ pointerEvents: started ? "none" : "auto" }}
-        onClick={started ? undefined : start}
-      >
-        {!started && (
-          <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-black/40 to-black/70 cursor-pointer">
-            <div className="text-center text-white">
-              <div className="mx-auto size-16 rounded-full bg-white/10 grid place-items-center backdrop-blur">
-                <Play className="size-7" />
-              </div>
-              <div className="mt-3 text-sm">Tap to start · {durationSeconds}s ad</div>
-              <div className="text-xs text-white/60 mt-1">Watch fully to earn credit</div>
+      {/* Pre-start tap-to-play overlay */}
+      {!started && (
+        <div
+          className="absolute inset-0 grid place-items-center bg-gradient-to-b from-black/40 to-black/70 cursor-pointer"
+          onClick={start}
+        >
+          <div className="text-center text-white">
+            <div className="mx-auto size-16 rounded-full bg-white/10 grid place-items-center backdrop-blur">
+              <Play className="size-7" />
             </div>
+            <div className="mt-3 text-sm">Tap to start · {durationSeconds}s ad</div>
+            <div className="text-xs text-white/60 mt-1">Watch fully to earn credit</div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* After start: video itself is clickable and acts like the CTA button.
+          Opening the destination doesn't pause the reward — we still need a full watch. */}
+      {started && destinationUrl && onCtaClick && !done && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCtaClick(); }}
+          className="absolute inset-0 grid place-items-end p-3 bg-transparent cursor-pointer group"
+          aria-label="Open advertiser destination"
+        >
+          <span className="opacity-0 group-hover:opacity-100 transition rounded-full bg-black/70 text-white text-[10px] px-2 py-1 inline-flex items-center gap-1">
+            <ExternalLink className="size-3" /> Tap video to open
+          </span>
+        </button>
+      )}
 
       {hiddenWarning && !done && (
         <div className="absolute inset-x-0 bottom-0 bg-destructive/90 text-destructive-foreground text-xs text-center py-2 inline-flex items-center justify-center gap-2">
