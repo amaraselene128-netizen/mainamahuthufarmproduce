@@ -8,7 +8,8 @@ export const REWARD_CENTS: Record<AdDuration, number> = { 15: 1, 30: 2, 45: 3, 6
 // Advertiser pays (cents). Advertiser cost = user reward + 4¢.
 export const ADVERTISER_CENTS: Record<AdDuration, number> = { 15: 5, 30: 6, 45: 7, 60: 8 };
 
-export const TIER_PRICE_CENTS = { bronze: 500, silver: 1000, gold: 1500 } as const;
+// Bronze $5, Silver $100, Gold $1000 — keep in sync with public.referral_plans.price_cents.
+export const TIER_PRICE_CENTS = { bronze: 500, silver: 10000, gold: 100000 } as const;
 export type Tier = keyof typeof TIER_PRICE_CENTS;
 
 export const BUTTON_TEXT_OPTIONS = [

@@ -19,10 +19,31 @@ function AdvertiserCampaign() {
   const [countries, setCountries] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [detectedSec, setDetectedSec] = useState<number | null>(null);
 
   const budgetCents = Math.round(budgetUsd * 100);
   const views = viewsForBudget(budgetCents, duration);
   const cpv = ADVERTISER_CENTS[duration];
+
+  // Auto-detect uploaded video length and snap to the nearest allowed bucket (15/30/45/60).
+  function handleFile(f: File | null) {
+    setFile(f);
+    setDetectedSec(null);
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.src = url;
+    v.onloadedmetadata = () => {
+      const sec = Math.round(v.duration || 0);
+      setDetectedSec(sec);
+      const buckets = AD_DURATIONS as readonly number[];
+      const nearest = buckets.reduce((a, b) => (Math.abs(b - sec) < Math.abs(a - sec) ? b : a), buckets[0]);
+      setDuration(nearest as AdDuration);
+      URL.revokeObjectURL(url);
+    };
+    v.onerror = () => URL.revokeObjectURL(url);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,8 +97,13 @@ function AdvertiserCampaign() {
           <label className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-input bg-background px-3 py-6 cursor-pointer hover:bg-accent">
             <Upload className="size-4" />
             <span className="text-sm">{file ? file.name : "Choose video"}</span>
-            <input type="file" accept="video/*" hidden onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <input type="file" accept="video/*" hidden onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
           </label>
+          {detectedSec != null && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Detected length: <b>{detectedSec}s</b> · ad duration auto-set to <b>{duration}s</b>.
+            </p>
+          )}
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Destination URL">
