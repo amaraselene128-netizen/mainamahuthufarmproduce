@@ -113,6 +113,13 @@ create table if not exists public.referral_earnings (
   meta jsonb,
   created_at timestamptz not null default now()
 );
+-- Backfill columns if an older referral_earnings table already existed.
+alter table public.referral_earnings
+  add column if not exists source_user_id uuid references auth.users(id) on delete cascade,
+  add column if not exists generation smallint,
+  add column if not exists kind text,
+  add column if not exists amount_cents int,
+  add column if not exists meta jsonb;
 grant select on public.referral_earnings to authenticated;
 grant all on public.referral_earnings to service_role;
 alter table public.referral_earnings enable row level security;
