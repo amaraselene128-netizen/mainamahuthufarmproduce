@@ -15,6 +15,7 @@ do $$ begin create type public.fraud_level as enum ('low','medium','high','criti
 do $$ begin create type public.ticket_status as enum ('open','pending','resolved','closed'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.referral_tier as enum ('bronze','silver','gold'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.market_link_type as enum ('youtube','tiktok','instagram','facebook','website','mobile_app','service'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.tier_level as enum ('bronze','silver','gold'); exception when duplicate_object then null; end $$;
 
 create table if not exists public.countries (
   code text primary key, name text not null,
@@ -51,9 +52,13 @@ create table if not exists public.profiles (
   two_factor_enabled boolean not null default false,
   suspended boolean not null default false,
   banned boolean not null default false,
+  referral_code text,
+  referred_by uuid references public.profiles(id),
+  active_tier public.tier_level,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+create unique index if not exists profiles_referral_code_unique on public.profiles(referral_code) where referral_code is not null;
 grant select, insert, update on public.profiles to authenticated;
 grant all on public.profiles to service_role;
 alter table public.profiles enable row level security;
@@ -100,17 +105,29 @@ create policy "Users see own wallet" on public.wallets for select to authenticat
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare uname text;
+declare
+  uname text;
+  ref_code text := nullif(new.raw_user_meta_data->>'referral_code', '');
+  referrer uuid;
 begin
   uname := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
   while exists (select 1 from public.profiles where username = uname) loop
     uname := uname || floor(random()*10000)::text;
   end loop;
-  insert into public.profiles (id, email, username, country_code, account_mode)
+  if ref_code is not null then
+    select id into referrer from public.profiles where referral_code = ref_code limit 1;
+  end if;
+  insert into public.profiles (id, email, username, country_code, account_mode, referred_by)
   values (new.id, new.email, uname,
     coalesce(new.raw_user_meta_data->>'country_code', null),
-    coalesce((new.raw_user_meta_data->>'account_mode')::public.account_mode, 'worker'));
-  insert into public.wallets (user_id) values (new.id);
+    coalesce((new.raw_user_meta_data->>'account_mode')::public.account_mode, 'worker'),
+    referrer);
+  insert into public.wallets (user_id) values (new.id) on conflict (user_id) do nothing;
+  if referrer is not null then
+    insert into public.referrals(referrer_id, referred_id, code)
+    values (referrer, new.id, ref_code)
+    on conflict do nothing;
+  end if;
   return new;
 end; $$;
 drop trigger if exists on_auth_user_created on auth.users;
@@ -368,6 +385,7 @@ create table if not exists public.referral_plans (
   id uuid primary key default gen_random_uuid(),
   tier public.referral_tier unique not null,
   price numeric(10,2) not null,
+  price_cents int,
   commission_rate numeric(5,4) not null,
   features jsonb not null default '[]',
   active boolean not null default true
@@ -384,6 +402,9 @@ insert into public.referral_plans (tier, price, commission_rate, features) value
 ('silver', 500,  0.10, '["10% commission","Advanced analytics","Priority support"]'),
 ('gold',   1000, 0.10, '["10% commission","Premium dashboard","Dedicated manager","Custom branding"]')
 on conflict (tier) do nothing;
+update public.referral_plans set price_cents = 200 where tier = 'bronze';
+update public.referral_plans set price_cents = 50000 where tier = 'silver';
+update public.referral_plans set price_cents = 100000 where tier = 'gold';
 
 create table if not exists public.referral_subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -437,7 +458,12 @@ create table if not exists public.referral_earnings (
   id uuid primary key default gen_random_uuid(),
   referrer_id uuid not null references auth.users(id) on delete cascade,
   referral_id uuid references public.referrals(id) on delete set null,
+  source_user_id uuid references public.profiles(id),
+  generation smallint,
+  kind text,
   amount numeric(10,2) not null,
+  amount_cents int,
+  meta jsonb,
   status text not null default 'pending',
   created_at timestamptz not null default now()
 );

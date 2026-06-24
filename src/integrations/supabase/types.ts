@@ -1333,6 +1333,10 @@ export type Database = {
         Args: { p_tier_cents: number; p_user: string }
         Returns: undefined
       }
+      pay_subscription_commission: {
+        Args: { p_tier_dollars: number; p_user: string }
+        Returns: undefined
+      }
       unlock_tier_from_credits: { Args: { p_tier: string }; Returns: Json }
     }
     Enums: {
@@ -1352,6 +1356,7 @@ export type Database = {
         | "paused"
         | "completed"
         | "rejected"
+        | "approved"
       fraud_level: "low" | "medium" | "high" | "critical"
       market_link_type:
         | "youtube"
@@ -1512,6 +1517,7 @@ export const Constants = {
         "paused",
         "completed",
         "rejected",
+        "approved",
       ],
       fraud_level: ["low", "medium", "high", "critical"],
       market_link_type: [
