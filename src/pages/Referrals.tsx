@@ -9,6 +9,7 @@ type Plan = { id: string; tier: string; price: number; commission_rate: number; 
 type Sub = { plan_id: string; referral_plans: Plan | null };
 type ReferredRow = {
   id: string;
+  referred_id: string;
   username: string;
   country_code: string | null;
   status: string;
@@ -38,37 +39,59 @@ function Referrals() {
     if (!user) return;
     setLoading(true);
     const code = (profile as any)?.referral_code as string | undefined;
-    const [pRes, sRes, refsRes, eRes, cRes] = await Promise.all([
+    const [pRes, sRes, refsRes, directProfilesRes, eRes, cRes] = await Promise.all([
       db.from("referral_plans").select("*").eq("active", true).order("price"),
       db.from("referral_subscriptions").select("plan_id, referral_plans(*)").eq("user_id", user.id).maybeSingle(),
-      db.from("referrals").select("id, referred_id, verified_at, created_at, profiles!referrals_referred_id_fkey(username,country_code)").eq("referrer_id", user.id),
-      db.from("referral_earnings").select("amount,status,referred_id").eq("referrer_id", user.id),
+      db.from("referrals").select("id,referred_id,verified_at,created_at").eq("referrer_id", user.id),
+      db.from("profiles").select("id,username,country_code,created_at").eq("referred_by", user.id),
+      db.from("referral_earnings").select("amount,amount_cents,status,referral_id,source_user_id").eq("referrer_id", user.id),
       code ? db.from("referral_clicks").select("*", { count: "exact", head: true }).eq("code", code) : Promise.resolve({ count: 0 } as any),
     ]);
     setPlans((pRes.data as Plan[]) ?? []);
     setSub(sRes.data as Sub | null);
 
-    const refs = refsRes.data ?? [];
-    const earnings = eRes.data ?? [];
+    const refs = (refsRes.data as any[]) ?? [];
+    const directProfiles = (directProfilesRes.data as any[]) ?? [];
+    const profileIds = [...new Set([...refs.map((r) => r.referred_id), ...directProfiles.map((p) => p.id)].filter(Boolean))];
+    let profileMap = new Map<string, any>(directProfiles.map((p) => [p.id, p]));
+    if (profileIds.length > 0) {
+      const { data: profiles } = await db.from("profiles").select("id,username,country_code,created_at").in("id", profileIds);
+      profileMap = new Map(((profiles as any[]) ?? directProfiles).map((p) => [p.id, p]));
+    }
+
+    const mergedRefs = new Map<string, any>();
+    for (const r of refs) if (r.referred_id) mergedRefs.set(r.referred_id, r);
+    for (const p of directProfiles) {
+      if (!mergedRefs.has(p.id)) {
+        mergedRefs.set(p.id, { id: `profile-${p.id}`, referred_id: p.id, verified_at: null, created_at: p.created_at });
+      }
+    }
+
+    const earnings = (eRes.data as any[]) ?? [];
+    const referralIdToUser = new Map(refs.map((r: any) => [r.id, r.referred_id]));
     const earningsByRef = new Map<string, number>();
     for (const r of earnings) {
-      earningsByRef.set(r.referred_id, (earningsByRef.get(r.referred_id) ?? 0) + Number(r.amount));
+      const key = r.source_user_id ?? referralIdToUser.get(r.referral_id);
+      if (!key) continue;
+      const amount = r.amount_cents != null ? Number(r.amount_cents) / 100 : Number(r.amount ?? 0);
+      earningsByRef.set(key, (earningsByRef.get(key) ?? 0) + amount);
     }
     setRows(
-      refs.map((r: any) => ({
+      Array.from(mergedRefs.values()).map((r: any) => ({
         id: r.id,
-        username: r.profiles?.username ?? "—",
-        country_code: r.profiles?.country_code ?? null,
+        referred_id: r.referred_id,
+        username: profileMap.get(r.referred_id)?.username ?? "—",
+        country_code: profileMap.get(r.referred_id)?.country_code ?? null,
         status: r.verified_at ? "verified" : "signed-up",
         earnings: earningsByRef.get(r.referred_id) ?? 0,
-        created_at: r.created_at,
+        created_at: profileMap.get(r.referred_id)?.created_at ?? r.created_at,
       })),
     );
     setStats({
       clicks: (cRes as any).count ?? 0,
-      signups: refs.length,
-      verified: refs.filter((r: any) => r.verified_at).length,
-      earnings: earnings.reduce((s: number, e: any) => s + Number(e.amount), 0),
+      signups: mergedRefs.size,
+      verified: Array.from(mergedRefs.values()).filter((r: any) => r.verified_at).length,
+      earnings: earnings.reduce((s: number, e: any) => s + (e.amount_cents != null ? Number(e.amount_cents) / 100 : Number(e.amount ?? 0)), 0),
     });
     setLoading(false);
   }

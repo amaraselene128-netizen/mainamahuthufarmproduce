@@ -10,13 +10,28 @@ function ReviewTask() {
   const [subs, setSubs] = useState<any[]>([]);
 
   async function load() {
-    const [{ data: t }, { data: s }] = await Promise.all([
+    const [{ data: t, error: taskError }, { data: s, error: subError }] = await Promise.all([
       db.from("tasks").select("*,categories(name)").eq("id", id).maybeSingle(),
       db.from("task_submissions")
-        .select("id,status,comments,urls,files,admin_comment,created_at,worker_id,profiles:profiles!task_submissions_worker_id_fkey(username,country_code,email)")
+        .select("id,application_id,status,comments,urls,files,admin_comment,created_at,worker_id")
         .eq("task_id", id).order("created_at", { ascending: false }),
     ]);
-    setTask(t); setSubs(s ?? []);
+    if (taskError) toast.error(taskError.message);
+    if (subError) toast.error(subError.message);
+
+    const submissions = (s as any[]) ?? [];
+    const workerIds = [...new Set(submissions.map((row) => row.worker_id).filter(Boolean))];
+    let profileMap = new Map<string, any>();
+    if (workerIds.length > 0) {
+      const { data: profiles } = await db
+        .from("profiles")
+        .select("id,username,country_code,email")
+        .in("id", workerIds);
+      profileMap = new Map(((profiles as any[]) ?? []).map((p) => [p.id, p]));
+    }
+
+    setTask(t);
+    setSubs(submissions.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null })));
   }
   useEffect(() => { load(); }, [id]);
 
