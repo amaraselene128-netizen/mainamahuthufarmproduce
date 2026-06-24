@@ -130,6 +130,8 @@ function EarnAds() {
           <AdPlayer
             videoUrl={active.video_url}
             durationSeconds={active.duration_seconds}
+            destinationUrl={active.destination_url}
+            onCtaClick={() => setShowCta(true)}
             onCompleted={() => creditView(active)}
             onAborted={(r) => toast.error(`Not credited: ${r}`)}
           />
