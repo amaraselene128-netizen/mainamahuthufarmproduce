@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
-import { Users2, Copy, Crown, ExternalLink } from "lucide-react";
+import { Users2, Copy, Crown, ExternalLink, Play, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 type Plan = { id: string; tier: string; price: number; commission_rate: number; features: string[] };
@@ -74,14 +75,6 @@ function Referrals() {
 
   useEffect(() => { if (profile) load(); }, [profile?.id, (profile as any)?.referral_code]);
 
-  async function subscribe(planId: string) {
-    if (!user) return;
-    const { error } = await db.from("referral_subscriptions").upsert({ user_id: user.id, plan_id: planId });
-    if (error) return toast.error(error.message);
-    toast.success("Subscribed — share your link below");
-    load();
-  }
-
   const code = (profile as any)?.referral_code as string | undefined;
   const link = code ? `${window.location.origin}/auth/register?ref=${code}` : "";
 
@@ -113,12 +106,21 @@ function Referrals() {
                 <div className="text-xs text-muted-foreground">
                   Commission: <span className="font-semibold text-foreground">{Number(p.commission_rate) * 100}%</span>
                 </div>
-                <button
-                  onClick={() => subscribe(p.id)}
-                  className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
-                >
-                  Subscribe
-                </button>
+                <div className="space-y-2 pt-1">
+                  <button
+                    disabled
+                    title="PayPal checkout coming soon"
+                    className="w-full rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                  >
+                    <Lock className="size-4" /> Pay with PayPal · Coming soon
+                  </button>
+                  <Link
+                    to="/dashboard/earn/unlock"
+                    className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground inline-flex items-center justify-center gap-2"
+                  >
+                    <Play className="size-4" /> Unlock by watching ads
+                  </Link>
+                </div>
               </div>
             ))}
             {plans.length === 0 && !loading && (
