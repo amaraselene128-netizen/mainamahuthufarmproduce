@@ -1,133 +1,67 @@
+# EGRATASKS — Full Platform Overhaul Plan
 
-## Goal
+This is a large, multi-area change. Below is the scoped plan I'd execute. Please confirm or trim before I build.
 
-Implement the EGRATASKS rewarded ads program end-to-end:
+## 1. Admin moderation (tasks, ads, campaigns)
+- Fix admin pages to actually query: submissions, applications, ads, campaigns, market submissions — currently many fetches/RLS are mismatched.
+- Admin can **edit, delete, hide, pause, approve, reject, respond** on every task / ad / campaign / submission.
+- Add `admin_notes` + `hidden` flag to `tasks`, `advertisements`, `market_submissions` where missing.
+- Tasks become **tier-locked**: client uploads without tier → status `pending_review` → admin assigns `required_tier` on approval → only users at/above that tier see it on the Tasks page.
 
-1. Advertisers upload video campaigns (Cloudinary).
-2. Users watch full videos (countdown only, no skip / no scrubber) to earn **Tier Credits** (non-withdrawable) that unlock Bronze/Silver/Gold referral tiers.
-3. Post-watch CTA opens the destination (Play Store / App Store / URL).
-4. Strict fraud rules (tab-active, one reward per ad per user, full watch only).
-5. Fix mobile layout overlap on the existing site.
+## 2. Tier pricing (everywhere)
+- Bronze **$5**, Silver **$100**, Gold **$1000**.
+- Update `TIER_PRICE_CENTS` in `src/lib/ads.ts`, the `referral_plans` table, `unlock_tier_from_credits` RPC, and any displayed copy.
+- Two upgrade paths everywhere a tier is shown:
+  1. **Pay with PayPal** → checkout
+  2. **Earn via Ads** → starts a tier campaign
 
-PayPal direct-pay path for tiers is out of scope for this turn (link is "already working" per request) — only the **ads earning path** is built. The referral link generation already exists in `Referrals.tsx`.
+## 3. PayPal direct upgrade
+- Add `paypal-create-order` and `paypal-capture-order` edge functions.
+- Requires secrets: `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_MODE` (`sandbox`/`live`). I'll request these.
+- On capture: insert subscription row, mark tier active, record `transactions` row.
 
----
+## 4. Ads = tasks (unified)
+- Surface active ad views inside the main **Tasks** page under a "Watch & Earn" category, in addition to the existing Earn (Ads) page.
+- One renderer; the Tasks list pulls from `advertisements` where `status='active'`.
+- **Video itself is clickable** to count as a view (in addition to the existing "I watched" button). Both call the same `credit_ad_view` RPC.
+- On ad upload, **auto-detect video duration** via `loadedmetadata` and pre-fill `duration_seconds` (rounded to nearest allowed bucket 15/30/45/60).
 
-## 1. Database (migration)
+## 5. Tier-upgrade-via-ads campaign
+- New table `tier_campaigns(user_id, target_tier, target_cents, progress_cents, status, started_at)`.
+- User clicks "Earn this tier via ads" → row inserted, target = tier price.
+- Every completed ad view credits `progress_cents` (uses existing reward logic but routed to the campaign instead of the wallet while active).
+- Dashboard banner appears while a campaign is active: encouraging copy + **progress bar** + remaining amount.
+- When progress ≥ target → auto-unlock tier, close campaign, toast.
 
-New tables (with grants + RLS per project rules):
+## 6. Social/evidence tasks
+- Extend `task_submissions` with: `evidence_urls text[]`, `evidence_type` (`screenshot|recording|handle|other`), `handle_or_username`, `action_date`, `notes`.
+- New task category set: YouTube subscribe, FB follow/like/share/comment, App install/open/review, etc.
+- Worker submission form requires at least one piece of evidence; admin reviews manually and approves/rejects → wallet credit on approve.
 
-```text
-advertisements
-  id, advertiser_id (auth.users), title, description,
-  video_url, video_public_id, destination_url, button_text,
-  duration_seconds (15|30|45|60), country_targeting text[],
-  budget_cents, spent_cents, views_purchased, views_completed,
-  status ('pending'|'approved'|'active'|'paused'|'rejected'|'depleted'),
-  created_at, approved_at, admin_notes
+## 7. Referral program (3 generations + bonus)
+- Tables: extend `profiles.referred_by uuid`, add `referrals(referrer_id, referred_id, generation, created_at)`.
+- On a referred user's tier purchase (PayPal or ads-earned):
+  - Gen 1 referrer: **30%** of tier price
+  - Gen 2 referrer: **5%**
+  - Gen 3 referrer: **5%**
+- On each referred user's **first withdrawal**: **1% bonus** to each of the 3 upline referrers.
+- Implemented as a `pay_referral_commissions(referred_user, tier_price_cents)` SQL function + trigger; idempotent (won't double-pay on retries).
+- Referral hierarchy never expires; commissions are unlimited going forward.
 
-ad_views
-  id, ad_id, user_id, watched_seconds, completed bool,
-  reward_cents, ip, user_agent, fingerprint, created_at
-  UNIQUE(ad_id, user_id) WHERE completed = true   -- one reward per ad per user
+## 8. General hardening
+- Audit every dashboard widget and admin row: ensure they fetch and render real data (no empty stubs).
+- Every button → wired to an action; every link → routed.
+- Make MarketWithUs category tiles on the home page clickable → route to the matching submission form.
 
-ad_clicks
-  id, ad_id, user_id, clicked_at, destination_url
+## Technical details (for the technical reader)
+- **DB migration** adds: `tasks.required_tier`, `tasks.hidden`, `advertisements.hidden`, `market_submissions.hidden/admin_notes`, `task_submissions` evidence columns, `tier_campaigns`, `referrals`, updates `referral_plans.price_cents`, rewrites `unlock_tier_from_credits` and adds `pay_referral_commissions`, `start_tier_campaign`, `credit_tier_campaign` RPCs. GRANTs + RLS for each new table.
+- **Edge functions**: `paypal-create-order`, `paypal-capture-order`, `admin-ads` (edit/hide/delete), `admin-campaigns` (edit/hide/delete).
+- **Frontend**: new `PayPalCheckout.tsx`, `TierCampaignBanner.tsx`, evidence-upload UI in submission form, ad auto-duration on `AdvertiserCampaign.tsx`, clickable-video in `AdPlayer.tsx`, unified ads listing inside `Tasks` page, MarketWithUs tile links.
 
-tier_credits           -- non-withdrawable ad-earned balance
-  user_id PK, balance_cents int default 0, updated_at
+## Required from you
+1. Confirm PayPal as the only direct-payment provider (vs. enabling Lovable's built-in Stripe/Paddle, which would also handle tax/compliance for you).
+2. Provide **PayPal REST API Client ID + Secret** (sandbox first; live later) when I request them.
+3. Confirm referral split: 30% / 5% / 5% across 3 generations + 1% first-withdrawal bonus — your message said "30% from B, 5% from C and D" which I'm reading as 30/5/5. Correct?
+4. For ads-earned tier upgrades: while a tier campaign is active, ad rewards go **only** to the campaign (not the wallet). OK?
 
-tier_credit_ledger     -- audit trail
-  id, user_id, delta_cents, source ('ad_view'|'tier_unlock'),
-  ref_id (ad_view id or subscription id), created_at
-```
-
-RLS:
-- `advertisements`: advertiser sees own; everyone authenticated can SELECT active rows; admin via `has_role` can update status.
-- `ad_views` / `ad_clicks`: user can insert own; user can read own; admin reads all.
-- `tier_credits` / `tier_credit_ledger`: read own only; writes via SECURITY DEFINER functions.
-
-SECURITY DEFINER RPCs:
-- `credit_ad_view(p_ad_id uuid, p_watched int, p_fingerprint text)` → validates duration ≥ ad duration, no prior completed view, ad active + budget left; inserts `ad_views`, increments `tier_credits.balance_cents` by reward (15s→1, 30s→2, 45s→3, 60s→4), inserts ledger row, decrements `advertisements.spent_cents`/increments `views_completed`, sets status='depleted' when spent ≥ budget. Returns new balance.
-- `unlock_tier_from_credits(p_tier text)` → checks `tier_credits.balance_cents >= price`, debits, inserts a `referral_subscriptions` row for the matching tier plan, ledger row. Returns subscription.
-
-## 2. Edge function: `request-credit-ad-view`
-
-Server-side validation layer (Deno, mcp-lite/Hono not needed — plain `Deno.serve` with `corsHeaders` from `npm:@supabase/supabase-js@2/cors`).
-- Validates JWT manually (verify_jwt=false), Zod-validates body `{ ad_id, watched_seconds, fingerprint }`.
-- Pulls ad row with service role, confirms `watched_seconds >= duration_seconds`, calls `credit_ad_view` RPC, returns `{ balance_cents, reward_cents }`.
-- Why edge function: keeps fraud thresholds + fingerprint logging server-side; client cannot self-credit.
-
-## 3. Frontend — viewer
-
-New page `src/pages/EarnAds.tsx` (route `/dashboard/earn`):
-- Lists available ads (filtered by country + budget remaining + not already completed by user).
-- Tier-credit balance card + progress bar toward selected tier (Bronze/Silver/Gold).
-
-New component `src/components/ads/AdPlayer.tsx`:
-- `<video>` with `controls={false}`, `disablePictureInPicture`, `controlsList="nodownload noplaybackrate"`, no seekbar, autoplay+muted-fallback, ref.
-- Overlay shows **countdown only** (e.g. `28s`), no progress, no skip.
-- `onTimeUpdate` recomputes remaining; **`seeking` listener resets `currentTime` to last known max** to block scrubbing.
-- `visibilitychange` + `blur` → pause + flag invalidates reward.
-- On `ended`: call edge function with `watched_seconds = duration` + fingerprint (canvas+UA hash). On success: toast reward, show CTA.
-
-New component `src/components/ads/AdCTA.tsx`:
-- Modal with `button_text` → `window.open(destination_url, '_blank')`, logs `ad_clicks`, plus "Close" button.
-
-New page `src/pages/TierUnlock.tsx` (route `/dashboard/earn/unlock`) to spend credits on Bronze/Silver/Gold (calls `unlock_tier_from_credits`). Hook into existing `Referrals.tsx` so the unlocked subscription shows the link immediately.
-
-## 4. Frontend — advertiser
-
-New page `src/pages/AdvertiserCampaign.tsx` (route `/dashboard/advertise`):
-- Form: title, description, video upload via existing `uploadToCloudinary` (resource_type video), destination_url, button_text (select), duration (15/30/45/60), countries (multi), budget USD.
-- Inserts `advertisements` row with `status='pending'`, `spent_cents=0`, `views_purchased = floor(budget / advertiser_cost)`.
-
-Advertiser dashboard `src/pages/AdvertiserDashboard.tsx` (route `/dashboard/advertise/campaigns`):
-- Views Purchased / Completed / Budget Remaining / Completion Rate / Avg Watch Time / CTR / Status per campaign (aggregates from `ad_views` + `ad_clicks`).
-
-## 5. Admin
-
-New page `src/pages/AdminAds.tsx` (route `/admin/ads`):
-- Pending queue → Approve/Reject; Approve sets `status='active'`.
-- List active + paused with quick pause/resume + spent/budget bars.
-- Link added to `AdminLayout.tsx` sidebar.
-
-## 6. Navigation
-
-- Dashboard sidebar (DashLayout): add **Earn (Ads)**, **Advertise** entries.
-- Admin sidebar: add **Ads**.
-- `Home.tsx` adds a small "Earn by watching ads" CTA in the rewards strip.
-
-## 7. Mobile overlap fix
-
-Audit and fix on `Header.tsx`, `DashLayout.tsx`, dashboard pages:
-- Header: replace fixed grid with flex + `flex-wrap` on `< md`; collapse nav into existing hamburger; ensure `pt-16` body offset.
-- `DashLayout`: switch desktop sidebar `lg:grid-cols-[240px_1fr]` and add `overflow-x-hidden` + `min-w-0` on main column; mobile uses drawer (Sheet) — fix double-stack causing overlap.
-- Home/MarketWithUs hero: `min-h-[100svh]`, `px-4 sm:px-6`, replace `absolute` decorations that overflow with `pointer-events-none overflow-hidden` wrapper.
-- Tables: wrap in `overflow-x-auto` where missing.
-
-## 8. Technical details
-
-- Reward table constant in `src/lib/ads.ts`:
-  ```ts
-  export const AD_DURATIONS = [15,30,45,60] as const;
-  export const REWARD_CENTS = {15:1,30:2,45:3,60:4} as const;
-  export const ADVERTISER_CENTS = {15:5,30:6,45:7,60:8} as const;
-  export const TIER_PRICE_CENTS = { bronze:500, silver:1000, gold:1500 } as const;
-  ```
-- Fingerprint: lightweight hash of `navigator.userAgent + screen + canvas` — no third-party lib.
-- Anti-skip strategy lives both client-side (UX) **and** server-side (RPC rejects partial watches, unique-completed-per-user index).
-- Cloudinary: re-use `uploadToCloudinary` with `folder: "egratasks/ads"` and pass through `resource_type: "video"` (already handled in helper).
-- No new secrets needed (Cloudinary preset already configured, Supabase already connected, no PayPal in this turn).
-
-## Out of scope this turn
-
-- PayPal direct purchase of tiers (you said link path is already working).
-- VPN/bot detection beyond fingerprint + tab-active + unique constraint (can layer later).
-- Country targeting enforcement uses simple `country_code` match from profile; no geo-IP lookup.
-
-## Files
-
-New: `src/pages/EarnAds.tsx`, `TierUnlock.tsx`, `AdvertiserCampaign.tsx`, `AdvertiserDashboard.tsx`, `AdminAds.tsx`; `src/components/ads/AdPlayer.tsx`, `AdCTA.tsx`; `src/lib/ads.ts`; `src/lib/fingerprint.ts`; `supabase/functions/request-credit-ad-view/index.ts`.
-
-Edited: `src/App.tsx` (routes), `src/components/dashboard/DashLayout.tsx` (nav + mobile), `src/pages/AdminLayout.tsx` (nav), `src/components/site/Header.tsx` (mobile), `src/pages/Home.tsx` (entry CTA + mobile), `src/pages/Referrals.tsx` (link to ads-unlock), `db/schema.sql` (appended migration).
+Reply "go" (with any tweaks) and I'll ship it in stages: DB+admin fixes first, then PayPal+tiers, then ads-as-tasks + campaign banner, then referrals, then evidence tasks.
