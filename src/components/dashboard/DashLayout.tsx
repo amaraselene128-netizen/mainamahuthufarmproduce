@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 
 const workerNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
-  { label: "Available tasks", to: "/dashboard/worker", icon: ListChecks },
+  { label: "Available jobs", to: "/dashboard/worker", icon: ListChecks },
   { label: "My applications", to: "/dashboard/worker/applied", icon: ClipboardList },
   { label: "Completed", to: "/dashboard/worker/completed", icon: CheckCircle2 },
   { label: "Rejected", to: "/dashboard/worker/rejected", icon: XCircle },

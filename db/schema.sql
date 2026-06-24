@@ -860,13 +860,13 @@ declare
   v_existing uuid;
 begin
   if v_uid is null then raise exception 'Not authenticated'; end if;
-  v_price := case lower(p_tier)
-    when 'bronze' then 500 when 'silver' then 1000 when 'gold' then 1500
-    else null end;
-  if v_price is null then raise exception 'Invalid tier'; end if;
 
-  select id into v_plan_id from public.referral_plans where tier = lower(p_tier)::public.referral_tier and active limit 1;
-  if v_plan_id is null then raise exception 'Plan not found'; end if;
+  select id, coalesce(price_cents, round(price * 100)::int)
+    into v_plan_id, v_price
+  from public.referral_plans
+  where tier = lower(p_tier)::public.referral_tier and active
+  limit 1;
+  if v_plan_id is null or v_price is null then raise exception 'Plan not found'; end if;
 
   select id into v_existing from public.referral_subscriptions where user_id = v_uid;
   if v_existing is not null then raise exception 'Already subscribed'; end if;
