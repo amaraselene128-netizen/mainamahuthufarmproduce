@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { ExternalLink, Megaphone } from "lucide-react";
+import { SocialEmbed } from "@/components/media/SocialEmbed";
+import { forceDownload } from "@/lib/download";
 
 type Campaign = {
   id: string;
@@ -89,18 +91,32 @@ function CampaignRow({ c, onAction }: { c: Campaign; onAction: (id: string, s: s
         </span>
       </div>
       <p className="text-sm text-muted-foreground whitespace-pre-wrap">{c.description}</p>
+      {c.video_url && (
+        <div className="rounded-xl overflow-hidden border hairline bg-black">
+          {/^https?:\/\/res\.cloudinary\.com\//i.test(c.video_url) ? (
+            <video src={c.video_url} controls className="w-full aspect-video bg-black" />
+          ) : (
+            <SocialEmbed url={c.video_url} title={c.title} />
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap gap-3 text-xs">
         {c.website_url && <a href={c.website_url} target="_blank" rel="noopener" className="text-primary hover:underline inline-flex items-center gap-1">Website <ExternalLink className="size-3" /></a>}
-        {c.video_url && <a href={c.video_url} target="_blank" rel="noopener" className="text-primary hover:underline inline-flex items-center gap-1">Video <ExternalLink className="size-3" /></a>}
+        {c.video_url && <a href={c.video_url} target="_blank" rel="noopener" className="text-primary hover:underline inline-flex items-center gap-1">Open source <ExternalLink className="size-3" /></a>}
         {c.social_url && <a href={c.social_url} target="_blank" rel="noopener" className="text-primary hover:underline inline-flex items-center gap-1">Social <ExternalLink className="size-3" /></a>}
         {c.budget != null && <span className="text-muted-foreground">Budget: ${c.budget}</span>}
       </div>
       {Array.isArray(c.attachments) && c.attachments.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {c.attachments.map((u, i) => (
-            <a key={i} href={u} target="_blank" rel="noopener" className="text-xs rounded-lg border border-input bg-background px-2 py-1 hover:bg-accent">
+            <button
+              key={i}
+              type="button"
+              onClick={() => forceDownload(u, `attachment-${i + 1}`)}
+              className="text-xs rounded-lg border border-input bg-background px-2 py-1 hover:bg-accent"
+            >
               Attachment {i + 1}
-            </a>
+            </button>
           ))}
         </div>
       )}
