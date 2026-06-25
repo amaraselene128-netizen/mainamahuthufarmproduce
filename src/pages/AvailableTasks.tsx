@@ -39,7 +39,7 @@ function AvailableTasks() {
 
   async function load() {
     setLoading(true);
-    const [taskRes, adsRes, viewsRes] = await Promise.all([
+    const [taskRes, adsRes, campRes, viewsRes, campViewsRes] = await Promise.all([
       db.from("tasks")
         .select("id,title,description,payment_amount,tier,deadline,max_workers,current_workers,status,attachments,category")
         .eq("status", "active")
@@ -48,20 +48,39 @@ function AvailableTasks() {
         .select("id,title,description,duration_seconds,spent_cents,budget_cents,country_targeting,created_at")
         .eq("status", "active")
         .order("created_at", { ascending: false }),
+      db.from("market_campaigns")
+        .select("id,title,description,duration_seconds,target_countries,created_at,video_url,video_file_url")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false }),
       user ? db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true) : Promise.resolve({ data: [] } as any),
+      user ? db.from("campaign_views").select("campaign_id").eq("user_id", user.id).eq("completed", true) : Promise.resolve({ data: [] } as any),
     ]);
     setLoading(false);
     if (taskRes.error) toast.error(taskRes.error.message);
     if (adsRes.error) toast.error(adsRes.error.message);
 
-    const completed = new Set(((viewsRes as any).data ?? []).map((v: any) => v.ad_id));
+    const completed = new Set<string>();
+    ((viewsRes as any).data ?? []).forEach((v: any) => completed.add(v.ad_id));
+    ((campViewsRes as any).data ?? []).forEach((v: any) => completed.add(v.campaign_id));
     const country = profile?.country_code ?? null;
     const availableAds = (((adsRes.data as any[]) ?? []) as AdJob[])
       .filter((a) => a.spent_cents < a.budget_cents)
       .filter((a) => !completed.has(a.id))
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
+    const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
+      .filter((c) => !!(c.video_file_url || c.video_url))
+      .filter((c) => !completed.has(c.id))
+      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
+      .map((c) => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        duration_seconds: ([15,30,45,60] as number[]).includes(c.duration_seconds) ? c.duration_seconds : 30,
+        spent_cents: 0,
+        budget_cents: 1,
+      }));
     setTasks((taskRes.data as any) ?? []);
-    setAds(availableAds);
+    setAds([...availableAds, ...availableCampaigns]);
   }
   useEffect(() => { load(); }, [user?.id, profile?.country_code]);
 
