@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, Download, Users } from "lucide-react";
+import { forceDownload } from "@/lib/download";
 
 type Attachment = { url: string; name?: string; public_id?: string };
 
@@ -75,16 +76,14 @@ function TaskDetail() {
             <ul className="space-y-2">
               {attachments.map((f, i) => (
                 <li key={i}>
-                  <a
-                    href={f.url}
-                    target="_blank"
-                    rel="noopener"
-                    download={f.name ?? true}
+                  <button
+                    type="button"
+                    onClick={() => forceDownload(f.url, f.name)}
                     className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
                   >
                     <Download className="size-4 text-primary" />
                     {f.name ?? `Attachment ${i + 1}`}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
