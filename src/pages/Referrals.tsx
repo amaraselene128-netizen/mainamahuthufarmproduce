@@ -138,7 +138,7 @@ function Referrals() {
                   Commission: <span className="font-semibold text-foreground">{Number(p.commission_rate) * 100}%</span>
                 </div>
                 <button
-                  onClick={() => subscribe(p.id)}
+                  onClick={() => subscribe(p)}
                   className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
                 >
                   Subscribe
