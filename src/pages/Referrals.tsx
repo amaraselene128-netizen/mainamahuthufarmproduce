@@ -74,12 +74,36 @@ function Referrals() {
 
   useEffect(() => { if (profile) load(); }, [profile?.id, (profile as any)?.referral_code]);
 
-  async function subscribe(planId: string) {
+  async function subscribe(plan: Plan) {
     if (!user) return;
-    const { error } = await db.from("referral_subscriptions").upsert({ user_id: user.id, plan_id: planId });
-    if (error) return toast.error(error.message);
-    toast.success("Subscribed — share your link below");
-    load();
+    // Create a PayPal order via the secure edge function.
+    const { data, error } = await db.functions.invoke("paypal-create-order", {
+      body: { tier: plan.tier },
+    });
+    if (error || (data as any)?.error) {
+      return toast.error(error?.message ?? (data as any)?.error ?? "Could not start PayPal");
+    }
+    const orderId = (data as any)?.id as string | undefined;
+    if (!orderId) return toast.error("PayPal did not return an order id");
+    const approveUrl = `https://www.paypal.com/checkoutnow?token=${orderId}`;
+    // Open PayPal approval in a new window; user returns and we capture.
+    window.open(approveUrl, "_blank", "noopener,noreferrer");
+    toast.message("Complete payment in PayPal, then click 'I have paid'.", {
+      action: {
+        label: "I have paid",
+        onClick: async () => {
+          const { data: cap, error: capErr } = await db.functions.invoke("paypal-capture-order", {
+            body: { order_id: orderId, tier: plan.tier },
+          });
+          if (capErr || (cap as any)?.error) {
+            return toast.error(capErr?.message ?? (cap as any)?.error ?? "Capture failed");
+          }
+          toast.success("Subscription activated");
+          load();
+        },
+      },
+      duration: 60000,
+    });
   }
 
   const code = (profile as any)?.referral_code as string | undefined;
