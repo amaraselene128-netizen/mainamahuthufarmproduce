@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
 
+const TIERS = ["bronze", "silver", "gold"] as const;
+
 function Users() {
   const [rows, setRows] = useState<any[]>([]);
   const [q, setQ] = useState("");
@@ -22,6 +24,14 @@ function Users() {
     toast.success("Updated"); load();
   }
 
+  async function grantTier(id: string, tier: string) {
+    if (!tier) return;
+    const { error } = await db.rpc("admin_grant_tier" as any, { p_user: id, p_tier: tier });
+    if (error) return toast.error(error.message);
+    toast.success(`Granted ${tier.toUpperCase()} tier`);
+    load();
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -38,7 +48,16 @@ function Users() {
                 <td>{r.country_code ?? "—"}</td>
                 <td className="uppercase text-xs">{r.account_mode}</td>
                 <td className="text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${r.banned ? "bg-destructive/15 text-destructive" : r.suspended ? "bg-primary/15 text-primary" : "bg-secondary/15 text-secondary"}`}>{r.banned ? "Banned" : r.suspended ? "Suspended" : "Active"}</span></td>
-                <td className="text-right p-3 space-x-1">
+                <td className="text-right p-3 space-x-1 whitespace-nowrap">
+                  <select
+                    defaultValue=""
+                    onChange={(e) => { grantTier(r.id, e.target.value); e.currentTarget.value = ""; }}
+                    className="text-xs rounded-lg border border-input bg-background px-2 py-1"
+                    title="Grant a tier (use only if PayPal failed but you confirmed payment)"
+                  >
+                    <option value="">Grant tier…</option>
+                    {TIERS.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+                  </select>
                   <button onClick={() => toggle(r.id, "suspended", !r.suspended)} className="text-xs rounded-lg border border-input px-2 py-1 hover:bg-accent">{r.suspended ? "Unsuspend" : "Suspend"}</button>
                   <button onClick={() => toggle(r.id, "banned", !r.banned)} className="text-xs rounded-lg border border-destructive/30 text-destructive px-2 py-1 hover:bg-destructive/10">{r.banned ? "Unban" : "Ban"}</button>
                 </td>
