@@ -16,15 +16,13 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     )
     const token = authHeader.replace('Bearer ', '')
-    const { data: userData, error: userErr } = await userClient.auth.getUser(token)
-    if (userErr || !userData?.user) return json({ error: 'Unauthorized' }, 401)
-    const userId = userData.user.id
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token)
+    if (claimsErr || !claimsData?.claims) return json({ error: 'Unauthorized' }, 401)
+    const userId = claimsData.claims.sub as string
 
     const body = await req.json().catch(() => null) as
-      | { ad_id?: string; campaign_id?: string; kind?: 'ad' | 'campaign'; watched_seconds?: number; fingerprint?: string } | null
-    const targetId = body?.ad_id ?? body?.campaign_id
-    const kind: 'ad' | 'campaign' = body?.kind ?? (body?.campaign_id ? 'campaign' : 'ad')
-    if (!targetId || typeof body?.watched_seconds !== 'number') {
+      | { ad_id?: string; watched_seconds?: number; fingerprint?: string } | null
+    if (!body?.ad_id || typeof body.watched_seconds !== 'number') {
       return json({ error: 'Invalid request' }, 400)
     }
     if (body.watched_seconds < 0 || body.watched_seconds > 3600) {
@@ -39,11 +37,14 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    const rpcName = kind === 'campaign' ? 'credit_campaign_view' : 'credit_ad_view'
-    const rpcArgs = kind === 'campaign'
-      ? { p_campaign_id: targetId, p_user_id: userId, p_watched: Math.floor(body.watched_seconds), p_fingerprint: fingerprint, p_user_agent: userAgent, p_ip: ip }
-      : { p_ad_id: targetId, p_user_id: userId, p_watched: Math.floor(body.watched_seconds), p_fingerprint: fingerprint, p_user_agent: userAgent, p_ip: ip }
-    const { data, error } = await admin.rpc(rpcName, rpcArgs as any)
+    const { data, error } = await admin.rpc('credit_ad_view', {
+      p_ad_id: body.ad_id,
+      p_user_id: userId,
+      p_watched: Math.floor(body.watched_seconds),
+      p_fingerprint: fingerprint,
+      p_user_agent: userAgent,
+      p_ip: ip,
+    })
     if (error) return json({ error: error.message }, 400)
     return json(data ?? { ok: true }, 200)
   } catch (e) {

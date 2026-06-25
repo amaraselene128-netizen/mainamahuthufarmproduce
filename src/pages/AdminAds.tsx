@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
-import { Megaphone, ExternalLink, Pencil } from "lucide-react";
+import { Megaphone, ExternalLink } from "lucide-react";
 import { formatCents } from "@/lib/ads";
 
 type Ad = {
@@ -66,31 +66,6 @@ function AdminAds() {
 
 function Row({ a, onAction }: { a: Ad; onAction: (id: string, s: string, n?: string) => void }) {
   const [notes, setNotes] = useState(a.admin_notes ?? "");
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    title: a.title,
-    description: a.description ?? "",
-    duration_seconds: a.duration_seconds,
-    destination_url: a.destination_url,
-    button_text: a.button_text,
-    video_url: a.video_url,
-    budget_cents: a.budget_cents,
-  });
-  async function save() {
-    const { error } = await db.from("advertisements").update({
-      title: form.title,
-      description: form.description || null,
-      duration_seconds: Number(form.duration_seconds),
-      destination_url: form.destination_url,
-      button_text: form.button_text,
-      video_url: form.video_url,
-      budget_cents: Number(form.budget_cents),
-    }).eq("id", a.id);
-    if (error) return toast.error(error.message);
-    toast.success("Ad updated");
-    setEditing(false);
-    window.location.reload();
-  }
   return (
     <div className="rounded-2xl border hairline bg-card p-5 shadow-card space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -100,29 +75,8 @@ function Row({ a, onAction }: { a: Ad; onAction: (id: string, s: string, n?: str
             {a.duration_seconds}s · {a.button_text} · {new Date(a.created_at).toLocaleString()}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setEditing((v) => !v)} className="text-xs rounded-lg border border-input px-2 py-1 inline-flex items-center gap-1">
-            <Pencil className="size-3" /> {editing ? "Cancel" : "Edit"}
-          </button>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full uppercase bg-muted text-muted-foreground">{a.status}</span>
-        </div>
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full uppercase bg-muted text-muted-foreground">{a.status}</span>
       </div>
-      {editing && (
-        <div className="grid gap-2 md:grid-cols-2 rounded-xl border hairline bg-background p-3 text-sm">
-          <label className="text-xs">Title<input className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-          <label className="text-xs">Duration (s)
-            <select className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.duration_seconds} onChange={(e) => setForm({ ...form, duration_seconds: Number(e.target.value) })}>
-              {[15,30,45,60].map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </label>
-          <label className="text-xs md:col-span-2">Description<textarea rows={2} className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-          <label className="text-xs md:col-span-2">Video URL<input className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.video_url} onChange={(e) => setForm({ ...form, video_url: e.target.value })} /></label>
-          <label className="text-xs">Destination URL<input className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.destination_url} onChange={(e) => setForm({ ...form, destination_url: e.target.value })} /></label>
-          <label className="text-xs">Button text<input className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.button_text} onChange={(e) => setForm({ ...form, button_text: e.target.value })} /></label>
-          <label className="text-xs">Budget (cents)<input type="number" className="w-full mt-1 rounded border border-input bg-card px-2 py-1.5" value={form.budget_cents} onChange={(e) => setForm({ ...form, budget_cents: Number(e.target.value) })} /></label>
-          <div className="md:col-span-2"><button onClick={save} className="text-xs rounded-lg bg-primary text-primary-foreground px-3 py-1.5 font-semibold">Save changes</button></div>
-        </div>
-      )}
       {a.description && <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.description}</p>}
       <video src={a.video_url} controls className="w-full max-h-64 rounded-xl bg-black" />
       <div className="flex flex-wrap gap-3 text-xs">

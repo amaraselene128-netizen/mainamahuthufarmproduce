@@ -14,7 +14,6 @@ import { deviceFingerprint } from "@/lib/fingerprint";
 
 type Ad = {
   id: string;
-  kind: "ad" | "campaign";
   title: string;
   description: string | null;
   video_url: string;
@@ -34,57 +33,25 @@ function EarnAds() {
   const [active, setActive] = useState<Ad | null>(null);
   const [showCta, setShowCta] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [hasTier, setHasTier] = useState(false);
 
   async function load() {
     if (!user) return;
     setLoading(true);
-    const [adsRes, campRes, viewsRes, campViewsRes, creditRes, subRes] = await Promise.all([
+    const [adsRes, viewsRes, creditRes] = await Promise.all([
       db.from("advertisements")
         .select("id,title,description,video_url,destination_url,button_text,duration_seconds,spent_cents,budget_cents,country_targeting")
         .eq("status", "active")
         .order("created_at", { ascending: false }),
-      db.from("market_campaigns")
-        .select("id,title,description,video_url,video_file_url,website_url,social_url,duration_seconds,target_countries,promotion_type")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false }),
       db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true),
-      db.from("campaign_views").select("campaign_id").eq("user_id", user.id).eq("completed", true),
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("referral_subscriptions").select("id").eq("user_id", user.id).maybeSingle(),
     ]);
     const country = profile?.country_code ?? null;
-    const adList: Ad[] = ((adsRes.data as any[]) ?? [])
+    const list = ((adsRes.data as any[]) ?? [])
       .filter((a) => a.spent_cents < a.budget_cents)
-      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)))
-      .map((a) => ({ ...a, kind: "ad" as const }));
-    const campList: Ad[] = ((campRes.data as any[]) ?? [])
-      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
-      .map((c) => {
-        const video = c.video_file_url || c.video_url || c.social_url || "";
-        const dest = c.website_url || c.social_url || c.video_url || "#";
-        const dur = (c.duration_seconds ?? 30) as AdDuration;
-        return {
-          id: c.id,
-          kind: "campaign" as const,
-          title: c.title,
-          description: c.description,
-          video_url: video,
-          destination_url: dest,
-          button_text: "Visit",
-          duration_seconds: (([15,30,45,60] as number[]).includes(dur) ? dur : 30) as AdDuration,
-          spent_cents: 0,
-          budget_cents: 1,
-        };
-      })
-      .filter((c) => !!c.video_url);
-    setAds([...adList, ...campList]);
-    const done = new Set<string>();
-    ((viewsRes.data as any[]) ?? []).forEach((v) => done.add(v.ad_id));
-    ((campViewsRes.data as any[]) ?? []).forEach((v) => done.add(v.campaign_id));
-    setCompletedIds(done);
+      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
+    setAds(list as Ad[]);
+    setCompletedIds(new Set(((viewsRes.data as any[]) ?? []).map((v) => v.ad_id)));
     setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
-    setHasTier(!!(subRes.data as any)?.id);
     setLoading(false);
   }
   useEffect(() => { load(); }, [user?.id]);
@@ -94,23 +61,16 @@ function EarnAds() {
 
   async function creditView(ad: Ad) {
     const fp = deviceFingerprint();
-    const payload =
-      ad.kind === "campaign"
-        ? { campaign_id: ad.id, kind: "campaign", watched_seconds: ad.duration_seconds, fingerprint: fp }
-        : { ad_id: ad.id, kind: "ad", watched_seconds: ad.duration_seconds, fingerprint: fp };
-    const { data, error } = await supabase.functions.invoke("request-credit-ad-view", { body: payload });
+    const { data, error } = await supabase.functions.invoke("request-credit-ad-view", {
+      body: { ad_id: ad.id, watched_seconds: ad.duration_seconds, fingerprint: fp },
+    });
     if (error || (data as any)?.error) {
       toast.error((data as any)?.error ?? error?.message ?? "Could not credit view");
       return;
     }
-    setBalance((data as any).balance_cents ?? balance);
+    setBalance((data as any).balance_cents);
     setCompletedIds((s) => new Set(s).add(ad.id));
-    const paidTo = (data as any).paid_to;
-    toast.success(
-      paidTo === "wallet"
-        ? `Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} to your wallet`
-        : `Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} tier credit`
-    );
+    toast.success(`Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} tier credit`);
     setShowCta(true);
   }
 
@@ -129,11 +89,6 @@ function EarnAds() {
       </div>
 
       <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
-        {hasTier && (
-          <div className="rounded-xl bg-secondary/10 text-secondary text-xs px-3 py-2">
-            Tier active — every completed view pays real money to your wallet.
-          </div>
-        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2">
             <Coins className="size-5 text-primary" />

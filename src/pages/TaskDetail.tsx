@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, Download, Users } from "lucide-react";
-import { forceDownload } from "@/lib/download";
 
 type Attachment = { url: string; name?: string; public_id?: string };
 
@@ -51,11 +50,7 @@ function TaskDetail() {
 
       <div>
         <div className="flex items-center gap-2 text-xs">
-          <span className={`font-bold px-2 py-0.5 rounded-full ${
-            task.tier === "gold" ? "bg-primary/15 text-primary" :
-            task.tier === "silver" ? "bg-muted text-foreground" :
-            "bg-secondary/15 text-secondary"
-          }`}>{String(task.tier).toUpperCase()}</span>
+          <span className="font-bold px-2 py-0.5 rounded-full bg-secondary/15 text-secondary">OPEN TO ALL</span>
           <span className="text-muted-foreground">{task.category ?? ""}</span>
         </div>
         <h1 className="mt-2 font-display text-3xl md:text-4xl font-semibold">{task.title}</h1>
@@ -76,14 +71,16 @@ function TaskDetail() {
             <ul className="space-y-2">
               {attachments.map((f, i) => (
                 <li key={i}>
-                  <button
-                    type="button"
-                    onClick={() => forceDownload(f.url, f.name)}
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener"
+                    download={f.name ?? true}
                     className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
                   >
                     <Download className="size-4 text-primary" />
                     {f.name ?? `Attachment ${i + 1}`}
-                  </button>
+                  </a>
                 </li>
               ))}
             </ul>

@@ -52,15 +52,13 @@ function Register() {
           username: form.username,
           country_code: form.country || null,
           account_mode: accountMode,
-          referral_code: ref ?? null,
         },
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
 
-    // If referral code present, resolve referrer by code as a client-side fallback.
-    // The database trigger also handles this from auth metadata for confirmed-email flows.
+    // If referral code present, resolve referrer by code and record the relationship.
     if (ref && data.user) {
       const { data: refProfile } = await db
         .from("profiles")

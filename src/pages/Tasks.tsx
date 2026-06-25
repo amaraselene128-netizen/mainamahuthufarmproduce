@@ -2,19 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
-import { Plus, Clock } from "lucide-react";
+import { Plus } from "lucide-react";
 
 function Tasks() {
   const [rows, setRows] = useState<any[]>([]);
-  const [pendingByTask, setPendingByTask] = useState<Record<string, number>>({});
   async function load() {
-    const [{ data }, { data: pending }] = await Promise.all([
-      db.from("tasks").select("*").order("created_at", { ascending: false }).limit(200),
-      db.from("task_submissions").select("task_id").eq("status", "pending").limit(1000),
-    ]);
-    const counts: Record<string, number> = {};
-    ((pending as any[]) ?? []).forEach((s) => { counts[s.task_id] = (counts[s.task_id] ?? 0) + 1; });
-    setPendingByTask(counts);
+    const { data } = await db.from("tasks").select("*").order("created_at", { ascending: false }).limit(200);
     setRows(data ?? []);
   }
   useEffect(() => { load(); }, []);
@@ -46,14 +39,7 @@ function Tasks() {
         {rows.map((t) => (
           <div key={t.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
             <Link to={`/admin/tasks/${t.id}`} className="min-w-0 hover:text-primary">
-              <div className="font-medium truncate flex items-center gap-2">
-                {t.title}
-                {pendingByTask[t.id] > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                    <Clock className="size-3" /> {pendingByTask[t.id]} pending
-                  </span>
-                )}
-              </div>
+              <div className="font-medium truncate">{t.title}</div>
               <div className="text-xs text-muted-foreground">{t.current_workers}/{t.max_workers} · ${Number(t.payment_amount).toFixed(2)} · {t.status}</div>
             </Link>
             <div className="flex gap-1 flex-wrap">

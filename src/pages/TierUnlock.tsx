@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Crown, Coins, ArrowLeft, Lock } from "lucide-react";
+import { Crown, Coins, ArrowLeft } from "lucide-react";
 import { formatCents, TIER_PRICE_CENTS, type Tier } from "@/lib/ads";
 
 function TierUnlock() {
@@ -67,22 +67,13 @@ function TierUnlock() {
                 <Crown className={`size-5 ${t === "gold" ? "text-primary" : t === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
               </div>
               <div className="font-display text-4xl text-gradient-gold">{formatCents(price)}</div>
-              <div className="space-y-2">
-                <button
-                  disabled={!!activeTier || busy === t || balance < price}
-                  onClick={() => unlock(t)}
-                  className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {busy === t ? "Unlocking…" : ok ? `Unlock with credits` : balance < price ? `Need ${formatCents(price - balance)} more` : "Already subscribed"}
-                </button>
-                <button
-                  disabled
-                  title="PayPal checkout coming soon"
-                  className="w-full rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 cursor-not-allowed"
-                >
-                  <Lock className="size-4" /> Pay with PayPal · Coming soon
-                </button>
-              </div>
+              <button
+                disabled={!ok || busy === t}
+                onClick={() => unlock(t)}
+                className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {busy === t ? "Unlocking…" : ok ? `Unlock ${t}` : balance < price ? `Need ${formatCents(price - balance)} more` : "Already subscribed"}
+              </button>
             </div>
           );
         })}
