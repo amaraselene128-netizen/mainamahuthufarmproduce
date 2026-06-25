@@ -50,11 +50,7 @@ function TaskDetail() {
 
       <div>
         <div className="flex items-center gap-2 text-xs">
-          <span className={`font-bold px-2 py-0.5 rounded-full ${
-            task.tier === "gold" ? "bg-primary/15 text-primary" :
-            task.tier === "silver" ? "bg-muted text-foreground" :
-            "bg-secondary/15 text-secondary"
-          }`}>{String(task.tier).toUpperCase()}</span>
+          <span className="font-bold px-2 py-0.5 rounded-full bg-secondary/15 text-secondary">OPEN TO ALL</span>
           <span className="text-muted-foreground">{task.category ?? ""}</span>
         </div>
         <h1 className="mt-2 font-display text-3xl md:text-4xl font-semibold">{task.title}</h1>
