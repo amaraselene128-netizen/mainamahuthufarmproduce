@@ -236,3 +236,35 @@ begin
 end; $$;
 revoke all on function public.unlock_tier_from_credits(text) from public, anon;
 grant execute on function public.unlock_tier_from_credits(text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 7. handle_new_user: resolve `ref_code` from signup metadata server-side so
+--    the referrer chain is built even before email verification / login.
+-- ---------------------------------------------------------------------------
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  uname text;
+  v_ref_code text;
+  v_ref_id uuid;
+begin
+  uname := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
+  while exists (select 1 from public.profiles where username = uname) loop
+    uname := uname || floor(random()*10000)::text;
+  end loop;
+
+  v_ref_code := nullif(new.raw_user_meta_data->>'ref_code', '');
+  if v_ref_code is not null then
+    select id into v_ref_id from public.profiles where referral_code = v_ref_code limit 1;
+  end if;
+
+  insert into public.profiles (id, email, username, country_code, account_mode, referred_by)
+  values (
+    new.id, new.email, uname,
+    coalesce(new.raw_user_meta_data->>'country_code', null),
+    coalesce((new.raw_user_meta_data->>'account_mode')::public.account_mode, 'worker'),
+    v_ref_id
+  );
+  insert into public.wallets (user_id) values (new.id);
+  return new;
+end; $$;
