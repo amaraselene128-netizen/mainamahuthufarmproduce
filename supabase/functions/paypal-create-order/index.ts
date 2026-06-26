@@ -39,9 +39,9 @@ async function paypalToken() {
 }
 
 const TIER_PRICE_USD: Record<string, string> = {
-  bronze: "5.00",
-  silver: "100.00",
-  gold: "1000.00",
+  bronze: "100.00",
+  silver: "1000.00",
+  gold: "10000.00",
 };
 
 Deno.serve(async (req) => {
