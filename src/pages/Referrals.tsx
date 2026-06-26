@@ -40,24 +40,31 @@ function Referrals() {
     const [pRes, sRes, refsRes, eRes, cRes] = await Promise.all([
       db.from("referral_plans").select("*").eq("active", true).order("price"),
       db.from("referral_subscriptions").select("plan_id, referral_plans(*)").eq("user_id", user.id).maybeSingle(),
-      db.from("referrals").select("id, referred_id, verified_at, created_at, profiles!referrals_referred_id_fkey(username,country_code)").eq("referrer_id", user.id),
+      db.from("referrals").select("id, referred_id, verified_at, created_at").eq("referrer_id", user.id),
       db.from("referral_earnings").select("amount,status,referred_id").eq("referrer_id", user.id),
       code ? db.from("referral_clicks").select("*", { count: "exact", head: true }).eq("code", code) : Promise.resolve({ count: 0 } as any),
     ]);
     setPlans((pRes.data as Plan[]) ?? []);
     setSub(sRes.data as Sub | null);
 
-    const refs = refsRes.data ?? [];
+    const refs = (refsRes.data ?? []) as any[];
     const earnings = eRes.data ?? [];
     const earningsByRef = new Map<string, number>();
     for (const r of earnings) {
       earningsByRef.set(r.referred_id, (earningsByRef.get(r.referred_id) ?? 0) + Number(r.amount));
     }
+    // Fetch referred profiles separately (no FK from referrals -> profiles via PostgREST embed reliably).
+    const ids = refs.map((r) => r.referred_id).filter(Boolean);
+    const profilesById = new Map<string, { username?: string; country_code?: string | null }>();
+    if (ids.length) {
+      const { data: profs } = await db.from("profiles").select("id, username, country_code").in("id", ids);
+      for (const p of profs ?? []) profilesById.set((p as any).id, p as any);
+    }
     setRows(
       refs.map((r: any) => ({
         id: r.id,
-        username: r.profiles?.username ?? "—",
-        country_code: r.profiles?.country_code ?? null,
+        username: profilesById.get(r.referred_id)?.username ?? "—",
+        country_code: profilesById.get(r.referred_id)?.country_code ?? null,
         status: r.verified_at ? "verified" : "signed-up",
         earnings: earningsByRef.get(r.referred_id) ?? 0,
         created_at: r.created_at,
@@ -128,8 +135,10 @@ function Referrals() {
                   <Crown className={`size-5 ${p.tier === "gold" ? "text-primary" : p.tier === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
                 </div>
                 <div className="font-display text-4xl text-gradient-gold">
-                  ${Number(p.price).toFixed(2)}
-                  <span className="text-sm text-muted-foreground"> /mo</span>
+                  ${Number(p.price).toFixed(0)}
+                </div>
+                <div className="text-[10px] text-muted-foreground/30 -mt-2 select-none">
+                  monthly subscription ${(Number(p.price) / 2).toFixed(0)}/mo
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {(p.features ?? []).map((f, i) => <li key={i}>✓ {f}</li>)}
