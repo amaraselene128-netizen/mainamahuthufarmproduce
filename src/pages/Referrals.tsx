@@ -135,8 +135,10 @@ function Referrals() {
                   <Crown className={`size-5 ${p.tier === "gold" ? "text-primary" : p.tier === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
                 </div>
                 <div className="font-display text-4xl text-gradient-gold">
-                  ${Number(p.price).toFixed(2)}
-                  <span className="text-sm text-muted-foreground"> /mo</span>
+                  ${Number(p.price).toFixed(0)}
+                </div>
+                <div className="text-[10px] text-muted-foreground/30 -mt-2 select-none">
+                  monthly subscription ${(Number(p.price) / 2).toFixed(0)}/mo
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {(p.features ?? []).map((f, i) => <li key={i}>✓ {f}</li>)}
