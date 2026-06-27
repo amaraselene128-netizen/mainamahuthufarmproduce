@@ -30,6 +30,7 @@ function Home() {
         <MarketWithUs />
         <Categories />
         <Testimonials />
+        <TierPromo />
         <FAQ />
         <CTA />
       </main>
