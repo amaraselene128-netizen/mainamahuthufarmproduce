@@ -11,7 +11,6 @@ const Terms = lazy(() => import("@/pages/Terms"));
 const CategoriesPage = lazy(() => import("@/pages/CategoriesPage"));
 const MarketWithUs = lazy(() => import("@/pages/MarketWithUs"));
 const Tiers = lazy(() => import("@/pages/Tiers"));
-const MarketWithUs = lazy(() => import("@/pages/MarketWithUs"));
 
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
