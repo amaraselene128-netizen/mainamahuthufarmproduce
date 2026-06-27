@@ -65,7 +65,7 @@ function AvailableTasks() {
               return (
                 <div key={t.id} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{t.category ?? "Task"}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{t.categories?.name ?? "Task"}</span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       t.tier === "gold" ? "bg-primary/15 text-primary" :
                       t.tier === "silver" ? "bg-muted text-foreground" : "bg-secondary/15 text-secondary"
