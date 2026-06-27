@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
-import { Megaphone, Upload } from "lucide-react";
+import { Megaphone, Upload, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import {
   AD_DURATIONS, ADVERTISER_CENTS, BUTTON_TEXT_OPTIONS, formatCents, viewsForBudget, type AdDuration,
 } from "@/lib/ads";
+
+type Mode = "upload" | "embed";
 
 function AdvertiserCampaign() {
   const { user } = useAuth();
