@@ -1,7 +1,10 @@
 project_id = "iycbpeujxgwcsmelvwdw"
 
 [functions.admin-users]
-verify_jwt = true
+verify_jwt = false
+
+[functions.admin-notify]
+verify_jwt = false
 
 [functions.admin-withdrawals]
 verify_jwt = true
