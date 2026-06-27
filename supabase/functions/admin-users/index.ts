@@ -1,4 +1,4 @@
-// Admin user actions: suspend, ban, unsuspend, unban.
+// Admin user actions: suspend/ban + grant/revoke admin role.
 import { requireAdmin, json, corsHeaders } from "../_shared/admin.ts";
 
 Deno.serve(async (req) => {
@@ -21,7 +21,24 @@ Deno.serve(async (req) => {
       .from("profiles")
       .update({ [field]: Boolean(value) })
       .eq("id", user_id);
-    if (error) return json({ error: error.message }, 500);
+    if (error) return json({ error: `Update failed: ${error.message}` }, 500);
+    return json({ ok: true });
+  }
+
+  if (action === "set_admin") {
+    if (value) {
+      const { error } = await ctx.admin
+        .from("user_roles")
+        .upsert({ user_id, role: "admin" }, { onConflict: "user_id,role" });
+      if (error) return json({ error: `Grant admin failed: ${error.message}` }, 500);
+    } else {
+      const { error } = await ctx.admin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("role", "admin");
+      if (error) return json({ error: `Revoke admin failed: ${error.message}` }, 500);
+    }
     return json({ ok: true });
   }
 
