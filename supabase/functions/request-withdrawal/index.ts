@@ -56,21 +56,17 @@ Deno.serve(async (req) => {
     if (amount > available) return json({ error: "Insufficient available balance" }, 400);
 
     const open = isWindowOpen(new Date());
-    if (!open) {
-      return json({ error: "Withdrawals are closed. Window: 28th — 5th of next month." }, 400);
-    }
 
-    // Instant payout path
+    // Always create a pending withdrawal request. Inside the payout window
+    // the admin can approve quickly; outside, it queues for review.
     const { data: req_, error: rErr } = await admin
       .from("withdrawal_requests")
       .insert({
         user_id: userId,
         amount,
         method,
-        details,
-        status: "paid",
-        approved_at: new Date().toISOString(),
-        paid_at: new Date().toISOString(),
+        details: { ...details, submitted_outside_window: !open },
+        status: "pending",
       })
       .select("id")
       .single();
