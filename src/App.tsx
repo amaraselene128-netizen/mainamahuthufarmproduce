@@ -10,6 +10,7 @@ const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const CategoriesPage = lazy(() => import("@/pages/CategoriesPage"));
 const MarketWithUs = lazy(() => import("@/pages/MarketWithUs"));
+const Packages = lazy(() => import("@/pages/Packages"));
 
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
@@ -48,7 +49,6 @@ const AdminUsers = lazy(() => import("@/pages/Users"));
 const AdminTasks = lazy(() => import("@/pages/Tasks"));
 const AdminNewTask = lazy(() => import("@/pages/AdminNewTask"));
 const AdminTaskReview = lazy(() => import("@/pages/AdminTaskReview"));
-const AdminSubmissions = lazy(() => import("@/pages/AdminSubmissions"));
 const AdminCampaigns = lazy(() => import("@/pages/AdminCampaigns"));
 const AdminWithdrawals = lazy(() => import("@/pages/Withdrawals"));
 const AdminCountries = lazy(() => import("@/pages/Countries"));
@@ -90,6 +90,7 @@ export default function App() {
         <Route path="/legal/terms" element={<Terms />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/market-with-us" element={<MarketWithUs />} />
+        <Route path="/packages" element={<Packages />} />
 
 
         <Route path="/auth/login" element={<Login />} />
@@ -128,7 +129,6 @@ export default function App() {
           <Route path="tasks" element={<AdminTasks />} />
           <Route path="tasks/new" element={<AdminNewTask />} />
           <Route path="tasks/:id" element={<AdminTaskReview />} />
-          <Route path="submissions" element={<AdminSubmissions />} />
           <Route path="campaigns" element={<AdminCampaigns />} />
           <Route path="withdrawals" element={<AdminWithdrawals />} />
           <Route path="countries" element={<AdminCountries />} />

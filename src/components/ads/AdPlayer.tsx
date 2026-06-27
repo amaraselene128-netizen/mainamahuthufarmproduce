@@ -1,5 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, EyeOff, ExternalLink } from "lucide-react";
+import { SocialEmbed } from "@/components/media/SocialEmbed";
+
+/**
+ * Returns true if the URL points to a directly-playable video file
+ * (Cloudinary upload, .mp4/.webm/.mov/.m4v, or a blob/data URL). Everything
+ * else (YouTube, Facebook, Instagram, TikTok, X …) is treated as a social
+ * embed and rendered inside the appropriate iframe.
+ */
+function isDirectVideo(url: string): boolean {
+  if (!url) return false;
+  if (/^(blob:|data:video\/)/i.test(url)) return true;
+  try {
+    const u = new URL(url);
+    if (/(^|\.)res\.cloudinary\.com$/i.test(u.hostname)) return true;
+    if (/\.(mp4|webm|mov|m4v|ogv)(\?|$)/i.test(u.pathname)) return true;
+  } catch { /* not a URL */ }
+  return false;
+}
 
 type Props = {
   videoUrl: string;
@@ -20,6 +38,7 @@ type Props = {
  *  - Fires onCompleted when full duration was watched contiguously while visible.
  */
 export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, destinationUrl, onCtaClick }: Props) {
+  const embedded = !isDirectVideo(videoUrl);
   const vidRef = useRef<HTMLVideoElement>(null);
   const lastTimeRef = useRef(0);
   const watchedRef = useRef(0); // accumulated seconds watched while visible
@@ -33,9 +52,8 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, de
   useEffect(() => {
     const onVis = () => {
       const v = vidRef.current;
-      if (!v) return;
       if (document.hidden) {
-        v.pause();
+        v?.pause();
         setHiddenWarning(true);
         lastTickRef.current = null;
       }
@@ -47,6 +65,25 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, de
       window.removeEventListener("blur", onVis);
     };
   }, []);
+
+  // Wall-clock countdown used for embedded (YouTube/FB/IG/TikTok/X) players,
+  // where we can't read playback progress through the iframe. The viewer must
+  // keep the tab visible for `durationSeconds` after pressing Start.
+  useEffect(() => {
+    if (!embedded || !started || done) return;
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      watchedRef.current += 1;
+      const left = Math.max(0, durationSeconds - Math.floor(watchedRef.current));
+      setRemaining(left);
+      if (left <= 0) {
+        setDone(true);
+        onCompleted();
+        window.clearInterval(id);
+      }
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [embedded, started, done, durationSeconds, onCompleted]);
 
   function handleSeeking() {
     const v = vidRef.current;
@@ -83,10 +120,11 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, de
   }
 
   async function start() {
-    const v = vidRef.current;
-    if (!v) return;
     setStarted(true);
     setHiddenWarning(false);
+    if (embedded) return;
+    const v = vidRef.current;
+    if (!v) return;
     try {
       v.muted = false;
       await v.play();
@@ -99,18 +137,26 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, de
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border hairline bg-black aspect-video">
-      <video
-        ref={vidRef}
-        src={videoUrl}
-        className="w-full h-full object-contain bg-black"
-        playsInline
-        controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
-        disablePictureInPicture
-        onTimeUpdate={handleTimeUpdate}
-        onSeeking={handleSeeking}
-        onEnded={handleEnded}
-        onContextMenu={(e) => e.preventDefault()}
-      />
+      {embedded ? (
+        started ? (
+          <div className="absolute inset-0">
+            <SocialEmbed url={videoUrl} className="w-full h-full" />
+          </div>
+        ) : null
+      ) : (
+        <video
+          ref={vidRef}
+          src={videoUrl}
+          className="w-full h-full object-contain bg-black"
+          playsInline
+          controlsList="nodownload nofullscreen noplaybackrate noremoteplayback"
+          disablePictureInPicture
+          onTimeUpdate={handleTimeUpdate}
+          onSeeking={handleSeeking}
+          onEnded={handleEnded}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+      )}
 
       {/* Countdown overlay — replaces native controls entirely */}
       {started && !done && (

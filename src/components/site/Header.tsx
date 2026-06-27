@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 const nav = [
   { label: "How it works", href: "/#how" },
   { label: "Categories", href: "/categories" },
+  { label: "Packages", href: "/packages" },
   { label: "Market with us", href: "/market-with-us" },
   { label: "FAQ", href: "/#faq" },
 ];

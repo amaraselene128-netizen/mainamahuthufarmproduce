@@ -14,6 +14,7 @@ import { deviceFingerprint } from "@/lib/fingerprint";
 
 type Ad = {
   id: string;
+  kind: "ad" | "campaign";
   title: string;
   description: string | null;
   video_url: string;
@@ -33,126 +34,141 @@ function EarnAds() {
   const [active, setActive] = useState<Ad | null>(null);
   const [showCta, setShowCta] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const tierActive = Boolean((profile as any)?.active_tier);
+  const [hasTier, setHasTier] = useState(false);
 
   async function load() {
     if (!user) return;
     setLoading(true);
-    const [adsRes, viewsRes, creditRes, walletRes] = await Promise.all([
+    const [adsRes, campRes, viewsRes, campViewsRes, creditRes, subRes] = await Promise.all([
       db.from("advertisements")
         .select("id,title,description,video_url,destination_url,button_text,duration_seconds,spent_cents,budget_cents,country_targeting")
         .eq("status", "active")
         .order("created_at", { ascending: false }),
+      db.from("market_campaigns")
+        .select("id,title,description,video_url,video_file_url,website_url,social_url,duration_seconds,target_countries,promotion_type")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false }),
       db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true),
+      db.from("campaign_views").select("campaign_id").eq("user_id", user.id).eq("completed", true),
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("wallets").select("available").eq("user_id", user.id).maybeSingle(),
+      db.from("referral_subscriptions").select("id").eq("user_id", user.id).maybeSingle(),
     ]);
     const country = profile?.country_code ?? null;
-    const list = ((adsRes.data as any[]) ?? [])
+    const adList: Ad[] = ((adsRes.data as any[]) ?? [])
       .filter((a) => a.spent_cents < a.budget_cents)
-      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
-    setAds(list as Ad[]);
-    setCompletedIds(new Set(((viewsRes.data as any[]) ?? []).map((v) => v.ad_id)));
-    if (tierActive) {
-      setBalance(Math.round(Number((walletRes.data as any)?.available ?? 0) * 100));
-    } else {
-      setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
-    }
+      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)))
+      .map((a) => ({ ...a, kind: "ad" as const }));
+    const campList: Ad[] = ((campRes.data as any[]) ?? [])
+      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
+      .map((c) => {
+        const video = c.video_file_url || c.video_url || c.social_url || "";
+        const dest = c.website_url || c.social_url || c.video_url || "#";
+        const dur = (c.duration_seconds ?? 30) as AdDuration;
+        return {
+          id: c.id,
+          kind: "campaign" as const,
+          title: c.title,
+          description: c.description,
+          video_url: video,
+          destination_url: dest,
+          button_text: "Visit",
+          duration_seconds: (([15,30,45,60] as number[]).includes(dur) ? dur : 30) as AdDuration,
+          spent_cents: 0,
+          budget_cents: 1,
+        };
+      })
+      .filter((c) => !!c.video_url);
+    setAds([...adList, ...campList]);
+    const done = new Set<string>();
+    ((viewsRes.data as any[]) ?? []).forEach((v) => done.add(v.ad_id));
+    ((campViewsRes.data as any[]) ?? []).forEach((v) => done.add(v.campaign_id));
+    setCompletedIds(done);
+    setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
+    setHasTier(!!(subRes.data as any)?.id);
     setLoading(false);
   }
-  useEffect(() => { load(); }, [user?.id, tierActive]);
+  useEffect(() => { load(); }, [user?.id]);
 
   const available = useMemo(() => ads.filter((a) => !completedIds.has(a.id)), [ads, completedIds]);
   const prog = tierProgress(balance, tier);
 
   async function creditView(ad: Ad) {
     const fp = deviceFingerprint();
-    const { data, error } = await supabase.functions.invoke("request-credit-ad-view", {
-      body: { ad_id: ad.id, watched_seconds: ad.duration_seconds, fingerprint: fp },
-    });
+    const payload =
+      ad.kind === "campaign"
+        ? { campaign_id: ad.id, kind: "campaign", watched_seconds: ad.duration_seconds, fingerprint: fp }
+        : { ad_id: ad.id, kind: "ad", watched_seconds: ad.duration_seconds, fingerprint: fp };
+    const { data, error } = await supabase.functions.invoke("request-credit-ad-view", { body: payload });
     if (error || (data as any)?.error) {
       toast.error((data as any)?.error ?? error?.message ?? "Could not credit view");
       return;
     }
-    const d = data as any;
-    setBalance(d.balance_cents);
+    setBalance((data as any).balance_cents ?? balance);
     setCompletedIds((s) => new Set(s).add(ad.id));
-    const dest = d.destination === "wallet" ? "to wallet" : "tier credit";
-    toast.success(`Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} ${dest}`);
+    const paidTo = (data as any).paid_to;
+    toast.success(
+      paidTo === "wallet"
+        ? `Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} to your wallet`
+        : `Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} tier credit`
+    );
     setShowCta(true);
   }
 
-
   return (
-
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold flex items-center gap-2">
-          <Tv className="size-7 text-primary" />
-          {tierActive ? "Watch ads — earnings go to your wallet" : "Watch ads to unlock your tier"}
+          <Tv className="size-7 text-primary" /> Earn by watching ads
         </h1>
-        {!tierActive && (
-          <Link
-            to="/dashboard/earn/unlock"
-            className="text-xs rounded-lg bg-gradient-gold text-primary-foreground px-3 py-2 font-semibold inline-flex items-center gap-1.5"
-          >
-            <Crown className="size-3.5" /> Unlock tier
-          </Link>
-        )}
+        <Link
+          to="/dashboard/earn/unlock"
+          className="text-xs rounded-lg bg-gradient-gold text-primary-foreground px-3 py-2 font-semibold inline-flex items-center gap-1.5"
+        >
+          <Crown className="size-3.5" /> Unlock tier
+        </Link>
       </div>
 
-      {tierActive ? (
-        <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex flex-wrap items-center justify-between gap-3">
+      <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
+        {hasTier && (
+          <div className="rounded-xl bg-secondary/10 text-secondary text-xs px-3 py-2">
+            Tier active — every completed view pays real money to your wallet.
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2">
-            <Coins className="size-5 text-secondary" />
+            <Coins className="size-5 text-primary" />
             <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
-            <span className="text-xs text-muted-foreground">wallet balance · withdrawable</span>
+            <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
           </div>
-          <span className="text-xs rounded-full bg-secondary/15 text-secondary px-3 py-1 font-semibold capitalize">
-            <Crown className="inline size-3.5 -mt-0.5 mr-1" />
-            {(profile as any)?.active_tier} tier active
-          </span>
-        </div>
-      ) : (
-        <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-2">
-              <Coins className="size-5 text-primary" />
-              <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
-              <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
-            </div>
-            <div className="flex rounded-xl border border-input overflow-hidden text-xs">
-              {(["bronze","silver","gold"] as Tier[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTier(t)}
-                  className={`px-3 py-1.5 capitalize ${tier === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
-                >
-                  {t} · {formatCents(TIER_PRICE_CENTS[t])}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Progress to {tier} ({formatCents(prog.price)})</span>
-              <span>{formatCents(balance)} / {formatCents(prog.price)} · {prog.pct}%</span>
-            </div>
-            <Progress value={prog.pct} />
-            {prog.remaining === 0 ? (
-              <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
-                You can unlock {tier} now →
-              </Link>
-            ) : (
-              <div className="mt-2 text-xs text-muted-foreground">
-                {formatCents(prog.remaining)} remaining to unlock {tier}.
-              </div>
-            )}
+          <div className="flex rounded-xl border border-input overflow-hidden text-xs">
+            {(["bronze","silver","gold"] as Tier[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTier(t)}
+                className={`px-3 py-1.5 capitalize ${tier === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+              >
+                {t} · {formatCents(TIER_PRICE_CENTS[t])}
+              </button>
+            ))}
           </div>
         </div>
-      )}
-
+        <div>
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <span>Progress to {tier} ({formatCents(prog.price)})</span>
+            <span>{formatCents(balance)} / {formatCents(prog.price)} · {prog.pct}%</span>
+          </div>
+          <Progress value={prog.pct} />
+          {prog.remaining === 0 ? (
+            <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
+              You can unlock {tier} now →
+            </Link>
+          ) : (
+            <div className="mt-2 text-xs text-muted-foreground">
+              {formatCents(prog.remaining)} remaining to unlock {tier}.
+            </div>
+          )}
+        </div>
+      </div>
 
       {active ? (
         <div className="space-y-3">

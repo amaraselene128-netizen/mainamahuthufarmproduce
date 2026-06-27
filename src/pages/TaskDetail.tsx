@@ -3,7 +3,8 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, Download, Users } from "lucide-react";
+import { ArrowLeft, Clock, Download, Users, Lock } from "lucide-react";
+import { forceDownload } from "@/lib/download";
 
 type Attachment = { url: string; name?: string; public_id?: string };
 
@@ -17,7 +18,7 @@ function TaskDetail() {
 
   async function load() {
     if (!id) return;
-    const { data: t } = await db.from("tasks").select("*,categories(name)").eq("id", id).maybeSingle();
+    const { data: t } = await db.from("tasks").select("*").eq("id", id).maybeSingle();
     setTask(t);
     if (user) {
       const { data: a } = await db.from("task_applications")
@@ -41,6 +42,7 @@ function TaskDetail() {
 
   const attachments: Attachment[] = Array.isArray(task.attachments) ? task.attachments : [];
   const full = (task.current_workers ?? 0) >= (task.max_workers ?? 0);
+  const appApproved = application?.status === "approved" || application?.status === "submitted";
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -55,7 +57,7 @@ function TaskDetail() {
             task.tier === "silver" ? "bg-muted text-foreground" :
             "bg-secondary/15 text-secondary"
           }`}>{String(task.tier).toUpperCase()}</span>
-          <span className="text-muted-foreground">{task.categories?.name ?? ""}</span>
+          <span className="text-muted-foreground">{task.category ?? ""}</span>
         </div>
         <h1 className="mt-2 font-display text-3xl md:text-4xl font-semibold">{task.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
@@ -72,22 +74,30 @@ function TaskDetail() {
         {attachments.length > 0 && (
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Files to download</div>
-            <ul className="space-y-2">
-              {attachments.map((f, i) => (
-                <li key={i}>
-                  <a
-                    href={f.url}
-                    target="_blank"
-                    rel="noopener"
-                    download={f.name ?? true}
-                    className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
-                  >
-                    <Download className="size-4 text-primary" />
-                    {f.name ?? `Attachment ${i + 1}`}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {!application ? (
+              <div className="text-xs rounded-lg bg-muted p-3 inline-flex items-center gap-2 text-muted-foreground">
+                <Lock className="size-3.5" /> Apply to this task to request access to the attachments.
+              </div>
+            ) : !appApproved ? (
+              <div className="text-xs rounded-lg bg-muted p-3 inline-flex items-center gap-2 text-muted-foreground">
+                <Lock className="size-3.5" /> Files unlock once an admin approves your application.
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {attachments.map((f, i) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => forceDownload(f.url, f.name)}
+                      className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
+                    >
+                      <Download className="size-4 text-primary" />
+                      {f.name ?? `Attachment ${i + 1}`}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 

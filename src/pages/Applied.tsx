@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { db, supabase } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Upload, MessageSquare } from "lucide-react";
+import { Upload, Lock } from "lucide-react";
 
 type Row = {
   id: string;
@@ -43,20 +43,28 @@ function Applied() {
         {rows.length === 0 && <div className="p-8 text-muted-foreground text-center">No applications yet. Browse <a href="/dashboard/worker" className="text-primary hover:underline">available tasks</a>.</div>}
         {rows.map((r) => {
           const sub = subs[r.id];
-          const task = r.tasks ?? ({} as Row["tasks"]);
           return (
             <div key={r.id} className="p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="font-medium">{task.title ?? "Task no longer available"}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Applied {new Date(r.applied_at).toLocaleString()}{task.tier ? ` · ${task.tier.toUpperCase()}` : ""}</div>
+                  <div className="font-medium">{r.tasks.title}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Applied {new Date(r.applied_at).toLocaleString()} · {r.tasks.tier.toUpperCase()}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${badge(r.status)}`}>{r.status.toUpperCase()}</span>
-                  <span className="font-display text-lg text-gradient-gold">${Number(task.payment_amount ?? 0).toFixed(2)}</span>
-                  <button onClick={() => setActiveId(activeId === r.id ? null : r.id)} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent">
-                    {activeId === r.id ? "Close" : r.status === "approved" ? "View" : "Submit work"}
-                  </button>
+                  <span className="font-display text-lg text-gradient-gold">${Number(r.tasks.payment_amount).toFixed(2)}</span>
+                  {r.status === "pending" ? (
+                    <span
+                      title="Waiting for admin approval of your application"
+                      className="inline-flex items-center gap-1 text-xs rounded-lg border border-input bg-muted px-3 py-1.5 text-muted-foreground cursor-not-allowed"
+                    >
+                      <Lock className="size-3" /> Awaiting approval
+                    </span>
+                  ) : (
+                    <button onClick={() => setActiveId(activeId === r.id ? null : r.id)} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent">
+                      {activeId === r.id ? "Close" : r.status === "approved" ? "View" : "Submit work"}
+                    </button>
+                  )}
                 </div>
               </div>
               {sub?.admin_comment && (
@@ -128,9 +136,8 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
 
   return (
     <div className="mt-4 rounded-xl border border-input bg-background p-4 space-y-3">
-      {application.tasks?.instructions && (
+      {application.tasks.instructions && (
         <div className="text-xs text-muted-foreground"><strong>Instructions:</strong> {application.tasks.instructions}</div>
-
       )}
       <label className="block text-sm font-medium">URLs (one per line)</label>
       <textarea value={urls} onChange={(e) => setUrls(e.target.value)} rows={3} className="w-full rounded-lg border border-input bg-card p-3 text-sm" placeholder="https://..." />
