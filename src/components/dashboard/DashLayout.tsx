@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationToaster } from "@/components/site/NotificationToaster";
+
 
 const workerNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -58,7 +60,9 @@ export function DashLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NotificationToaster />
       {/* Topbar */}
+
       <header className="sticky top-0 z-40 border-b hairline bg-background/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-3"><Brand /></Link>

@@ -50,35 +50,38 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     const { data: wallet, error: wErr } = await admin
-      .from("wallets").select("available,pending,total_withdrawn").eq("user_id", userId).maybeSingle();
+      .from("wallets").select("available").eq("user_id", userId).maybeSingle();
     if (wErr) return json({ error: wErr.message }, 500);
     const available = Number(wallet?.available ?? 0);
     if (amount > available) return json({ error: "Insufficient available balance" }, 400);
 
     const open = isWindowOpen(new Date());
+    if (!open) {
+      return json({ error: "Withdrawals are closed. Window: 28th — 5th of next month." }, 400);
+    }
 
-    // Always create a pending withdrawal request. Inside the payout window
-    // the admin can approve quickly; outside, it queues for review.
+    // Instant payout path
     const { data: req_, error: rErr } = await admin
       .from("withdrawal_requests")
       .insert({
         user_id: userId,
         amount,
         method,
-        details: { ...details, submitted_outside_window: !open },
-        status: "pending",
+        details,
+        status: "paid",
+        approved_at: new Date().toISOString(),
+        paid_at: new Date().toISOString(),
       })
       .select("id")
       .single();
     if (rErr) return json({ error: rErr.message }, 500);
 
     const newAvailable = +(available - amount).toFixed(2);
-    const currentPending = Number(wallet?.["pending"] ?? 0);
     const { error: w2Err } = await admin
       .from("wallets")
       .update({
         available: newAvailable,
-        pending: +(currentPending + amount).toFixed(2),
+        total_withdrawn: +(Number(wallet?.["total_withdrawn"] ?? 0) + amount).toFixed(2),
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
@@ -88,12 +91,12 @@ Deno.serve(async (req) => {
       user_id: userId,
       type: "withdrawal",
       amount: -amount,
-      status: "pending",
+      status: "completed",
       reference: req_.id,
-      details: { method, ...details, window_open: open },
+      details: { method, ...details },
     });
 
-    return json({ ok: true, id: req_.id, status: "pending", window_open: open });
+    return json({ ok: true, id: req_.id, status: "paid" });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }

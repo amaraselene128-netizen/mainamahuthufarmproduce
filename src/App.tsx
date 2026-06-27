@@ -54,7 +54,6 @@ const AdminCountries = lazy(() => import("@/pages/Countries"));
 const AdminReferrals = lazy(() => import("@/pages/Refs"));
 const AdminFraud = lazy(() => import("@/pages/Fraud"));
 const AdminSupport = lazy(() => import("@/pages/AdminSupport"));
-const AdminSubmissions = lazy(() => import("@/pages/AdminSubmissions"));
 const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
 
 function PageFallback() {
@@ -128,7 +127,6 @@ export default function App() {
           <Route path="tasks" element={<AdminTasks />} />
           <Route path="tasks/new" element={<AdminNewTask />} />
           <Route path="tasks/:id" element={<AdminTaskReview />} />
-          <Route path="submissions" element={<AdminSubmissions />} />
           <Route path="campaigns" element={<AdminCampaigns />} />
           <Route path="withdrawals" element={<AdminWithdrawals />} />
           <Route path="countries" element={<AdminCountries />} />

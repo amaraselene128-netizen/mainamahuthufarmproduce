@@ -41,10 +41,6 @@ function TaskDetail() {
 
   const attachments: Attachment[] = Array.isArray(task.attachments) ? task.attachments : [];
   const full = (task.current_workers ?? 0) >= (task.max_workers ?? 0);
-  const appStatus: string | undefined = application?.status;
-  const isApproved = appStatus === "approved";
-  const isRejected = appStatus === "rejected";
-  void appStatus;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -76,32 +72,19 @@ function TaskDetail() {
         {attachments.length > 0 && (
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Files to download</div>
-            {application && !isApproved && (
-              <div className="text-xs rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 px-3 py-2 mb-2">
-                {isRejected
-                  ? "Your application was rejected. Downloads are disabled."
-                  : "Awaiting admin approval — downloads unlock once approved."}
-              </div>
-            )}
             <ul className="space-y-2">
               {attachments.map((f, i) => (
                 <li key={i}>
-                  {application && !isApproved ? (
-                    <span aria-disabled className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-muted/40 text-muted-foreground px-3 py-2 cursor-not-allowed">
-                      <Download className="size-4" /> {f.name ?? `Attachment ${i + 1}`} (locked)
-                    </span>
-                  ) : (
-                    <a
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener"
-                      download={f.name ?? true}
-                      className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
-                    >
-                      <Download className="size-4 text-primary" />
-                      {f.name ?? `Attachment ${i + 1}`}
-                    </a>
-                  )}
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener"
+                    download={f.name ?? true}
+                    className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
+                  >
+                    <Download className="size-4 text-primary" />
+                    {f.name ?? `Attachment ${i + 1}`}
+                  </a>
                 </li>
               ))}
             </ul>
@@ -111,26 +94,9 @@ function TaskDetail() {
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <span className="font-display text-3xl text-gradient-gold font-semibold">${Number(task.payment_amount).toFixed(2)}</span>
           {application ? (
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                isApproved ? "bg-secondary/15 text-secondary" :
-                isRejected ? "bg-destructive/15 text-destructive" :
-                "bg-amber-500/15 text-amber-600"
-              }`}>
-                {isApproved ? "Approved" : isRejected ? "Rejected" : "Pending review"}
-              </span>
-              <Link
-                to="/dashboard/worker/applied"
-                className={`rounded-xl px-5 py-2.5 text-sm font-semibold ${
-                  isApproved
-                    ? "bg-gradient-gold text-primary-foreground"
-                    : "bg-muted text-muted-foreground pointer-events-none cursor-not-allowed"
-                }`}
-                aria-disabled={!isApproved}
-              >
-                {isApproved ? "Submit work" : isRejected ? "Submit unavailable" : "Awaiting approval"}
-              </Link>
-            </div>
+            <Link to="/dashboard/worker/applied" className="rounded-xl bg-gradient-gold px-5 py-2.5 text-sm font-semibold text-primary-foreground">
+              View my application
+            </Link>
           ) : (
             <button
               disabled={full || applying || !user}

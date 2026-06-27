@@ -34,16 +34,19 @@ function EarnAds() {
   const [showCta, setShowCta] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const tierActive = Boolean((profile as any)?.active_tier);
+
   async function load() {
     if (!user) return;
     setLoading(true);
-    const [adsRes, viewsRes, creditRes] = await Promise.all([
+    const [adsRes, viewsRes, creditRes, walletRes] = await Promise.all([
       db.from("advertisements")
         .select("id,title,description,video_url,destination_url,button_text,duration_seconds,spent_cents,budget_cents,country_targeting")
         .eq("status", "active")
         .order("created_at", { ascending: false }),
       db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true),
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
+      db.from("wallets").select("available").eq("user_id", user.id).maybeSingle(),
     ]);
     const country = profile?.country_code ?? null;
     const list = ((adsRes.data as any[]) ?? [])
@@ -51,15 +54,17 @@ function EarnAds() {
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
     setAds(list as Ad[]);
     setCompletedIds(new Set(((viewsRes.data as any[]) ?? []).map((v) => v.ad_id)));
-    setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
+    if (tierActive) {
+      setBalance(Math.round(Number((walletRes.data as any)?.available ?? 0) * 100));
+    } else {
+      setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
+    }
     setLoading(false);
   }
-  useEffect(() => { load(); }, [user?.id]);
+  useEffect(() => { load(); }, [user?.id, tierActive]);
 
   const available = useMemo(() => ads.filter((a) => !completedIds.has(a.id)), [ads, completedIds]);
   const prog = tierProgress(balance, tier);
-  const activeTier = (profile as any)?.active_tier as Tier | null | undefined;
-  const tierActive = !!activeTier;
 
   async function creditView(ad: Ad) {
     const fp = deviceFingerprint();
@@ -70,17 +75,22 @@ function EarnAds() {
       toast.error((data as any)?.error ?? error?.message ?? "Could not credit view");
       return;
     }
-    setBalance((data as any).balance_cents);
+    const d = data as any;
+    setBalance(d.balance_cents);
     setCompletedIds((s) => new Set(s).add(ad.id));
-    toast.success(`Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} tier credit`);
+    const dest = d.destination === "wallet" ? "to wallet" : "tier credit";
+    toast.success(`Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} ${dest}`);
     setShowCta(true);
   }
 
+
   return (
+
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold flex items-center gap-2">
-          <Tv className="size-7 text-primary" /> {tierActive ? "Earn cash by watching ads" : "Earn by watching ads"}
+          <Tv className="size-7 text-primary" />
+          {tierActive ? "Watch ads — earnings go to your wallet" : "Watch ads to unlock your tier"}
         </h1>
         {!tierActive && (
           <Link
@@ -90,60 +100,59 @@ function EarnAds() {
             <Crown className="size-3.5" /> Unlock tier
           </Link>
         )}
-        {tierActive && (
-          <span className="text-xs rounded-full bg-secondary/15 text-secondary px-3 py-1 font-semibold inline-flex items-center gap-1.5 capitalize">
-            <Crown className="size-3.5" /> {activeTier} active · earnings go to wallet
-          </span>
-        )}
       </div>
 
-      {!tierActive ? (
-      <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      {tierActive ? (
+        <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2">
-            <Coins className="size-5 text-primary" />
+            <Coins className="size-5 text-secondary" />
             <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
-            <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
+            <span className="text-xs text-muted-foreground">wallet balance · withdrawable</span>
           </div>
-          <div className="flex rounded-xl border border-input overflow-hidden text-xs">
-            {(["bronze","silver","gold"] as Tier[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTier(t)}
-                className={`px-3 py-1.5 capitalize ${tier === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
-              >
-                {t} · {formatCents(TIER_PRICE_CENTS[t])}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs rounded-full bg-secondary/15 text-secondary px-3 py-1 font-semibold capitalize">
+            <Crown className="inline size-3.5 -mt-0.5 mr-1" />
+            {(profile as any)?.active_tier} tier active
+          </span>
         </div>
-        <div>
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Progress to {tier} ({formatCents(prog.price)})</span>
-            <span>{formatCents(balance)} / {formatCents(prog.price)} · {prog.pct}%</span>
-          </div>
-          <Progress value={prog.pct} />
-          {prog.remaining === 0 ? (
-            <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
-              You can unlock {tier} now →
-            </Link>
-          ) : (
-            <div className="mt-2 text-xs text-muted-foreground">
-              {formatCents(prog.remaining)} remaining to unlock {tier}.
-            </div>
-          )}
-        </div>
-      </div>
       ) : (
-      <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex flex-wrap items-center gap-3 justify-between">
-        <div className="inline-flex items-center gap-2">
-          <Coins className="size-5 text-secondary" />
-          <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
-          <span className="text-xs text-muted-foreground">earned this session — credited to your wallet</span>
+        <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2">
+              <Coins className="size-5 text-primary" />
+              <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
+              <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
+            </div>
+            <div className="flex rounded-xl border border-input overflow-hidden text-xs">
+              {(["bronze","silver","gold"] as Tier[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTier(t)}
+                  className={`px-3 py-1.5 capitalize ${tier === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+                >
+                  {t} · {formatCents(TIER_PRICE_CENTS[t])}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>Progress to {tier} ({formatCents(prog.price)})</span>
+              <span>{formatCents(balance)} / {formatCents(prog.price)} · {prog.pct}%</span>
+            </div>
+            <Progress value={prog.pct} />
+            {prog.remaining === 0 ? (
+              <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
+                You can unlock {tier} now →
+              </Link>
+            ) : (
+              <div className="mt-2 text-xs text-muted-foreground">
+                {formatCents(prog.remaining)} remaining to unlock {tier}.
+              </div>
+            )}
+          </div>
         </div>
-        <Link to="/dashboard/wallet" className="text-xs rounded-lg bg-primary text-primary-foreground px-3 py-2 font-semibold">View wallet</Link>
-      </div>
       )}
+
 
       {active ? (
         <div className="space-y-3">
