@@ -144,8 +144,5 @@ function Field({ label, ...p }: { label: string } & React.InputHTMLAttributes<HT
 function Textarea({ label, ...p }: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <label className="block"><span className="text-sm font-medium">{label}</span><textarea {...p} className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40" /></label>;
 }
-function Select({ label, options, ...p }: { label: string; options: { value: string; label: string }[] } & React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <label className="block"><span className="text-sm font-medium">{label}</span><select {...p} className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm">{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>;
-}
 
 export default NewTask;
