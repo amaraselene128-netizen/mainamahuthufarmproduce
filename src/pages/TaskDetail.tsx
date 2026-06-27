@@ -17,7 +17,7 @@ function TaskDetail() {
 
   async function load() {
     if (!id) return;
-    const { data: t } = await db.from("tasks").select("*").eq("id", id).maybeSingle();
+    const { data: t } = await db.from("tasks").select("*,categories(name)").eq("id", id).maybeSingle();
     setTask(t);
     if (user) {
       const { data: a } = await db.from("task_applications")
