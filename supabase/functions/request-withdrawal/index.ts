@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     const { data: wallet, error: wErr } = await admin
-      .from("wallets").select("available").eq("user_id", userId).maybeSingle();
+      .from("wallets").select("available,pending,total_withdrawn").eq("user_id", userId).maybeSingle();
     if (wErr) return json({ error: wErr.message }, 500);
     const available = Number(wallet?.available ?? 0);
     if (amount > available) return json({ error: "Insufficient available balance" }, 400);
