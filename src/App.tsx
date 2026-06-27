@@ -128,6 +128,7 @@ export default function App() {
           <Route path="tasks" element={<AdminTasks />} />
           <Route path="tasks/new" element={<AdminNewTask />} />
           <Route path="tasks/:id" element={<AdminTaskReview />} />
+          <Route path="submissions" element={<AdminSubmissions />} />
           <Route path="campaigns" element={<AdminCampaigns />} />
           <Route path="withdrawals" element={<AdminWithdrawals />} />
           <Route path="countries" element={<AdminCountries />} />
