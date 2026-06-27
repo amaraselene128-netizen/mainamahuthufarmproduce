@@ -44,7 +44,7 @@ function TaskDetail() {
   const appStatus: string | undefined = application?.status;
   const isApproved = appStatus === "approved";
   const isRejected = appStatus === "rejected";
-  const isPending = !!application && !isApproved && !isRejected;
+  void appStatus;
 
   return (
     <div className="max-w-3xl space-y-6">
