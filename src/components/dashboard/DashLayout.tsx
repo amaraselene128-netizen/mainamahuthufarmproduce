@@ -6,6 +6,7 @@ import {
   Users2, Coins, ShieldCheck, LogOut, MessageSquare, Tv, Megaphone,
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
+import { TierBadge } from "@/components/site/TierBadge";
 import { useAuth } from "@/lib/auth-context";
 
 const workerNav = [
