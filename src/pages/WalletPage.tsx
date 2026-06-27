@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Wallet, ArrowDownCircle, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
-import { isWithdrawalOpen, windowStatus } from "@/lib/withdrawal-window";
+import { ArrowDownCircle, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { windowStatus } from "@/lib/withdrawal-window";
 
 function WalletPage() {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ function WalletPage() {
   const insufficient = numericAmount > Number(w?.available ?? 0);
   const tooLow = !numericAmount || numericAmount < 10;
   const noDetails = !details.trim();
-  const submitDisabled = loading || !open || insufficient || tooLow || noDetails;
+  const submitDisabled = loading || insufficient || tooLow || noDetails;
 
   async function load() {
     if (!user) return;
@@ -37,7 +37,6 @@ function WalletPage() {
   async function withdraw(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (!open) return toast.error("Withdrawals are closed. Window: 1st — 5th of every month.");
     if (tooLow) return toast.error("Minimum withdrawal is $10");
     if (insufficient) return toast.error("Insufficient available balance");
 
@@ -49,7 +48,7 @@ function WalletPage() {
     if (error || (data as any)?.error) {
       return toast.error(error?.message ?? (data as any).error);
     }
-    toast.success("Paid instantly to your account 🎉");
+    toast.success("Withdrawal request submitted for review");
     setAmount(""); setDetails("");
     load();
   }
@@ -80,15 +79,13 @@ function WalletPage() {
             <h2 className="font-display text-xl">Request withdrawal</h2>
           </div>
 
-          {!open && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs flex items-start gap-2">
-              <AlertCircle className="size-4 mt-0.5 text-amber-500 shrink-0" />
-              <span>
-                Payouts are open <strong>1st — 5th</strong> of each month. {winStatus.label}.
-                During the window, withdrawals are instant.
-              </span>
-            </div>
-          )}
+          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs flex items-start gap-2">
+            <AlertCircle className="size-4 mt-0.5 text-destructive shrink-0" />
+            <span>
+              <strong>Important:</strong> You can submit a withdrawal request anytime, but processing only runs inside our payout window
+              ({winStatus.label}). Requests made outside this window <strong>may fail or be delayed</strong>.
+            </span>
+          </div>
 
           <label className="block">
             <span className="text-sm font-medium">Amount (USD)</span>
