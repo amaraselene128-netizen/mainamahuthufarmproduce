@@ -73,11 +73,12 @@ Deno.serve(async (req) => {
     if (rErr) return json({ error: rErr.message }, 500);
 
     const newAvailable = +(available - amount).toFixed(2);
+    const currentPending = Number(wallet?.["pending"] ?? 0);
     const { error: w2Err } = await admin
       .from("wallets")
       .update({
         available: newAvailable,
-        total_withdrawn: +(Number(wallet?.["total_withdrawn"] ?? 0) + amount).toFixed(2),
+        pending: +(currentPending + amount).toFixed(2),
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
@@ -87,12 +88,12 @@ Deno.serve(async (req) => {
       user_id: userId,
       type: "withdrawal",
       amount: -amount,
-      status: "completed",
+      status: "pending",
       reference: req_.id,
-      details: { method, ...details },
+      details: { method, ...details, window_open: open },
     });
 
-    return json({ ok: true, id: req_.id, status: "paid" });
+    return json({ ok: true, id: req_.id, status: "pending", window_open: open });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }
