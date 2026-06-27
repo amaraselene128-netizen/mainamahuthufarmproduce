@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { ArrowDownCircle, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Wallet, ArrowDownCircle, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { windowStatus } from "@/lib/withdrawal-window";
 
 function WalletPage() {
