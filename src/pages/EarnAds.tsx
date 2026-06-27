@@ -90,50 +90,73 @@ function EarnAds() {
         <h1 className="font-display text-3xl font-semibold flex items-center gap-2">
           <Tv className="size-7 text-primary" /> Earn by watching ads
         </h1>
-        <Link
-          to="/dashboard/earn/unlock"
-          className="text-xs rounded-lg bg-gradient-gold text-primary-foreground px-3 py-2 font-semibold inline-flex items-center gap-1.5"
-        >
-          <Crown className="size-3.5" /> Unlock tier
-        </Link>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-semibold flex items-center gap-2">
+          <Tv className="size-7 text-primary" />
+          {tierActive ? "Watch ads — earnings go to your wallet" : "Watch ads to unlock your tier"}
+        </h1>
+        {!tierActive && (
+          <Link
+            to="/dashboard/earn/unlock"
+            className="text-xs rounded-lg bg-gradient-gold text-primary-foreground px-3 py-2 font-semibold inline-flex items-center gap-1.5"
+          >
+            <Crown className="size-3.5" /> Unlock tier
+          </Link>
+        )}
       </div>
 
-      <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      {tierActive ? (
+        <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2">
-            <Coins className="size-5 text-primary" />
+            <Coins className="size-5 text-secondary" />
             <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
-            <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
+            <span className="text-xs text-muted-foreground">wallet balance · withdrawable</span>
           </div>
-          <div className="flex rounded-xl border border-input overflow-hidden text-xs">
-            {(["bronze","silver","gold"] as Tier[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTier(t)}
-                className={`px-3 py-1.5 capitalize ${tier === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
-              >
-                {t} · {formatCents(TIER_PRICE_CENTS[t])}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs rounded-full bg-secondary/15 text-secondary px-3 py-1 font-semibold capitalize">
+            <Crown className="inline size-3.5 -mt-0.5 mr-1" />
+            {(profile as any)?.active_tier} tier active
+          </span>
         </div>
-        <div>
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Progress to {tier} ({formatCents(prog.price)})</span>
-            <span>{formatCents(balance)} / {formatCents(prog.price)} · {prog.pct}%</span>
-          </div>
-          <Progress value={prog.pct} />
-          {prog.remaining === 0 ? (
-            <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
-              You can unlock {tier} now →
-            </Link>
-          ) : (
-            <div className="mt-2 text-xs text-muted-foreground">
-              {formatCents(prog.remaining)} remaining to unlock {tier}.
+      ) : (
+        <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2">
+              <Coins className="size-5 text-primary" />
+              <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
+              <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
             </div>
-          )}
+            <div className="flex rounded-xl border border-input overflow-hidden text-xs">
+              {(["bronze","silver","gold"] as Tier[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTier(t)}
+                  className={`px-3 py-1.5 capitalize ${tier === t ? "bg-primary text-primary-foreground" : "bg-background hover:bg-accent"}`}
+                >
+                  {t} · {formatCents(TIER_PRICE_CENTS[t])}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>Progress to {tier} ({formatCents(prog.price)})</span>
+              <span>{formatCents(balance)} / {formatCents(prog.price)} · {prog.pct}%</span>
+            </div>
+            <Progress value={prog.pct} />
+            {prog.remaining === 0 ? (
+              <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
+                You can unlock {tier} now →
+              </Link>
+            ) : (
+              <div className="mt-2 text-xs text-muted-foreground">
+                {formatCents(prog.remaining)} remaining to unlock {tier}.
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
 
       {active ? (
         <div className="space-y-3">
