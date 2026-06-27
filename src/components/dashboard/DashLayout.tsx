@@ -39,7 +39,7 @@ const sharedNav = [
 ];
 
 export function DashLayout() {
-  const { user, profile, loading, isAdmin, signOut } = useAuth();
+  const { user, profile, loading, isAdmin, tier, signOut } = useAuth();
   const nav = useNavigate();
   const path = useLocation().pathname;
 
