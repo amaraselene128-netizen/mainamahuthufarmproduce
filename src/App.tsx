@@ -48,6 +48,7 @@ const AdminUsers = lazy(() => import("@/pages/Users"));
 const AdminTasks = lazy(() => import("@/pages/Tasks"));
 const AdminNewTask = lazy(() => import("@/pages/AdminNewTask"));
 const AdminTaskReview = lazy(() => import("@/pages/AdminTaskReview"));
+const AdminSubmissions = lazy(() => import("@/pages/AdminSubmissions"));
 const AdminCampaigns = lazy(() => import("@/pages/AdminCampaigns"));
 const AdminWithdrawals = lazy(() => import("@/pages/Withdrawals"));
 const AdminCountries = lazy(() => import("@/pages/Countries"));
