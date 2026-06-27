@@ -128,8 +128,9 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
 
   return (
     <div className="mt-4 rounded-xl border border-input bg-background p-4 space-y-3">
-      {application.tasks.instructions && (
+      {application.tasks?.instructions && (
         <div className="text-xs text-muted-foreground"><strong>Instructions:</strong> {application.tasks.instructions}</div>
+
       )}
       <label className="block text-sm font-medium">URLs (one per line)</label>
       <textarea value={urls} onChange={(e) => setUrls(e.target.value)} rows={3} className="w-full rounded-lg border border-input bg-card p-3 text-sm" placeholder="https://..." />
