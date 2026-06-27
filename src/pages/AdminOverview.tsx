@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { db } from "@/lib/db";
 import { Users, ListChecks, CheckCircle2, Clock, Globe2, DollarSign } from "lucide-react";
 
@@ -34,9 +33,7 @@ function AdminOverview() {
         <Tile icon={Users} label="Workers" v={s.workers} />
         <Tile icon={Users} label="Clients" v={s.hiring} />
         <Tile icon={ListChecks} label="Tasks" v={s.tasks} />
-        <Link to="/admin/submissions" className="block hover:scale-[1.02] transition-transform">
-          <Tile icon={Clock} label="Pending review" v={s.pending} />
-        </Link>
+        <Tile icon={Clock} label="Pending review" v={s.pending} />
         <Tile icon={CheckCircle2} label="Approved" v={s.approved} />
         <Tile icon={Globe2} label="Countries" v={s.countries} />
         <Tile icon={DollarSign} label="Revenue" v={`$${s.revenue.toFixed(2)}`} />

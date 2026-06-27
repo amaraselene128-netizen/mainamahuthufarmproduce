@@ -58,6 +58,8 @@ function EarnAds() {
 
   const available = useMemo(() => ads.filter((a) => !completedIds.has(a.id)), [ads, completedIds]);
   const prog = tierProgress(balance, tier);
+  const activeTier = (profile as any)?.active_tier as Tier | null | undefined;
+  const tierActive = !!activeTier;
 
   async function creditView(ad: Ad) {
     const fp = deviceFingerprint();
@@ -78,16 +80,24 @@ function EarnAds() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold flex items-center gap-2">
-          <Tv className="size-7 text-primary" /> Earn by watching ads
+          <Tv className="size-7 text-primary" /> {tierActive ? "Earn cash by watching ads" : "Earn by watching ads"}
         </h1>
-        <Link
-          to="/dashboard/earn/unlock"
-          className="text-xs rounded-lg bg-gradient-gold text-primary-foreground px-3 py-2 font-semibold inline-flex items-center gap-1.5"
-        >
-          <Crown className="size-3.5" /> Unlock tier
-        </Link>
+        {!tierActive && (
+          <Link
+            to="/dashboard/earn/unlock"
+            className="text-xs rounded-lg bg-gradient-gold text-primary-foreground px-3 py-2 font-semibold inline-flex items-center gap-1.5"
+          >
+            <Crown className="size-3.5" /> Unlock tier
+          </Link>
+        )}
+        {tierActive && (
+          <span className="text-xs rounded-full bg-secondary/15 text-secondary px-3 py-1 font-semibold inline-flex items-center gap-1.5 capitalize">
+            <Crown className="size-3.5" /> {activeTier} active · earnings go to wallet
+          </span>
+        )}
       </div>
 
+      {!tierActive ? (
       <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2">
@@ -124,6 +134,16 @@ function EarnAds() {
           )}
         </div>
       </div>
+      ) : (
+      <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex flex-wrap items-center gap-3 justify-between">
+        <div className="inline-flex items-center gap-2">
+          <Coins className="size-5 text-secondary" />
+          <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
+          <span className="text-xs text-muted-foreground">earned this session — credited to your wallet</span>
+        </div>
+        <Link to="/dashboard/wallet" className="text-xs rounded-lg bg-primary text-primary-foreground px-3 py-2 font-semibold">View wallet</Link>
+      </div>
+      )}
 
       {active ? (
         <div className="space-y-3">

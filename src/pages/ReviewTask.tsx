@@ -13,7 +13,7 @@ function ReviewTask() {
     const [{ data: t }, { data: s }] = await Promise.all([
       db.from("tasks").select("*,categories(name)").eq("id", id).maybeSingle(),
       db.from("task_submissions")
-        .select("id,status,comments,urls,files,admin_comment,created_at,worker_id,profiles:profiles!task_submissions_worker_id_fkey(username,country_code,email)")
+        .select("id,status,comments,urls,files,admin_comment,created_at,worker_id,profiles:profiles!task_submissions_worker_id_profiles_fkey(username,country_code,email)")
         .eq("task_id", id).order("created_at", { ascending: false }),
     ]);
     setTask(t); setSubs(s ?? []);

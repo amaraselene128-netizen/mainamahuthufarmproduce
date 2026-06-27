@@ -40,31 +40,24 @@ function Referrals() {
     const [pRes, sRes, refsRes, eRes, cRes] = await Promise.all([
       db.from("referral_plans").select("*").eq("active", true).order("price"),
       db.from("referral_subscriptions").select("plan_id, referral_plans(*)").eq("user_id", user.id).maybeSingle(),
-      db.from("referrals").select("id, referred_id, verified_at, created_at").eq("referrer_id", user.id),
+      db.from("referrals").select("id, referred_id, verified_at, created_at, profiles!referrals_referred_id_fkey(username,country_code)").eq("referrer_id", user.id),
       db.from("referral_earnings").select("amount,status,referred_id").eq("referrer_id", user.id),
       code ? db.from("referral_clicks").select("*", { count: "exact", head: true }).eq("code", code) : Promise.resolve({ count: 0 } as any),
     ]);
     setPlans((pRes.data as Plan[]) ?? []);
     setSub(sRes.data as Sub | null);
 
-    const refs = (refsRes.data ?? []) as any[];
+    const refs = refsRes.data ?? [];
     const earnings = eRes.data ?? [];
     const earningsByRef = new Map<string, number>();
     for (const r of earnings) {
       earningsByRef.set(r.referred_id, (earningsByRef.get(r.referred_id) ?? 0) + Number(r.amount));
     }
-    // Fetch referred profiles separately (no FK from referrals -> profiles via PostgREST embed reliably).
-    const ids = refs.map((r) => r.referred_id).filter(Boolean);
-    const profilesById = new Map<string, { username?: string; country_code?: string | null }>();
-    if (ids.length) {
-      const { data: profs } = await db.from("profiles").select("id, username, country_code").in("id", ids);
-      for (const p of profs ?? []) profilesById.set((p as any).id, p as any);
-    }
     setRows(
       refs.map((r: any) => ({
         id: r.id,
-        username: profilesById.get(r.referred_id)?.username ?? "—",
-        country_code: profilesById.get(r.referred_id)?.country_code ?? null,
+        username: r.profiles?.username ?? "—",
+        country_code: r.profiles?.country_code ?? null,
         status: r.verified_at ? "verified" : "signed-up",
         earnings: earningsByRef.get(r.referred_id) ?? 0,
         created_at: r.created_at,
@@ -81,36 +74,12 @@ function Referrals() {
 
   useEffect(() => { if (profile) load(); }, [profile?.id, (profile as any)?.referral_code]);
 
-  async function subscribe(plan: Plan) {
+  async function subscribe(planId: string) {
     if (!user) return;
-    // Create a PayPal order via the secure edge function.
-    const { data, error } = await db.functions.invoke("paypal-create-order", {
-      body: { tier: plan.tier },
-    });
-    if (error || (data as any)?.error) {
-      return toast.error(error?.message ?? (data as any)?.error ?? "Could not start PayPal");
-    }
-    const orderId = (data as any)?.id as string | undefined;
-    if (!orderId) return toast.error("PayPal did not return an order id");
-    const approveUrl = `https://www.paypal.com/checkoutnow?token=${orderId}`;
-    // Open PayPal approval in a new window; user returns and we capture.
-    window.open(approveUrl, "_blank", "noopener,noreferrer");
-    toast.message("Complete payment in PayPal, then click 'I have paid'.", {
-      action: {
-        label: "I have paid",
-        onClick: async () => {
-          const { data: cap, error: capErr } = await db.functions.invoke("paypal-capture-order", {
-            body: { order_id: orderId, tier: plan.tier },
-          });
-          if (capErr || (cap as any)?.error) {
-            return toast.error(capErr?.message ?? (cap as any)?.error ?? "Capture failed");
-          }
-          toast.success("Subscription activated");
-          load();
-        },
-      },
-      duration: 60000,
-    });
+    const { error } = await db.from("referral_subscriptions").upsert({ user_id: user.id, plan_id: planId });
+    if (error) return toast.error(error.message);
+    toast.success("Subscribed — share your link below");
+    load();
   }
 
   const code = (profile as any)?.referral_code as string | undefined;
@@ -134,19 +103,9 @@ function Referrals() {
                   <div className="font-display text-2xl font-semibold capitalize">{p.tier}</div>
                   <Crown className={`size-5 ${p.tier === "gold" ? "text-primary" : p.tier === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
                 </div>
-                <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 -mx-1">
-                  <div className="text-[10px] uppercase tracking-wider text-primary font-bold">
-                    Monthly subscription
-                  </div>
-                  <div className="font-display text-3xl text-gradient-gold leading-none mt-1">
-                    ${(Number(p.price) / 2).toFixed(0)}<span className="text-base text-muted-foreground">/mo</span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-1">
-                    Pay monthly — cancel anytime. Same tier benefits.
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Or one-time: <b>${Number(p.price).toFixed(0)}</b>
+                <div className="font-display text-4xl text-gradient-gold">
+                  ${Number(p.price).toFixed(2)}
+                  <span className="text-sm text-muted-foreground"> /mo</span>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {(p.features ?? []).map((f, i) => <li key={i}>✓ {f}</li>)}
@@ -155,10 +114,10 @@ function Referrals() {
                   Commission: <span className="font-semibold text-foreground">{Number(p.commission_rate) * 100}%</span>
                 </div>
                 <button
-                  onClick={() => subscribe(p)}
+                  onClick={() => subscribe(p.id)}
                   className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
                 >
-                  Subscribe monthly
+                  Subscribe
                 </button>
               </div>
             ))}

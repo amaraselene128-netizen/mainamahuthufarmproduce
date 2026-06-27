@@ -52,15 +52,13 @@ function Register() {
           username: form.username,
           country_code: form.country || null,
           account_mode: accountMode,
-          ref_code: ref ?? null,
         },
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
 
-    // Best-effort fallback in case the server-side resolver didn't fire
-    // (e.g. existing deployments). The signup trigger normally handles this.
+    // If referral code present, resolve referrer by code and record the relationship.
     if (ref && data.user) {
       const { data: refProfile } = await db
         .from("profiles")
@@ -68,6 +66,11 @@ function Register() {
         .eq("referral_code", ref)
         .maybeSingle();
       if (refProfile?.id) {
+        await db.from("referrals").insert({
+          referrer_id: refProfile.id,
+          referred_id: data.user.id,
+          code: ref,
+        }).then(() => undefined);
         await db.from("profiles").update({ referred_by: refProfile.id }).eq("id", data.user.id).then(() => undefined);
       }
     }
