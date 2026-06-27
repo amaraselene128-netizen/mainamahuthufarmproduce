@@ -8,6 +8,7 @@ const items = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/tasks", label: "Tasks", icon: ListChecks },
+  { to: "/admin/submissions", label: "Submissions", icon: ClipboardList },
   { to: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { to: "/admin/ads", label: "Ads", icon: Tv },
   { to: "/admin/withdrawals", label: "Withdrawals", icon: Wallet },
