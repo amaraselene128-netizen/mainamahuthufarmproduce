@@ -23,6 +23,7 @@ type AuthState = {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  tier: "bronze" | "silver" | "gold" | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [tier, setTier] = useState<AuthState["tier"]>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
