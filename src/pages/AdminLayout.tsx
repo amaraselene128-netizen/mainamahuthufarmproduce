@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { LayoutDashboard, Users, ListChecks, Headphones, Globe2, ShieldAlert, Wallet, Crown, Megaphone, Tv } from "lucide-react";
+import { LayoutDashboard, Users, ListChecks, Headphones, Globe2, ShieldAlert, Wallet, Crown, Megaphone, Tv, ClipboardList } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
 
