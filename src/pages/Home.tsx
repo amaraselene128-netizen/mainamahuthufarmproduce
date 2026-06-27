@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, ShieldCheck, Wallet, Globe2, Zap,
   Youtube, Music2, Instagram, Facebook, Globe, Smartphone, Briefcase,
-  CheckCircle2, Star, ChevronDown, LayoutDashboard,
+  CheckCircle2, Star, ChevronDown, LayoutDashboard, Award, Crown, Trophy,
 } from "lucide-react";
 import { useState } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -27,6 +27,7 @@ function Home() {
         <Stats />
         <HowItWorks />
         <WhyChooseUs />
+        <Packages />
         <MarketWithUs />
         <Categories />
         <Testimonials />
