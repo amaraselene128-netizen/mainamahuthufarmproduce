@@ -30,6 +30,7 @@ function Home() {
         <MarketWithUs />
         <Categories />
         <Testimonials />
+        <TierPromo />
         <FAQ />
         <CTA />
       </main>
@@ -42,7 +43,7 @@ function Home() {
 function Hero() {
   const { user, profile } = useAuth();
   return (
-    <section className="relative overflow-hidden pt-32 pb-24 sm:pt-40 sm:pb-32">
+    <section className="relative overflow-hidden pt-32 pb-32 sm:pt-40 sm:pb-44">
       <div className="absolute inset-0 -z-10 bg-gradient-hero" />
       <img
         src={heroBg}
@@ -122,8 +123,8 @@ function Hero() {
         </motion.div>
       </div>
 
-      {/* floating cards — relative on mobile to avoid overlap, absolute on desktop */}
-      <div className="mt-12 sm:mt-0 sm:pointer-events-none sm:absolute sm:-bottom-6 sm:inset-x-0 flex justify-center">
+      {/* floating cards — fully inside the section, no clipping */}
+      <div className="mt-12 sm:mt-0 sm:pointer-events-none sm:absolute sm:bottom-8 sm:inset-x-0 flex justify-center">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl w-full px-4 sm:px-6">
           {[
             { icon: ShieldCheck, label: "Verified workers" },
@@ -391,14 +392,57 @@ function Testimonials() {
   );
 }
 
+/* ---------------- TIER PROMO ---------------- */
+function TierPromo() {
+  return (
+    <section className="py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div
+          {...fadeUp}
+          className="relative overflow-hidden rounded-3xl border hairline shadow-luxe p-10 sm:p-14 text-center"
+          style={{ background: "var(--gradient-emerald)" }}
+        >
+          <div className="absolute inset-0 opacity-25 mix-blend-overlay" style={{ background: "var(--gradient-gold)" }} />
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full bg-background/15 text-secondary-foreground px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+              <Star className="size-3.5" /> Insider tip
+            </span>
+            <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold text-secondary-foreground leading-tight">
+              Did you know? A higher tier subscription gives you a near-100% chance of selection on every task you apply to.
+            </h2>
+            <p className="mt-4 text-secondary-foreground/85 max-w-2xl mx-auto text-sm sm:text-base">
+              Tier-subscribed workers receive 18 of every 20 task slots and unlimited daily ad/campaign tasks. Bronze, Silver and Gold tiers stack priority — Gold gets first pick.
+            </p>
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
+              <Link to="/tiers" className="inline-flex items-center gap-2 rounded-xl bg-background px-6 py-3.5 text-sm font-semibold text-foreground shadow-luxe hover:shadow-glow transition-all">
+                Learn more <ArrowRight className="size-4" />
+              </Link>
+              <Link to="/auth/register" className="inline-flex items-center gap-2 rounded-xl border border-secondary-foreground/30 px-6 py-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary-foreground/10 transition-colors">
+                Join EGMTASKS
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- FAQ ---------------- */
 function FAQ() {
   const faqs = [
     { q: "How do I get paid?", a: "All approved earnings settle to your in-app wallet and pay out monthly on the 5th via PayPal. Stripe, Payoneer, Wise and M-Pesa are on the roadmap." },
     { q: "Is registration available worldwide?", a: "EGMTASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
-    { q: "How many workers can join one task?", a: "Each task accepts up to 20 workers on a first-come-first-served basis. Once full, the task is marked TAKEN." },
     { q: "What stops fake submissions?", a: "Our AI fraud engine combines duplicate-detection, screenshot similarity, device fingerprinting, and risk scoring (Low → Critical) with admin review." },
     { q: "Can I switch between Worker and Client?", a: "Yes — switch account modes anytime from your dashboard settings." },
+    { q: "Does a subscription tier guarantee I get tasks?", a: "Subscribing to a tier dramatically increases your selection priority during admin approval. Gold tier subscribers receive the highest possible placement priority across the platform." },
+    { q: "What payment methods do you support?", a: "PayPal is live today. M-Pesa, Stripe, bank cards, Payoneer and Wise are queued and announced as they roll out region-by-region." },
+    { q: "How does the escrow work?", a: "Clients fully fund a task before it is published. Funds are held in escrow until the work is approved, disputed, or refunded under our policy." },
+    { q: "What happens to uncollected balances?", a: "Funds not withdrawn within two months after pay-maturity may be reclaimed by EGMTASKS to cover platform maintenance, account services, and escrow operations (see Terms §31)." },
+    { q: "Can I run video ads using a link instead of uploading?", a: "Yes — choose 'Embedded link' on the Advertise page and paste a YouTube, Facebook, TikTok, Instagram or other supported video URL." },
+    { q: "How are disputes resolved?", a: "Open a dispute from the task page. Our trust team reviews evidence, communication and timestamps, then issues a binding decision." },
+    { q: "Is my data private and secure?", a: "We use industry-standard encryption in transit and at rest, plus role-based access controls. Review our Privacy Policy for full detail." },
+    { q: "Can I refer friends and earn?", a: "Yes. Activate a referral tier from your dashboard to unlock your unique link, real-time stats and recurring commissions." },
   ];
   const [open, setOpen] = useState<number | null>(0);
   return (

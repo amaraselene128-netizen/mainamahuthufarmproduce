@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { LayoutDashboard, Users, ListChecks, Headphones, Globe2, ShieldAlert, Wallet, Crown, Megaphone, Tv } from "lucide-react";
+import { LayoutDashboard, Users, ListChecks, Headphones, Globe2, ShieldAlert, Wallet, Crown, Megaphone, Tv, ClipboardCheck } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
 
@@ -8,6 +8,7 @@ const items = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/tasks", label: "Tasks", icon: ListChecks },
+  { to: "/admin/submissions", label: "Submissions", icon: ClipboardCheck },
   { to: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { to: "/admin/ads", label: "Ads", icon: Tv },
   { to: "/admin/withdrawals", label: "Withdrawals", icon: Wallet },

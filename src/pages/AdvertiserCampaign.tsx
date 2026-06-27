@@ -1,17 +1,22 @@
 import { useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
-import { Megaphone, Upload } from "lucide-react";
+import { Megaphone, Upload, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import {
   AD_DURATIONS, ADVERTISER_CENTS, BUTTON_TEXT_OPTIONS, formatCents, viewsForBudget, type AdDuration,
 } from "@/lib/ads";
 
+type Mode = "upload" | "embed";
+
 function AdvertiserCampaign() {
   const { user } = useAuth();
+  const [mode, setMode] = useState<Mode>("upload");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [embedUrl, setEmbedUrl] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
   const [buttonText, setButtonText] = useState<string>("Install Now");
   const [duration, setDuration] = useState<AdDuration>(30);
@@ -48,18 +53,17 @@ function AdvertiserCampaign() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (!file) return toast.error("Upload a video first");
+    if (mode === "upload" && !file) return toast.error("Upload a video first");
+    if (mode === "embed" && !/^https?:\/\//i.test(embedUrl)) return toast.error("Embed URL must start with http(s)://");
     if (!/^https?:\/\//i.test(destinationUrl)) return toast.error("Destination URL must start with http(s)://");
     if (budgetCents < cpv) return toast.error("Budget must cover at least one view");
     setBusy(true);
     try {
-      const up = await uploadToCloudinary(file, { folder: "egratasks/ads" });
       const targets = countries.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
-      const { error } = await db.from("advertisements").insert({
+      const payload: any = {
         advertiser_id: user.id,
         title, description,
-        video_url: up.secure_url,
-        video_public_id: up.public_id,
+        instructions: instructions || null,
         destination_url: destinationUrl,
         button_text: buttonText,
         duration_seconds: duration,
@@ -67,10 +71,20 @@ function AdvertiserCampaign() {
         budget_cents: budgetCents,
         views_purchased: views,
         status: "pending",
-      });
+        ad_type: mode,
+      };
+      if (mode === "upload") {
+        const up = await uploadToCloudinary(file as File, { folder: "egratasks/ads" });
+        payload.video_url = up.secure_url;
+        payload.video_public_id = up.public_id;
+      } else {
+        payload.embed_url = embedUrl;
+      }
+      const { error } = await db.from("advertisements").insert(payload);
       if (error) throw error;
       toast.success("Campaign submitted for review");
-      setTitle(""); setDescription(""); setDestinationUrl(""); setFile(null); setCountries("");
+      setTitle(""); setDescription(""); setInstructions(""); setDestinationUrl("");
+      setEmbedUrl(""); setFile(null); setCountries("");
     } catch (err: any) {
       toast.error(err.message ?? "Failed to submit");
     } finally {
@@ -84,6 +98,24 @@ function AdvertiserCampaign() {
         <Megaphone className="size-7 text-primary" /> Create ad campaign
       </h1>
 
+      {/* Mode tabs */}
+      <div className="inline-flex rounded-xl border hairline bg-card p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => setMode("upload")}
+          className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 font-semibold ${mode === "upload" ? "bg-gradient-gold text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Upload className="size-4" /> Upload video
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("embed")}
+          className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 font-semibold ${mode === "embed" ? "bg-gradient-gold text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Link2 className="size-4" /> Embedded link
+        </button>
+      </div>
+
       <form onSubmit={submit} className="space-y-4 rounded-2xl border hairline bg-card p-6 shadow-card">
         <Field label="Title">
           <input required value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120}
@@ -93,18 +125,39 @@ function AdvertiserCampaign() {
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} rows={3}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
         </Field>
-        <Field label="Video file (mp4, ≤ 20MB)">
-          <label className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-input bg-background px-3 py-6 cursor-pointer hover:bg-accent">
-            <Upload className="size-4" />
-            <span className="text-sm">{file ? file.name : "Choose video"}</span>
-            <input type="file" accept="video/*" hidden onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
-          </label>
-          {detectedSec != null && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Detected length: <b>{detectedSec}s</b> · ad duration auto-set to <b>{duration}s</b>.
-            </p>
-          )}
+        <Field label="Instructions for viewers (optional)">
+          <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} maxLength={500} rows={2}
+            placeholder="e.g. Watch the full clip, then like and subscribe."
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
         </Field>
+        {mode === "upload" ? (
+          <Field label="Video file (mp4, ≤ 20MB)">
+            <label className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-input bg-background px-3 py-6 cursor-pointer hover:bg-accent">
+              <Upload className="size-4" />
+              <span className="text-sm">{file ? file.name : "Choose video"}</span>
+              <input type="file" accept="video/*" hidden onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
+            </label>
+            {detectedSec != null && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Detected length: <b>{detectedSec}s</b> · ad duration auto-set to <b>{duration}s</b>.
+              </p>
+            )}
+          </Field>
+        ) : (
+          <Field label="Embed video URL (YouTube, Facebook, TikTok, Instagram, Vimeo…)">
+            <input
+              type="url"
+              required
+              value={embedUrl}
+              onChange={(e) => setEmbedUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=…"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Paste the public URL of your video. We'll embed and play it on EGMTASKS — no file upload needed.
+            </p>
+          </Field>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Destination URL">
             <input required value={destinationUrl} onChange={(e) => setDestinationUrl(e.target.value)}

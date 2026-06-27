@@ -23,6 +23,7 @@ type AuthState = {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  tier: "bronze" | "silver" | "gold" | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,15 +35,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [tier, setTier] = useState<AuthState["tier"]>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
-    const [{ data: p }, { data: roles }] = await Promise.all([
+    const [{ data: p }, { data: roles }, { data: subs }] = await Promise.all([
       db.from("profiles").select("*").eq("id", uid).maybeSingle(),
       db.from("user_roles").select("role").eq("user_id", uid),
+      db
+        .from("referral_subscriptions")
+        .select("status,expires_at,referral_plans(tier)")
+        .eq("user_id", uid)
+        .eq("status", "active"),
     ]);
     setProfile((p as unknown as Profile) ?? null);
     setIsAdmin(Boolean(roles?.some((r: { role: string }) => r.role === "admin")));
+    const now = Date.now();
+    const active = (subs ?? []).find((s: any) => !s.expires_at || new Date(s.expires_at).getTime() > now);
+    const t = (active as any)?.referral_plans?.tier as AuthState["tier"] | undefined;
+    setTier(t ?? null);
   };
 
   useEffect(() => {
@@ -53,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setTier(null);
       }
     });
     db.auth.getSession().then(({ data }) => {
@@ -73,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, isAdmin, loading, refreshProfile, signOut }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, profile, isAdmin, tier, loading, refreshProfile, signOut }}>
       {children}
     </Ctx.Provider>
   );

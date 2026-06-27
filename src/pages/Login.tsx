@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { AuthShell, Field } from "@/components/auth/AuthShell";
 import { supabase } from "@/lib/db";
@@ -6,6 +6,8 @@ import { toast } from "sonner";
 
 function Login() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = params.get("next") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ function Login() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
-    navigate("/dashboard");
+    navigate(next);
   }
 
   return (
@@ -36,7 +38,7 @@ function Login() {
         </button>
         <p className="text-center text-sm text-muted-foreground">
           New to EGMTASKS?{" "}
-          <Link to="/auth/register" className="text-primary font-medium hover:underline">Create an account</Link>
+          <Link to={`/auth/register${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary font-medium hover:underline">Create an account</Link>
         </p>
       </form>
     </AuthShell>

@@ -6,6 +6,7 @@ import {
   Users2, Coins, ShieldCheck, LogOut, MessageSquare, Tv, Megaphone,
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
+import { TierBadge } from "@/components/site/TierBadge";
 import { useAuth } from "@/lib/auth-context";
 
 const workerNav = [
@@ -38,7 +39,7 @@ const sharedNav = [
 ];
 
 export function DashLayout() {
-  const { user, profile, loading, isAdmin, signOut } = useAuth();
+  const { user, profile, loading, isAdmin, tier, signOut } = useAuth();
   const nav = useNavigate();
   const path = useLocation().pathname;
 
@@ -67,6 +68,7 @@ export function DashLayout() {
             <span className="hidden sm:inline rounded-full bg-muted px-2 py-0.5 text-xs uppercase tracking-wider text-muted-foreground">
               {profile.account_mode === "worker" ? "Worker" : "Client"}
             </span>
+            <TierBadge tier={tier} />
             {isAdmin && (
               <Link to="/admin" className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-secondary/15 text-secondary border border-secondary/20 hover:bg-secondary/25">
                 <ShieldCheck className="inline size-3.5 -mt-0.5 mr-1" /> Admin

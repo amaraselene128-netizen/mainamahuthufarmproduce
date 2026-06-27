@@ -12,7 +12,7 @@ function NewTask() {
   const { user } = useAuth();
   const [form, setForm] = useState({
     title: "", description: "", requirements: "", instructions: "",
-    payment_amount: "1.00", tier: "bronze", category: "", category_group: "",
+    payment_amount: "1.00", category: "", category_group: "",
     deadline: "", terms: false,
   });
   const [files, setFiles] = useState<File[]>([]);
@@ -37,7 +37,7 @@ function NewTask() {
         requirements: form.requirements || null,
         instructions: form.instructions || null,
         payment_amount: Number(form.payment_amount),
-        tier: form.tier,
+        tier: "bronze",
         category: form.category,
         category_group: form.category_group || null,
         attachments,
@@ -89,9 +89,11 @@ function NewTask() {
         <Textarea label="Instructions for workers" value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} rows={3} />
         <Row>
           <Field label="Payment ($)" type="number" min="0.10" step="0.10" required value={form.payment_amount} onChange={(e) => setForm({ ...form, payment_amount: e.target.value })} />
-          <Select label="Tier" value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} options={[{ value: "bronze", label: "Bronze" }, { value: "silver", label: "Silver" }, { value: "gold", label: "Gold" }]} />
           <Field label="Deadline" type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
         </Row>
+        <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
+          ℹ︎ Tier requirements are set by admins during review — not by you. All tasks are open to every worker; tier-subscribed workers simply receive priority placement.
+        </div>
 
         {/* Attachments */}
         <label className="block">
@@ -141,9 +143,6 @@ function Field({ label, ...p }: { label: string } & React.InputHTMLAttributes<HT
 }
 function Textarea({ label, ...p }: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <label className="block"><span className="text-sm font-medium">{label}</span><textarea {...p} className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40" /></label>;
-}
-function Select({ label, options, ...p }: { label: string; options: { value: string; label: string }[] } & React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <label className="block"><span className="text-sm font-medium">{label}</span><select {...p} className="mt-1.5 w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm">{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>;
 }
 
 export default NewTask;

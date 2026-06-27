@@ -134,11 +134,19 @@ function Referrals() {
                   <div className="font-display text-2xl font-semibold capitalize">{p.tier}</div>
                   <Crown className={`size-5 ${p.tier === "gold" ? "text-primary" : p.tier === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
                 </div>
-                <div className="font-display text-4xl text-gradient-gold">
-                  ${Number(p.price).toFixed(0)}
+                <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 -mx-1">
+                  <div className="text-[10px] uppercase tracking-wider text-primary font-bold">
+                    Monthly subscription
+                  </div>
+                  <div className="font-display text-3xl text-gradient-gold leading-none mt-1">
+                    ${(Number(p.price) / 2).toFixed(0)}<span className="text-base text-muted-foreground">/mo</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-1">
+                    Pay monthly — cancel anytime. Same tier benefits.
+                  </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground/30 -mt-2 select-none">
-                  monthly subscription ${(Number(p.price) / 2).toFixed(0)}/mo
+                <div className="text-xs text-muted-foreground">
+                  Or one-time: <b>${Number(p.price).toFixed(0)}</b>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {(p.features ?? []).map((f, i) => <li key={i}>✓ {f}</li>)}
@@ -150,7 +158,7 @@ function Referrals() {
                   onClick={() => subscribe(p)}
                   className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
                 >
-                  Subscribe
+                  Subscribe monthly
                 </button>
               </div>
             ))}
