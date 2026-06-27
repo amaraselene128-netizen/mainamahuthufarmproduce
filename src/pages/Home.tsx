@@ -122,8 +122,8 @@ function Hero() {
         </motion.div>
       </div>
 
-      {/* floating cards — relative on mobile to avoid overlap, absolute on desktop */}
-      <div className="mt-12 sm:mt-0 sm:pointer-events-none sm:absolute sm:-bottom-6 sm:inset-x-0 flex justify-center">
+      {/* floating cards — fully inside the section, no clipping */}
+      <div className="mt-12 sm:mt-0 sm:pointer-events-none sm:absolute sm:bottom-8 sm:inset-x-0 flex justify-center">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl w-full px-4 sm:px-6">
           {[
             { icon: ShieldCheck, label: "Verified workers" },
