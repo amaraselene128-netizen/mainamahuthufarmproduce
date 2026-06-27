@@ -3,8 +3,35 @@ import { Link } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Crown, Coins, ArrowLeft } from "lucide-react";
+import { Crown, Coins, ArrowLeft, Check, ShieldAlert } from "lucide-react";
 import { formatCents, TIER_PRICE_CENTS, type Tier } from "@/lib/ads";
+
+const TIER_BENEFITS: Record<Tier, { coaching: string; tasks: string; referrals: string; minWithdraw: string; chat: string; minWithdrawCents: number }> = {
+  bronze: {
+    coaching: "10 minutes of weekly coaching",
+    tasks: "Regular + Bronze rated tasks",
+    referrals: "Regular + Bronze referral earnings",
+    minWithdraw: "$30 USD",
+    chat: "Tier 3 Millionaires group chat",
+    minWithdrawCents: 3000,
+  },
+  silver: {
+    coaching: "100 minutes of weekly coaching",
+    tasks: "Regular, Bronze + Silver rated tasks",
+    referrals: "Regular, Bronze + Silver referral earnings",
+    minWithdraw: "$20 USD",
+    chat: "Tier 2 Millionaires group chat",
+    minWithdrawCents: 2000,
+  },
+  gold: {
+    coaching: "Unlimited coaching · 1,000+ minutes of material weekly",
+    tasks: "Regular, Bronze, Silver + Gold rated tasks",
+    referrals: "Regular, Bronze, Silver + Gold referral earnings",
+    minWithdraw: "$10 USD",
+    chat: "Tier 1 (Premium) Millionaires group chat",
+    minWithdrawCents: 1000,
+  },
+};
 
 function TierUnlock() {
   const { user } = useAuth();
