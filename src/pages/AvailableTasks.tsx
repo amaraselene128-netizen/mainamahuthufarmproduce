@@ -26,8 +26,9 @@ function AvailableTasks() {
   async function load() {
     setLoading(true);
     const { data, error } = await db.from("tasks")
-      .select("id,title,description,payment_amount,tier,deadline,max_workers,current_workers,status,attachments,category")
+      .select("id,title,description,payment_amount,tier,deadline,max_workers,current_workers,status,attachments,categories(name)")
       .eq("status", "active")
+      .eq("hidden", false)
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) return toast.error(error.message);
