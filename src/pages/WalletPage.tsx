@@ -124,14 +124,13 @@ function WalletPage() {
             className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Processing…" :
-              !open ? "Withdrawals closed" :
               tooLow ? "Enter at least $10" :
               insufficient ? "Insufficient balance" :
               noDetails ? "Enter account details" :
-              `Withdraw $${numericAmount.toFixed(2)} instantly`}
+              `Request $${numericAmount.toFixed(2)} withdrawal`}
           </button>
           <p className="text-xs text-muted-foreground">
-            Inside the 1st → 5th window, payouts settle instantly. Outside it, the system is closed.
+            Requests are reviewed during the 1st → 5th payout window. Outside it, the request may be rejected or delayed.
           </p>
         </form>
 
