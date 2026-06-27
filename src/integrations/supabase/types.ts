@@ -97,6 +97,7 @@ export type Database = {
         Row: {
           admin_notes: string | null
           advertiser_id: string
+          approved: boolean
           approved_at: string | null
           budget_cents: number
           button_text: string
@@ -119,6 +120,7 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           advertiser_id: string
+          approved?: boolean
           approved_at?: string | null
           budget_cents: number
           button_text?: string
@@ -141,6 +143,7 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           advertiser_id?: string
+          approved?: boolean
           approved_at?: string | null
           budget_cents?: number
           button_text?: string
@@ -161,6 +164,53 @@ export type Database = {
           views_purchased?: number
         }
         Relationships: []
+      }
+      campaign_views: {
+        Row: {
+          campaign_id: string
+          completed: boolean
+          created_at: string
+          fingerprint: string | null
+          id: string
+          ip: string | null
+          reward_cents: number
+          user_agent: string | null
+          user_id: string
+          watched_seconds: number
+        }
+        Insert: {
+          campaign_id: string
+          completed?: boolean
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          reward_cents?: number
+          user_agent?: string | null
+          user_id: string
+          watched_seconds: number
+        }
+        Update: {
+          campaign_id?: string
+          completed?: boolean
+          created_at?: string
+          fingerprint?: string | null
+          id?: string
+          ip?: string | null
+          reward_cents?: number
+          user_agent?: string | null
+          user_id?: string
+          watched_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_views_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "market_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
@@ -427,7 +477,15 @@ export type Database = {
           subject?: string | null
           to_user?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_from_user_profiles_fkey"
+            columns: ["from_user"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -735,30 +793,41 @@ export type Database = {
       }
       referrals: {
         Row: {
-          code: string
+          code: string | null
           created_at: string
+          generation: number | null
           id: string
           referred_id: string | null
           referrer_id: string
           verified_at: string | null
         }
         Insert: {
-          code: string
+          code?: string | null
           created_at?: string
+          generation?: number | null
           id?: string
           referred_id?: string | null
           referrer_id: string
           verified_at?: string | null
         }
         Update: {
-          code?: string
+          code?: string | null
           created_at?: string
+          generation?: number | null
           id?: string
           referred_id?: string | null
           referrer_id?: string
           verified_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_id_fkey_profiles"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -852,6 +921,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "support_messages_sender_id_profiles_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "support_messages_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
@@ -894,10 +970,19 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_applications: {
         Row: {
+          admin_notes: string | null
           applied_at: string
           id: string
           proof_urls: string[]
@@ -906,6 +991,7 @@ export type Database = {
           worker_id: string
         }
         Insert: {
+          admin_notes?: string | null
           applied_at?: string
           id?: string
           proof_urls?: string[]
@@ -914,6 +1000,7 @@ export type Database = {
           worker_id: string
         }
         Update: {
+          admin_notes?: string | null
           applied_at?: string
           id?: string
           proof_urls?: string[]
@@ -929,7 +1016,48 @@ export type Database = {
             referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "task_applications_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_applications_worker_id_profiles_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      task_completions: {
+        Row: {
+          created_at: string
+          id: string
+          ref_id: string | null
+          reward_cents: number
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ref_id?: string | null
+          reward_cents?: number
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ref_id?: string | null
+          reward_cents?: number
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       task_submissions: {
         Row: {
@@ -1004,11 +1132,28 @@ export type Database = {
             referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "task_submissions_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_submissions_worker_id_profiles_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tasks: {
         Row: {
           admin_notes: string | null
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
           attachments: Json
           category: string | null
           category_group: string | null
@@ -1032,6 +1177,9 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           attachments?: Json
           category?: string | null
           category_group?: string | null
@@ -1055,6 +1203,9 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           attachments?: Json
           category?: string | null
           category_group?: string | null
@@ -1082,6 +1233,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_hiring_id_fkey"
+            columns: ["hiring_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_hiring_id_profiles_fkey"
+            columns: ["hiring_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1290,9 +1455,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_grant_tier: {
+        Args: { p_tier: string; p_user: string }
+        Returns: undefined
+      }
       apply_to_task: {
         Args: { _task_id: string }
         Returns: {
+          admin_notes: string | null
           applied_at: string
           id: string
           proof_urls: string[]
@@ -1318,6 +1488,17 @@ export type Database = {
         }
         Returns: Json
       }
+      credit_campaign_view: {
+        Args: {
+          p_campaign_id: string
+          p_fingerprint: string
+          p_ip: string
+          p_user_agent: string
+          p_user_id: string
+          p_watched: number
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1325,6 +1506,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      make_referral_code: { Args: { p_seed: string }; Returns: string }
       pay_first_withdrawal_bonus: {
         Args: { p_amount_cents: number; p_user: string }
         Returns: undefined
@@ -1333,10 +1515,12 @@ export type Database = {
         Args: { p_tier_cents: number; p_user: string }
         Returns: undefined
       }
-      pay_subscription_commission: {
-        Args: { p_tier_dollars: number; p_user: string }
-        Returns: undefined
-      }
+      pay_subscription_commission:
+        | { Args: { p_tier_cents: number; p_user: string }; Returns: undefined }
+        | {
+            Args: { p_tier_dollars: number; p_user: string }
+            Returns: undefined
+          }
       unlock_tier_from_credits: { Args: { p_tier: string }; Returns: Json }
     }
     Enums: {
