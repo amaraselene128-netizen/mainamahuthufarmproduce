@@ -396,9 +396,16 @@ function FAQ() {
   const faqs = [
     { q: "How do I get paid?", a: "All approved earnings settle to your in-app wallet and pay out monthly on the 5th via PayPal. Stripe, Payoneer, Wise and M-Pesa are on the roadmap." },
     { q: "Is registration available worldwide?", a: "EGMTASKS supports 100+ countries. Some regions may be temporarily restricted — you'll see a clear message if your country is currently unavailable." },
-    { q: "How many workers can join one task?", a: "Each task accepts up to 20 workers on a first-come-first-served basis. Once full, the task is marked TAKEN." },
     { q: "What stops fake submissions?", a: "Our AI fraud engine combines duplicate-detection, screenshot similarity, device fingerprinting, and risk scoring (Low → Critical) with admin review." },
     { q: "Can I switch between Worker and Client?", a: "Yes — switch account modes anytime from your dashboard settings." },
+    { q: "Does a subscription tier guarantee I get tasks?", a: "Subscribing to a tier dramatically increases your selection priority during admin approval. Gold tier subscribers receive the highest possible placement priority across the platform." },
+    { q: "What payment methods do you support?", a: "PayPal is live today. M-Pesa, Stripe, bank cards, Payoneer and Wise are queued and announced as they roll out region-by-region." },
+    { q: "How does the escrow work?", a: "Clients fully fund a task before it is published. Funds are held in escrow until the work is approved, disputed, or refunded under our policy." },
+    { q: "What happens to uncollected balances?", a: "Funds not withdrawn within two months after pay-maturity may be reclaimed by EGMTASKS to cover platform maintenance, account services, and escrow operations (see Terms §31)." },
+    { q: "Can I run video ads using a link instead of uploading?", a: "Yes — choose 'Embedded link' on the Advertise page and paste a YouTube, Facebook, TikTok, Instagram or other supported video URL." },
+    { q: "How are disputes resolved?", a: "Open a dispute from the task page. Our trust team reviews evidence, communication and timestamps, then issues a binding decision." },
+    { q: "Is my data private and secure?", a: "We use industry-standard encryption in transit and at rest, plus role-based access controls. Review our Privacy Policy for full detail." },
+    { q: "Can I refer friends and earn?", a: "Yes. Activate a referral tier from your dashboard to unlock your unique link, real-time stats and recurring commissions." },
   ];
   const [open, setOpen] = useState<number | null>(0);
   return (
