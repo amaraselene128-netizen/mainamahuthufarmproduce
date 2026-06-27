@@ -392,6 +392,42 @@ function Testimonials() {
   );
 }
 
+/* ---------------- TIER PROMO ---------------- */
+function TierPromo() {
+  return (
+    <section className="py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div
+          {...fadeUp}
+          className="relative overflow-hidden rounded-3xl border hairline shadow-luxe p-10 sm:p-14 text-center"
+          style={{ background: "var(--gradient-emerald)" }}
+        >
+          <div className="absolute inset-0 opacity-25 mix-blend-overlay" style={{ background: "var(--gradient-gold)" }} />
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full bg-background/15 text-secondary-foreground px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+              <Star className="size-3.5" /> Insider tip
+            </span>
+            <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold text-secondary-foreground leading-tight">
+              Did you know? A higher tier subscription gives you a near-100% chance of selection on every task you apply to.
+            </h2>
+            <p className="mt-4 text-secondary-foreground/85 max-w-2xl mx-auto text-sm sm:text-base">
+              Tier-subscribed workers receive 18 of every 20 task slots and unlimited daily ad/campaign tasks. Bronze, Silver and Gold tiers stack priority — Gold gets first pick.
+            </p>
+            <div className="mt-7 flex flex-wrap justify-center gap-3">
+              <Link to="/tiers" className="inline-flex items-center gap-2 rounded-xl bg-background px-6 py-3.5 text-sm font-semibold text-foreground shadow-luxe hover:shadow-glow transition-all">
+                Learn more <ArrowRight className="size-4" />
+              </Link>
+              <Link to="/auth/register" className="inline-flex items-center gap-2 rounded-xl border border-secondary-foreground/30 px-6 py-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary-foreground/10 transition-colors">
+                Join EGMTASKS
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- FAQ ---------------- */
 function FAQ() {
   const faqs = [
