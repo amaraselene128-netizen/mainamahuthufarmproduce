@@ -89,9 +89,11 @@ function NewTask() {
         <Textarea label="Instructions for workers" value={form.instructions} onChange={(e) => setForm({ ...form, instructions: e.target.value })} rows={3} />
         <Row>
           <Field label="Payment ($)" type="number" min="0.10" step="0.10" required value={form.payment_amount} onChange={(e) => setForm({ ...form, payment_amount: e.target.value })} />
-          <Select label="Tier" value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} options={[{ value: "bronze", label: "Bronze" }, { value: "silver", label: "Silver" }, { value: "gold", label: "Gold" }]} />
           <Field label="Deadline" type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
         </Row>
+        <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
+          ℹ︎ Tier requirements are set by admins during review — not by you. All tasks are open to every worker; tier-subscribed workers simply receive priority placement.
+        </div>
 
         {/* Attachments */}
         <label className="block">
