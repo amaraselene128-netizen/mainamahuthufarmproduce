@@ -12,7 +12,7 @@ function NewTask() {
   const { user } = useAuth();
   const [form, setForm] = useState({
     title: "", description: "", requirements: "", instructions: "",
-    payment_amount: "1.00", tier: "bronze", category: "", category_group: "",
+    payment_amount: "1.00", category: "", category_group: "",
     deadline: "", terms: false,
   });
   const [files, setFiles] = useState<File[]>([]);
