@@ -12,8 +12,11 @@ type Mode = "upload" | "embed";
 
 function AdvertiserCampaign() {
   const { user } = useAuth();
+  const [mode, setMode] = useState<Mode>("upload");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [embedUrl, setEmbedUrl] = useState("");
   const [destinationUrl, setDestinationUrl] = useState("");
   const [buttonText, setButtonText] = useState<string>("Install Now");
   const [duration, setDuration] = useState<AdDuration>(30);
