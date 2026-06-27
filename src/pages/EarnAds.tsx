@@ -34,16 +34,19 @@ function EarnAds() {
   const [showCta, setShowCta] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const tierActive = Boolean((profile as any)?.active_tier);
+
   async function load() {
     if (!user) return;
     setLoading(true);
-    const [adsRes, viewsRes, creditRes] = await Promise.all([
+    const [adsRes, viewsRes, creditRes, walletRes] = await Promise.all([
       db.from("advertisements")
         .select("id,title,description,video_url,destination_url,button_text,duration_seconds,spent_cents,budget_cents,country_targeting")
         .eq("status", "active")
         .order("created_at", { ascending: false }),
       db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true),
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
+      db.from("wallets").select("available").eq("user_id", user.id).maybeSingle(),
     ]);
     const country = profile?.country_code ?? null;
     const list = ((adsRes.data as any[]) ?? [])
@@ -51,10 +54,14 @@ function EarnAds() {
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
     setAds(list as Ad[]);
     setCompletedIds(new Set(((viewsRes.data as any[]) ?? []).map((v) => v.ad_id)));
-    setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
+    if (tierActive) {
+      setBalance(Math.round(Number((walletRes.data as any)?.available ?? 0) * 100));
+    } else {
+      setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
+    }
     setLoading(false);
   }
-  useEffect(() => { load(); }, [user?.id]);
+  useEffect(() => { load(); }, [user?.id, tierActive]);
 
   const available = useMemo(() => ads.filter((a) => !completedIds.has(a.id)), [ads, completedIds]);
   const prog = tierProgress(balance, tier);
@@ -68,11 +75,14 @@ function EarnAds() {
       toast.error((data as any)?.error ?? error?.message ?? "Could not credit view");
       return;
     }
-    setBalance((data as any).balance_cents);
+    const d = data as any;
+    setBalance(d.balance_cents);
     setCompletedIds((s) => new Set(s).add(ad.id));
-    toast.success(`Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} tier credit`);
+    const dest = d.destination === "wallet" ? "to wallet" : "tier credit";
+    toast.success(`Earned ${formatCents(REWARD_CENTS[ad.duration_seconds])} ${dest}`);
     setShowCta(true);
   }
+
 
   return (
     <div className="space-y-6">
