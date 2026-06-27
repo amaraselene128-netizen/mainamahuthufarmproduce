@@ -6,9 +6,13 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       <img
         src={logo}
         alt="EGMTASKS"
-        width={compact ? 32 : 200}
-        height={compact ? 32 : 48}
-        className={compact ? "size-8 object-contain" : "h-10 sm:h-11 w-auto object-contain"}
+        width={compact ? 64 : 400}
+        height={compact ? 64 : 96}
+        className={
+          compact
+            ? "size-16 object-contain"
+            : "h-20 sm:h-22 w-auto object-contain"
+        }
         loading="eager"
         decoding="async"
       />
