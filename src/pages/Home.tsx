@@ -42,7 +42,7 @@ function Home() {
 function Hero() {
   const { user, profile } = useAuth();
   return (
-    <section className="relative overflow-hidden pt-32 pb-24 sm:pt-40 sm:pb-32">
+    <section className="relative overflow-hidden pt-32 pb-32 sm:pt-40 sm:pb-44">
       <div className="absolute inset-0 -z-10 bg-gradient-hero" />
       <img
         src={heroBg}
