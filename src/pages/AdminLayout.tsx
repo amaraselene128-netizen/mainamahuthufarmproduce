@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { LayoutDashboard, Users, ListChecks, Headphones, Globe2, ShieldAlert, Wallet, Crown, Megaphone, Tv } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationToaster } from "@/components/site/NotificationToaster";
+
 
 const items = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
