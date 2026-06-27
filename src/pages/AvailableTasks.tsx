@@ -15,7 +15,7 @@ type Task = {
   current_workers: number;
   status: string;
   attachments: any;
-  category?: string | null;
+  categories?: { name: string } | null;
 };
 
 function AvailableTasks() {
