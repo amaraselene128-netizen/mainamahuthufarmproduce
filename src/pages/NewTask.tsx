@@ -37,7 +37,7 @@ function NewTask() {
         requirements: form.requirements || null,
         instructions: form.instructions || null,
         payment_amount: Number(form.payment_amount),
-        tier: form.tier,
+        tier: "bronze",
         category: form.category,
         category_group: form.category_group || null,
         attachments,
