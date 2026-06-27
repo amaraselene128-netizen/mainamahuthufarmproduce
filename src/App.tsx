@@ -91,6 +91,7 @@ export default function App() {
         <Route path="/legal/terms" element={<Terms />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/market-with-us" element={<MarketWithUs />} />
+        <Route path="/tiers" element={<Tiers />} />
 
 
         <Route path="/auth/login" element={<Login />} />
