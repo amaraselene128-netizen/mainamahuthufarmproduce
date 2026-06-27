@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationToaster } from "@/components/site/NotificationToaster";
+
 
 const workerNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
