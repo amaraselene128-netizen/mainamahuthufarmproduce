@@ -131,8 +131,12 @@ function Register() {
             <Link to="/legal/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
           </span>
         </label>
-        <button disabled={loading} className="w-full rounded-xl bg-gradient-gold px-4 py-3 font-semibold text-primary-foreground shadow-card hover:shadow-glow transition-shadow disabled:opacity-60">
-          {loading ? "Creating account…" : "Create account"}
+        <button
+          disabled={loading || !form.terms}
+          title={!form.terms ? "Please accept the Terms to continue" : undefined}
+          className="w-full rounded-xl bg-gradient-gold px-4 py-3 font-semibold text-primary-foreground shadow-card hover:shadow-glow transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {loading ? "Creating account…" : !form.terms ? "Accept the Terms to continue" : "Create account"}
         </button>
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}

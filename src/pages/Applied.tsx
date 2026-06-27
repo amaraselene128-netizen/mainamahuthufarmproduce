@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { db, supabase } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Upload, MessageSquare } from "lucide-react";
+import { Upload, Lock } from "lucide-react";
 
 type Row = {
   id: string;
@@ -53,9 +53,18 @@ function Applied() {
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${badge(r.status)}`}>{r.status.toUpperCase()}</span>
                   <span className="font-display text-lg text-gradient-gold">${Number(r.tasks.payment_amount).toFixed(2)}</span>
-                  <button onClick={() => setActiveId(activeId === r.id ? null : r.id)} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent">
-                    {activeId === r.id ? "Close" : r.status === "approved" ? "View" : "Submit work"}
-                  </button>
+                  {r.status === "pending" ? (
+                    <span
+                      title="Waiting for admin approval of your application"
+                      className="inline-flex items-center gap-1 text-xs rounded-lg border border-input bg-muted px-3 py-1.5 text-muted-foreground cursor-not-allowed"
+                    >
+                      <Lock className="size-3" /> Awaiting approval
+                    </span>
+                  ) : (
+                    <button onClick={() => setActiveId(activeId === r.id ? null : r.id)} className="text-xs rounded-lg border border-input bg-card px-3 py-1.5 hover:bg-accent">
+                      {activeId === r.id ? "Close" : r.status === "approved" ? "View" : "Submit work"}
+                    </button>
+                  )}
                 </div>
               </div>
               {sub?.admin_comment && (

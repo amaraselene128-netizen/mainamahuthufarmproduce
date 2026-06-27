@@ -10,6 +10,7 @@ const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const CategoriesPage = lazy(() => import("@/pages/CategoriesPage"));
 const MarketWithUs = lazy(() => import("@/pages/MarketWithUs"));
+const Packages = lazy(() => import("@/pages/Packages"));
 
 const Login = lazy(() => import("@/pages/Login"));
 const Register = lazy(() => import("@/pages/Register"));
@@ -89,6 +90,7 @@ export default function App() {
         <Route path="/legal/terms" element={<Terms />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/market-with-us" element={<MarketWithUs />} />
+        <Route path="/packages" element={<Packages />} />
 
 
         <Route path="/auth/login" element={<Login />} />
