@@ -222,6 +222,100 @@ function HowItWorks() {
   );
 }
 
+/* ---------------- PACKAGES ---------------- */
+function Packages() {
+  const pkgs = [
+    {
+      icon: Award,
+      tier: "Bronze",
+      accent: "from-amber-700/30 to-amber-500/10",
+      perks: [
+        "10 minutes coaching / week",
+        "Regular + Bronze-rated tasks",
+        "Regular + Bronze referral earnings",
+        "Min. withdrawal $30",
+        "Tier 3 Millionaires group chat",
+      ],
+    },
+    {
+      icon: Trophy,
+      tier: "Silver",
+      accent: "from-slate-400/30 to-slate-200/10",
+      perks: [
+        "100 minutes coaching / week",
+        "Regular, Bronze + Silver tasks",
+        "Regular, Bronze + Silver referrals",
+        "Min. withdrawal $20",
+        "Tier 2 Millionaires group chat",
+      ],
+    },
+    {
+      icon: Crown,
+      tier: "Gold",
+      accent: "from-primary/40 to-primary/10",
+      perks: [
+        "Unlimited coaching (1,000+ min/week)",
+        "All tasks: Regular → Gold",
+        "All referral tiers up to Gold",
+        "Min. withdrawal $10",
+        "Tier 1 Premium Millionaires chat",
+      ],
+    },
+  ];
+  return (
+    <section id="packages" className="py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeader
+          eyebrow="Membership packages"
+          title="Unlock the tier that fits your hustle"
+          sub="Higher tiers mean lower withdrawal minimums, better tasks, richer referral earnings and elite coaching."
+        />
+        <div className="mt-14 grid gap-6 md:grid-cols-3">
+          {pkgs.map((p, i) => (
+            <motion.div
+              key={p.tier}
+              {...fadeUp}
+              transition={{ ...fadeUp.transition, delay: i * 0.08 }}
+              className="relative rounded-2xl border hairline bg-card p-7 shadow-card hover:shadow-luxe transition-all overflow-hidden"
+            >
+              <div className={`absolute inset-0 -z-0 bg-gradient-to-br ${p.accent} opacity-60`} />
+              <div className="relative">
+                <div className="flex items-center gap-3">
+                  <div className="size-12 rounded-xl bg-gradient-gold grid place-items-center shadow-glow">
+                    <p.icon className="size-6 text-primary-foreground" />
+                  </div>
+                  <h3 className="font-display text-2xl font-semibold">{p.tier}</h3>
+                </div>
+                <ul className="mt-5 space-y-2 text-sm">
+                  {p.perks.map((perk) => (
+                    <li key={perk} className="flex items-start gap-2">
+                      <CheckCircle2 className="size-4 mt-0.5 text-secondary shrink-0" /> {perk}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to="/packages"
+                  className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                >
+                  View full benefits & terms <ArrowRight className="size-4" />
+                </Link>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <div className="mt-10 text-center">
+          <Link
+            to="/packages"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-6 py-3 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow"
+          >
+            See all packages, benefits & terms <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- WHY ---------------- */
 function WhyChooseUs() {
   const items = [
