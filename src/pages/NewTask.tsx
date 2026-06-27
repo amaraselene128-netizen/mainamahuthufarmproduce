@@ -44,7 +44,7 @@ function NewTask() {
         deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
       });
       if (error) throw error;
-      toast.success("Task posted");
+      toast.success("Task submitted for admin review");
       nav("/dashboard/hiring");
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to post task");
