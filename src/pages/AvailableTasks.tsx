@@ -15,7 +15,7 @@ type Task = {
   current_workers: number;
   status: string;
   attachments: any;
-  category?: string | null;
+  categories?: { name: string } | null;
 };
 
 function AvailableTasks() {
@@ -26,8 +26,9 @@ function AvailableTasks() {
   async function load() {
     setLoading(true);
     const { data, error } = await db.from("tasks")
-      .select("id,title,description,payment_amount,tier,deadline,max_workers,current_workers,status,attachments,category")
+      .select("id,title,description,payment_amount,tier,deadline,max_workers,current_workers,status,attachments,categories(name)")
       .eq("status", "active")
+      .eq("hidden", false)
       .order("created_at", { ascending: false });
     setLoading(false);
     if (error) return toast.error(error.message);
@@ -64,7 +65,7 @@ function AvailableTasks() {
               return (
                 <div key={t.id} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{t.category ?? "Task"}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{t.categories?.name ?? "Task"}</span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       t.tier === "gold" ? "bg-primary/15 text-primary" :
                       t.tier === "silver" ? "bg-muted text-foreground" : "bg-secondary/15 text-secondary"

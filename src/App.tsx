@@ -48,6 +48,7 @@ const AdminUsers = lazy(() => import("@/pages/Users"));
 const AdminTasks = lazy(() => import("@/pages/Tasks"));
 const AdminNewTask = lazy(() => import("@/pages/AdminNewTask"));
 const AdminTaskReview = lazy(() => import("@/pages/AdminTaskReview"));
+const AdminSubmissions = lazy(() => import("@/pages/AdminSubmissions"));
 const AdminCampaigns = lazy(() => import("@/pages/AdminCampaigns"));
 const AdminWithdrawals = lazy(() => import("@/pages/Withdrawals"));
 const AdminCountries = lazy(() => import("@/pages/Countries"));
@@ -127,6 +128,7 @@ export default function App() {
           <Route path="tasks" element={<AdminTasks />} />
           <Route path="tasks/new" element={<AdminNewTask />} />
           <Route path="tasks/:id" element={<AdminTaskReview />} />
+          <Route path="submissions" element={<AdminSubmissions />} />
           <Route path="campaigns" element={<AdminCampaigns />} />
           <Route path="withdrawals" element={<AdminWithdrawals />} />
           <Route path="countries" element={<AdminCountries />} />

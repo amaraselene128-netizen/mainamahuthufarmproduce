@@ -17,7 +17,7 @@ function TaskDetail() {
 
   async function load() {
     if (!id) return;
-    const { data: t } = await db.from("tasks").select("*").eq("id", id).maybeSingle();
+    const { data: t } = await db.from("tasks").select("*,categories(name)").eq("id", id).maybeSingle();
     setTask(t);
     if (user) {
       const { data: a } = await db.from("task_applications")
@@ -55,7 +55,7 @@ function TaskDetail() {
             task.tier === "silver" ? "bg-muted text-foreground" :
             "bg-secondary/15 text-secondary"
           }`}>{String(task.tier).toUpperCase()}</span>
-          <span className="text-muted-foreground">{task.category ?? ""}</span>
+          <span className="text-muted-foreground">{task.categories?.name ?? ""}</span>
         </div>
         <h1 className="mt-2 font-display text-3xl md:text-4xl font-semibold">{task.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
