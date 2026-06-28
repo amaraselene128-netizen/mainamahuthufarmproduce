@@ -28,6 +28,7 @@ type AdJob = {
   spent_cents: number;
   budget_cents: number;
   country_targeting?: string[] | null;
+  kind: "ad" | "campaign";
 };
 
 function AvailableTasks() {
@@ -62,15 +63,16 @@ function AvailableTasks() {
     const completed = new Set<string>();
     ((viewsRes as any).data ?? []).forEach((v: any) => completed.add(v.ad_id));
     ((campViewsRes as any).data ?? []).forEach((v: any) => completed.add(v.campaign_id));
-    const country = profile?.country_code ?? null;
+    const country = profile?.country_code?.toUpperCase() ?? null;
     const availableAds = (((adsRes.data as any[]) ?? []) as AdJob[])
       .filter((a) => a.spent_cents < a.budget_cents)
       .filter((a) => !completed.has(a.id))
-      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
+      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.map((c: string) => c.toUpperCase()).includes(country)))
+      .map((a) => ({ ...a, kind: "ad" as const }));
     const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
       .filter((c) => !!(c.video_file_url || c.video_url))
       .filter((c) => !completed.has(c.id))
-      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
+      .filter((c) => !c.target_countries?.length || (country && c.target_countries.map((x: string) => x.toUpperCase()).includes(country)))
       .map((c) => ({
         id: c.id,
         title: c.title,
@@ -78,6 +80,7 @@ function AvailableTasks() {
         duration_seconds: ([15,30,45,60] as number[]).includes(c.duration_seconds) ? c.duration_seconds : 30,
         spent_cents: 0,
         budget_cents: 1,
+        kind: "campaign" as const,
       }));
     setTasks((taskRes.data as any) ?? []);
     setAds([...availableAds, ...availableCampaigns]);
@@ -110,7 +113,7 @@ function AvailableTasks() {
             {ads.map((a) => (
               <div key={`ad-${a.id}`} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary">Video ad</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{a.kind === "campaign" ? "Approved campaign" : "Video ad"}</span>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">WATCH</span>
                 </div>
                 <div className="mt-4 aspect-video rounded-xl bg-muted grid place-items-center">
@@ -119,10 +122,10 @@ function AvailableTasks() {
                 <Link to="/dashboard/earn" className="mt-3 font-medium leading-snug hover:text-primary">
                   {a.title}
                 </Link>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{a.description ?? "Watch the full video to earn tier-unlock credits."}</p>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{a.description ?? "Watch the full video to earn."}</p>
                 <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1"><Clock className="size-3.5" /> {a.duration_seconds}s</span>
-                  <span className="flex items-center gap-1"><Coins className="size-3.5" /> {formatCents(REWARD_CENTS[a.duration_seconds])} tier credit</span>
+                  <span className="flex items-center gap-1"><Coins className="size-3.5" /> Earn {formatCents(REWARD_CENTS[a.duration_seconds])}</span>
                 </div>
                 <div className="mt-auto pt-5 flex items-center justify-between">
                   <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(REWARD_CENTS[a.duration_seconds])}</span>
