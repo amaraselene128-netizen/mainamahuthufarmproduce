@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { ExternalLink, Check, X } from "lucide-react";
+import { TierBadgeImg, type TierName } from "@/components/site/TierBadgeImg";
+
 
 function ReviewTask() {
   const { id } = useParams<{ id: string }>();
@@ -30,18 +32,32 @@ function ReviewTask() {
       ...applications.map((row) => row.worker_id),
     ].filter(Boolean))];
     let profileMap = new Map<string, any>();
+    let tierMap = new Map<string, TierName>();
     if (workerIds.length > 0) {
-      const { data: profiles } = await db
-        .from("profiles")
-        .select("id,username,country_code,email")
-        .in("id", workerIds);
+      const [{ data: profiles }, { data: subsRows }] = await Promise.all([
+        db.from("profiles").select("id,username,country_code,email").in("id", workerIds),
+        db
+          .from("referral_subscriptions")
+          .select("user_id,status,current_period_end,plans:plans(tier)")
+          .in("user_id", workerIds)
+          .eq("status", "active"),
+      ]);
       profileMap = new Map(((profiles as any[]) ?? []).map((p) => [p.id, p]));
+      const rank: Record<string, number> = { bronze: 1, silver: 2, gold: 3 };
+      for (const row of (subsRows as any[]) ?? []) {
+        const tier = (row.plans?.tier as TierName | undefined) ?? null;
+        if (!tier) continue;
+        if (row.current_period_end && new Date(row.current_period_end) < new Date()) continue;
+        const prev = tierMap.get(row.user_id);
+        if (!prev || (rank[tier] ?? 0) > (rank[prev] ?? 0)) tierMap.set(row.user_id, tier);
+      }
     }
 
     setTask(t);
-    setSubs(submissions.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null })));
-    setApps(applications.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null })));
+    setSubs(submissions.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null, tier: tierMap.get(row.worker_id) ?? null })));
+    setApps(applications.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null, tier: tierMap.get(row.worker_id) ?? null })));
   }
+
   useEffect(() => { load(); }, [id]);
 
   async function setAppStatus(appId: string, status: "approved" | "rejected") {
@@ -81,10 +97,19 @@ function ReviewTask() {
           <ul className="divide-y divide-border">
             {apps.map((a) => (
               <li key={a.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{a.profiles?.username ?? a.worker_id.slice(0, 8)}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(a.applied_at).toLocaleString()} · {a.profiles?.country_code ?? "—"}</div>
+                <div className="min-w-0 flex items-center gap-2.5">
+                  <TierBadgeImg tier={a.tier} size={32} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {a.profiles?.username ?? a.worker_id.slice(0, 8)}
+                      {a.tier && (
+                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">{a.tier}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{new Date(a.applied_at).toLocaleString()} · {a.profiles?.country_code ?? "—"}</div>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full ${
                     a.status === "approved" ? "bg-secondary/15 text-secondary" :
@@ -125,10 +150,19 @@ function SubRow({ s, onReview }: { s: any; onReview: (id: string, st: string, c?
   return (
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="font-medium">{s.profiles?.username ?? s.worker_id.slice(0, 6)}</div>
-          <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()} · {s.profiles?.country_code ?? "—"}</div>
+        <div className="flex items-center gap-2.5">
+          <TierBadgeImg tier={s.tier} size={32} />
+          <div>
+            <div className="font-medium flex items-center gap-1.5">
+              {s.profiles?.username ?? s.worker_id.slice(0, 6)}
+              {s.tier && (
+                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">{s.tier}</span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()} · {s.profiles?.country_code ?? "—"}</div>
+          </div>
         </div>
+
         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
           s.status === "approved" ? "bg-secondary/15 text-secondary" :
           s.status === "rejected" ? "bg-destructive/15 text-destructive" :
