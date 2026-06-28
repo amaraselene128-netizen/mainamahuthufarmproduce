@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Crown, Coins, ArrowLeft, Lock } from "lucide-react";
+import { Crown, Coins, ArrowLeft } from "lucide-react";
 import { formatCents, TIER_PRICE_CENTS, type Tier } from "@/lib/ads";
 
 function TierUnlock() {
@@ -11,6 +11,8 @@ function TierUnlock() {
   const [balance, setBalance] = useState(0);
   const [activeTier, setActiveTier] = useState<Tier | null>(null);
   const [busy, setBusy] = useState<Tier | null>(null);
+  const [payBusy, setPayBusy] = useState<Tier | null>(null);
+  const [params, setParams] = useSearchParams();
 
   async function load() {
     if (!user) return;
@@ -23,6 +25,26 @@ function TierUnlock() {
   }
   useEffect(() => { load(); }, [user?.id]);
 
+  // Handle the PayPal redirect: capture order + activate tier.
+  useEffect(() => {
+    const orderId = params.get("paypal_order");
+    if (!orderId || !user) return;
+    (async () => {
+      const { data, error } = await db.functions.invoke("paypal-capture-order", {
+        body: { orderId },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error ?? error?.message ?? "Payment capture failed");
+      } else {
+        toast.success(`${String((data as any).tier).toUpperCase()} tier activated`);
+        load();
+      }
+      params.delete("paypal_order");
+      setParams(params, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   async function unlock(tier: Tier) {
     setBusy(tier);
     const { error } = await db.rpc("unlock_tier_from_credits" as any, { p_tier: tier });
@@ -31,6 +53,44 @@ function TierUnlock() {
     toast.success(`${tier.toUpperCase()} tier unlocked`);
     load();
   }
+
+  async function payWithPaypal(tier: Tier) {
+    if (!user) return;
+    setPayBusy(tier);
+    const ret = `${window.location.origin}${window.location.pathname}?paypal_order={ORDER_ID_PLACEHOLDER}`;
+    const { data, error } = await db.functions.invoke("paypal-create-order", {
+      body: {
+        tier,
+        returnUrl: `${window.location.origin}${window.location.pathname}?paypal_order=`,
+        cancelUrl: `${window.location.origin}${window.location.pathname}?paypal_cancel=1`,
+      },
+    });
+    setPayBusy(null);
+    const payload = data as any;
+    if (error || payload?.error || !payload?.approveUrl) {
+      return toast.error(payload?.error ?? error?.message ?? "Could not start PayPal checkout");
+    }
+    // PayPal will append &token=ORDER_ID; we use ?paypal_order=<id> by appending the id ourselves
+    // after redirect by replacing the return URL with the order id.
+    const url = new URL(payload.approveUrl);
+    // we stored the orderId so build a return with it baked in
+    sessionStorage.setItem("paypal_pending_order", payload.id);
+    void ret;
+    window.location.href = url.toString();
+  }
+
+  // PayPal returns with ?token=<orderId>; remap that to our paypal_order param.
+  useEffect(() => {
+    const token = params.get("token");
+    const pending = sessionStorage.getItem("paypal_pending_order");
+    if (token && pending && token === pending) {
+      sessionStorage.removeItem("paypal_pending_order");
+      params.delete("token"); params.delete("PayerID");
+      params.set("paypal_order", token);
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -76,11 +136,11 @@ function TierUnlock() {
                   {busy === t ? "Unlocking…" : ok ? `Unlock with credits` : balance < price ? `Need ${formatCents(price - balance)} more` : "Already subscribed"}
                 </button>
                 <button
-                  disabled
-                  title="PayPal checkout coming soon"
-                  className="w-full rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                  disabled={!!activeTier || payBusy === t}
+                  onClick={() => payWithPaypal(t)}
+                  className="w-full rounded-xl bg-[#0070ba] px-4 py-2.5 text-sm font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <Lock className="size-4" /> Pay with PayPal · Coming soon
+                  {payBusy === t ? "Opening PayPal…" : `Pay ${formatCents(price)} with PayPal`}
                 </button>
               </div>
             </div>
