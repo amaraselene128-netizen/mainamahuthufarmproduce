@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Award, Trophy, Crown, CheckCircle2, ArrowRight, ShieldAlert } from "lucide-react";
+import { Award, Trophy, Crown, CheckCircle2, ArrowRight } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 
@@ -40,13 +40,6 @@ const packages = [
       "Access to the Tier 1 (Premium) Millionaires Group Chat",
     ],
   },
-];
-
-const terms = [
-  "The principal amount paid for any purchased package is non-refundable.",
-  "A subscription may only be cancelled if the user deposits an amount equal to the original principal amount to cover operational and cancellation fees.",
-  "EGMTASKS reserves the right to modify package benefits, withdrawal requirements, and platform policies when necessary.",
-  "Any misuse of the platform, fraudulent activities, or violation of the platform's terms may result in account suspension or termination.",
 ];
 
 export default function Packages() {
@@ -100,24 +93,13 @@ export default function Packages() {
             ))}
           </div>
 
-          <div className="mt-14 rounded-2xl border hairline bg-card p-7 shadow-card">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="size-5 text-primary" />
-              <h2 className="font-display text-xl font-semibold">Additional Terms & Conditions</h2>
-            </div>
-            <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-              {terms.map((t) => (
-                <li key={t} className="flex items-start gap-2">
-                  <span className="mt-1.5 size-1.5 rounded-full bg-primary shrink-0" />
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 text-xs text-muted-foreground">
-              By unlocking any package you agree to these terms and our{" "}
-              <Link to="/legal/terms" className="text-primary hover:underline">Terms of Service</Link>.
-            </p>
-          </div>
+          <p className="mt-10 text-center text-xs text-muted-foreground">
+            By unlocking any package you agree to our{" "}
+            <Link to="/legal/terms" className="text-primary hover:underline">
+              Terms &amp; Conditions
+            </Link>
+            .
+          </p>
         </section>
       </main>
       <Footer />
