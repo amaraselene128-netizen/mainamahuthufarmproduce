@@ -116,7 +116,7 @@ export default function MarketWithUs() {
   );
 }
 
-function GroupView({
+export function GroupView({
   group,
   onBack,
   onPick,
@@ -155,7 +155,7 @@ function GroupView({
   );
 }
 
-function SubmitForm({
+export function SubmitForm({
   userEmail,
   userId,
   initialCategory,
