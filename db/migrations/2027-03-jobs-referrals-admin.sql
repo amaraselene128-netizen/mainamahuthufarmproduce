@@ -1,16 +1,16 @@
 -- EGMTASKS jobs, referrals and admin review repair.
 -- Run this in the Supabase SQL editor if the live database has not yet been updated.
 
--- 1) Referral tiers: Bronze $2, Silver $500, Gold $1000.
+-- 1) Referral tiers: Bronze $5, Silver $100, Gold $1000.
 alter table public.referral_plans
   add column if not exists price_cents int;
 
 update public.referral_plans
-  set price = 2, price_cents = 200, commission_rate = 0.10,
+  set price = 5, price_cents = 500, commission_rate = 0.10,
       features = '["10% commission","Unique referral link","Basic analytics"]'::jsonb
   where tier = 'bronze';
 update public.referral_plans
-  set price = 500, price_cents = 50000, commission_rate = 0.10,
+  set price = 100, price_cents = 10000, commission_rate = 0.10,
       features = '["10% commission","Advanced analytics","Priority support"]'::jsonb
   where tier = 'silver';
 update public.referral_plans
