@@ -125,7 +125,7 @@ function Hero() {
 
       {/* floating cards — relative on mobile to avoid overlap, absolute on desktop */}
       <div className="mt-12 flex justify-center">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl w-full px-4 sm:px-6">
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-5xl w-full px-4 sm:px-6">
           {[
             { icon: ShieldCheck, label: "Verified workers" },
             { icon: Wallet, label: "Monthly payouts" },
@@ -163,7 +163,7 @@ function Stats() {
     <section className="pt-16 sm:pt-32 pb-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border hairline bg-card shadow-card overflow-hidden">
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border">
+          <div className="grid grid-cols-3 lg:grid-cols-4 divide-x divide-border">
             {stats.map((s, i) => (
               <motion.div
                 key={s.label}
@@ -202,7 +202,7 @@ function HowItWorks() {
           title="From sign-up to payout in four steps"
           sub="A clean, transparent workflow built for trust at every stage."
         />
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
             <motion.div
               key={s.n}
@@ -270,7 +270,7 @@ function Packages() {
           title="Unlock the tier that fits your hustle"
           sub="Higher tiers mean lower withdrawal minimums, better tasks, richer referral earnings and elite coaching."
         />
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
+        <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
           {pkgs.map((p, i) => (
             <motion.div
               key={p.tier}
@@ -387,7 +387,7 @@ function MarketWithUs() {
             <MarketCta />
           </motion.div>
 
-          <motion.div {...fadeUp} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <motion.div {...fadeUp} className="grid grid-cols-3 gap-3">
             {types.map((t, i) => (
               <motion.div
                 key={t.label}
@@ -423,7 +423,7 @@ function Categories() {
     <section id="categories" className="py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Available categories" title="Work across every channel that matters." sub="A global catalogue of tasks spanning the world's biggest platforms." />
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6">
           {cats.map((c, i) => (
             <motion.div
               key={c.label}
