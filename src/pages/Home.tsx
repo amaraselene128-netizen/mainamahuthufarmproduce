@@ -202,7 +202,7 @@ function HowItWorks() {
           title="From sign-up to payout in four steps"
           sub="A clean, transparent workflow built for trust at every stage."
         />
-        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6 md:grid-cols-4">
           {steps.map((s, i) => (
             <motion.div
               key={s.n}
