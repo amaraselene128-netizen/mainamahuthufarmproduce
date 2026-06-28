@@ -17,10 +17,13 @@ function TierUnlock() {
     if (!user) return;
     const [cRes, sRes] = await Promise.all([
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("referral_subscriptions").select("plan_id, referral_plans(tier)").eq("user_id", user.id).maybeSingle(),
+      db.from("referral_subscriptions").select("plan_id, active, expires_at, referral_plans(tier)").eq("user_id", user.id).eq("active", true).limit(1).maybeSingle(),
     ]);
     setBalance(Number((cRes.data as any)?.balance_cents ?? 0));
-    setActiveTier(((sRes.data as any)?.referral_plans?.tier as Tier) ?? null);
+    const sub = sRes.data as any;
+    const planTier = Array.isArray(sub?.referral_plans) ? sub.referral_plans[0]?.tier : sub?.referral_plans?.tier;
+    const live = Boolean(sub?.active) && (!sub?.expires_at || new Date(sub.expires_at) > new Date());
+    setActiveTier(live ? (planTier as Tier) ?? null : null);
   }
   useEffect(() => { load(); }, [user?.id]);
 
