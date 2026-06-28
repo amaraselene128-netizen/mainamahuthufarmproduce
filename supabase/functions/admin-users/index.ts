@@ -31,12 +31,19 @@ Deno.serve(async (req) => {
 
     const { data: plan, error: planError } = await ctx.admin
       .from("referral_plans")
-      .select("id,tier")
+      .select("id,tier,active")
       .eq("tier", tier)
-      .eq("active", true)
       .maybeSingle();
     if (planError) return json({ error: planError.message }, 500);
     if (!plan?.id) return json({ error: `Plan not found for ${tier}` }, 404);
+
+    if (plan.active === false) {
+      const { error: activateError } = await ctx.admin
+        .from("referral_plans")
+        .update({ active: true })
+        .eq("id", plan.id);
+      if (activateError) return json({ error: activateError.message }, 500);
+    }
 
     const { error: subError } = await ctx.admin
       .from("referral_subscriptions")
