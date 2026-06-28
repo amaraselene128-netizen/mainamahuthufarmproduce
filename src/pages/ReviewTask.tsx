@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { ExternalLink, Check, X } from "lucide-react";
+import { TierBadgeImg, type TierName } from "@/components/site/TierBadgeImg";
+
 
 function ReviewTask() {
   const { id } = useParams<{ id: string }>();
@@ -30,18 +32,32 @@ function ReviewTask() {
       ...applications.map((row) => row.worker_id),
     ].filter(Boolean))];
     let profileMap = new Map<string, any>();
+    let tierMap = new Map<string, TierName>();
     if (workerIds.length > 0) {
-      const { data: profiles } = await db
-        .from("profiles")
-        .select("id,username,country_code,email")
-        .in("id", workerIds);
+      const [{ data: profiles }, { data: subsRows }] = await Promise.all([
+        db.from("profiles").select("id,username,country_code,email").in("id", workerIds),
+        db
+          .from("referral_subscriptions")
+          .select("user_id,status,current_period_end,plans:plans(tier)")
+          .in("user_id", workerIds)
+          .eq("status", "active"),
+      ]);
       profileMap = new Map(((profiles as any[]) ?? []).map((p) => [p.id, p]));
+      const rank: Record<string, number> = { bronze: 1, silver: 2, gold: 3 };
+      for (const row of (subsRows as any[]) ?? []) {
+        const tier = (row.plans?.tier as TierName | undefined) ?? null;
+        if (!tier) continue;
+        if (row.current_period_end && new Date(row.current_period_end) < new Date()) continue;
+        const prev = tierMap.get(row.user_id);
+        if (!prev || (rank[tier] ?? 0) > (rank[prev] ?? 0)) tierMap.set(row.user_id, tier);
+      }
     }
 
     setTask(t);
-    setSubs(submissions.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null })));
-    setApps(applications.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null })));
+    setSubs(submissions.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null, tier: tierMap.get(row.worker_id) ?? null })));
+    setApps(applications.map((row) => ({ ...row, profiles: profileMap.get(row.worker_id) ?? null, tier: tierMap.get(row.worker_id) ?? null })));
   }
+
   useEffect(() => { load(); }, [id]);
 
   async function setAppStatus(appId: string, status: "approved" | "rejected") {
