@@ -34,7 +34,7 @@ function TaskDetail() {
     const { error } = await db.rpc("apply_to_task", { _task_id: id });
     setApplying(false);
     if (error) return toast.error(error.message);
-    toast.success("You're in — submit your work from My applications.");
+    toast.success("Application submitted — waiting for admin approval.");
     nav("/dashboard/worker/applied");
   }
 

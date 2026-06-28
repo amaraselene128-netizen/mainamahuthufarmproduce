@@ -89,7 +89,7 @@ function AvailableTasks() {
     const { error } = await db.rpc("apply_to_task", { _task_id: id });
     setApplying(null);
     if (error) return toast.error(error.message);
-    toast.success("You're in — submit your work in My applications.");
+    toast.success("Application submitted — waiting for admin approval.");
     load();
   }
 

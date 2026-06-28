@@ -77,7 +77,7 @@ function EarnAds() {
           budget_cents: 1,
         };
       })
-      .filter((c) => !!c.video_url);
+      .filter((c) => !completedIds.has(c.id));
     setAds([...adList, ...campList]);
     const done = new Set<string>();
     ((viewsRes.data as any[]) ?? []).forEach((v) => done.add(v.ad_id));
