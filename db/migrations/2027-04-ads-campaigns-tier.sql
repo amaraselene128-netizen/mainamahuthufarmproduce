@@ -65,7 +65,15 @@ begin
         status = case when spent_cents + v_advertiser_cost >= budget_cents then 'depleted'::public.ad_status else status end
     where id = p_ad_id;
 
-  select exists(select 1 from public.referral_subscriptions where user_id = p_user_id) into v_has_tier;
+  select exists(
+    select 1 from public.referral_subscriptions
+    where user_id = p_user_id
+      and active = true
+      and (expires_at is null or expires_at > now())
+  ) or exists(
+    select 1 from public.profiles
+    where id = p_user_id and active_tier is not null
+  ) into v_has_tier;
 
   if v_has_tier then
     v_dollars := (v_reward::numeric)/100;
@@ -122,7 +130,15 @@ begin
   insert into public.campaign_views (campaign_id, user_id, watched_seconds, completed, reward_cents, ip, user_agent, fingerprint)
   values (p_campaign_id, p_user_id, p_watched, true, v_reward, p_ip, p_user_agent, p_fingerprint);
 
-  select exists(select 1 from public.referral_subscriptions where user_id = p_user_id) into v_has_tier;
+  select exists(
+    select 1 from public.referral_subscriptions
+    where user_id = p_user_id
+      and active = true
+      and (expires_at is null or expires_at > now())
+  ) or exists(
+    select 1 from public.profiles
+    where id = p_user_id and active_tier is not null
+  ) into v_has_tier;
 
   if v_has_tier then
     v_dollars := (v_reward::numeric)/100;

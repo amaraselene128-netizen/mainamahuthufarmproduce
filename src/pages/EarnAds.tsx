@@ -11,6 +11,7 @@ import {
   formatCents, REWARD_CENTS, TIER_PRICE_CENTS, tierProgress, type Tier, type AdDuration,
 } from "@/lib/ads";
 import { deviceFingerprint } from "@/lib/fingerprint";
+import { TierBadgeImg } from "@/components/site/TierBadgeImg";
 
 type Ad = {
   id: string;
@@ -35,6 +36,7 @@ function EarnAds() {
   const [showCta, setShowCta] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasTier, setHasTier] = useState(false);
+  const [activeTier, setActiveTier] = useState<Tier | null>(null);
 
   async function load() {
     if (!user) return;
@@ -51,17 +53,19 @@ function EarnAds() {
       db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true),
       db.from("campaign_views").select("campaign_id").eq("user_id", user.id).eq("completed", true),
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("referral_subscriptions").select("id").eq("user_id", user.id).maybeSingle(),
+      db.from("referral_subscriptions").select("id,active,expires_at,referral_plans(tier)").eq("user_id", user.id).eq("active", true).limit(1).maybeSingle(),
     ]);
-    const country = profile?.country_code ?? null;
+    if (adsRes.error) toast.error(adsRes.error.message);
+    if (campRes.error) toast.error(campRes.error.message);
+    const country = profile?.country_code?.toUpperCase() ?? null;
     const adList: Ad[] = ((adsRes.data as any[]) ?? [])
       .filter((a) => a.spent_cents < a.budget_cents)
-      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)))
+      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.map((c: string) => c.toUpperCase()).includes(country)))
       .map((a) => ({ ...a, kind: "ad" as const }));
     const campList: Ad[] = ((campRes.data as any[]) ?? [])
-      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
+      .filter((c) => !c.target_countries?.length || (country && c.target_countries.map((x: string) => x.toUpperCase()).includes(country)))
       .map((c) => {
-        const video = c.video_file_url || c.video_url || c.social_url || "";
+        const video = c.video_file_url || c.video_url || c.social_url || c.website_url || "";
         const dest = c.website_url || c.social_url || c.video_url || "#";
         const dur = (c.duration_seconds ?? 30) as AdDuration;
         return {
@@ -80,16 +84,21 @@ function EarnAds() {
       .filter((c) => !!c.video_url);
     setAds([...adList, ...campList]);
     const done = new Set<string>();
-    ((viewsRes.data as any[]) ?? []).forEach((v) => done.add(v.ad_id));
-    ((campViewsRes.data as any[]) ?? []).forEach((v) => done.add(v.campaign_id));
+    ((viewsRes.data as any[]) ?? []).forEach((v) => done.add(`ad:${v.ad_id}`));
+    ((campViewsRes.data as any[]) ?? []).forEach((v) => done.add(`campaign:${v.campaign_id}`));
     setCompletedIds(done);
     setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
-    setHasTier(!!(subRes.data as any)?.id);
+    const sub = subRes.data as any;
+    const planTier = Array.isArray(sub?.referral_plans) ? sub.referral_plans[0]?.tier : sub?.referral_plans?.tier;
+    const tierName = (profile?.active_tier ?? planTier) as Tier | undefined;
+    const tierLive = Boolean(profile?.active_tier) || (Boolean(sub?.id) && sub?.active !== false && (!sub?.expires_at || new Date(sub.expires_at) > new Date()));
+    setHasTier(tierLive);
+    setActiveTier(tierLive ? tierName ?? null : null);
     setLoading(false);
   }
   useEffect(() => { load(); }, [user?.id]);
 
-  const available = useMemo(() => ads.filter((a) => !completedIds.has(a.id)), [ads, completedIds]);
+  const available = useMemo(() => ads.filter((a) => !completedIds.has(`${a.kind}:${a.id}`)), [ads, completedIds]);
   const prog = tierProgress(balance, tier);
 
   async function creditView(ad: Ad) {
@@ -104,7 +113,7 @@ function EarnAds() {
       return;
     }
     setBalance((data as any).balance_cents ?? balance);
-    setCompletedIds((s) => new Set(s).add(ad.id));
+    setCompletedIds((s) => new Set(s).add(`${ad.kind}:${ad.id}`));
     const paidTo = (data as any).paid_to;
     toast.success(
       paidTo === "wallet"
@@ -132,7 +141,8 @@ function EarnAds() {
 
       {hasTier ? (
         <div className="rounded-2xl border hairline bg-secondary/10 text-secondary px-4 py-3 text-sm flex items-center gap-2">
-          <Coins className="size-4" /> Tier active — every completed view pays real money straight to your wallet.
+          <TierBadgeImg tier={activeTier} size={42} />
+          <Coins className="size-4" /> Tier active — every completed ad or campaign pays real money straight to your wallet.
         </div>
       ) : (
         <div className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-4">
@@ -140,7 +150,7 @@ function EarnAds() {
             <div className="inline-flex items-center gap-2">
               <Coins className="size-5 text-primary" />
               <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
-              <span className="text-xs text-muted-foreground">tier credits (non-withdrawable)</span>
+              <span className="text-xs text-muted-foreground">optional tier credits earned from ads</span>
             </div>
             <div className="flex rounded-xl border border-input overflow-hidden text-xs">
               {(["bronze","silver","gold"] as Tier[]).map((t) => (
@@ -162,11 +172,11 @@ function EarnAds() {
             <Progress value={prog.pct} />
             {prog.remaining === 0 ? (
               <Link to="/dashboard/earn/unlock" className="mt-2 inline-block text-xs font-semibold text-secondary">
-                You can unlock {tier} now →
+                Optional: unlock {tier} now →
               </Link>
             ) : (
               <div className="mt-2 text-xs text-muted-foreground">
-                {formatCents(prog.remaining)} remaining to unlock {tier}.
+                Optional tier upgrade progress: {formatCents(prog.remaining)} remaining to unlock {tier}.
               </div>
             )}
           </div>
@@ -189,6 +199,7 @@ function EarnAds() {
               <div className="font-semibold">{active.title}</div>
               <div className="text-xs text-muted-foreground">
                 {active.duration_seconds}s · earn {formatCents(REWARD_CENTS[active.duration_seconds])}
+                {hasTier ? " cash" : " optional tier credit"}
               </div>
             </div>
             <button
@@ -230,7 +241,7 @@ function EarnAds() {
                 <div className="text-xs text-muted-foreground line-clamp-2">{a.description}</div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">{a.duration_seconds}s · earn {formatCents(REWARD_CENTS[a.duration_seconds])}</span>
+                <span className="text-xs text-muted-foreground">{a.duration_seconds}s · earn {formatCents(REWARD_CENTS[a.duration_seconds])}{hasTier ? " cash" : " optional tier credit"}</span>
                 <button
                   onClick={() => { setActive(a); setShowCta(false); }}
                   className="text-xs rounded-lg bg-primary text-primary-foreground px-3 py-1.5 font-semibold"

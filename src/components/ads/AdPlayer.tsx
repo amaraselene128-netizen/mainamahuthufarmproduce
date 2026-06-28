@@ -181,9 +181,9 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, de
         </div>
       )}
 
-      {/* After start: video itself is clickable and acts like the CTA button.
-          Opening the destination doesn't pause the reward — we still need a full watch. */}
-      {started && destinationUrl && onCtaClick && !done && (
+      {/* After start: direct videos are clickable and act like the CTA button.
+          For embedded videos, do not cover the iframe or users cannot press play. */}
+      {started && destinationUrl && onCtaClick && !done && !embedded && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onCtaClick(); }}
@@ -193,6 +193,17 @@ export function AdPlayer({ videoUrl, durationSeconds, onCompleted, onAborted, de
           <span className="opacity-0 group-hover:opacity-100 transition rounded-full bg-black/70 text-white text-[10px] px-2 py-1 inline-flex items-center gap-1">
             <ExternalLink className="size-3" /> Tap video to open
           </span>
+        </button>
+      )}
+
+      {started && destinationUrl && onCtaClick && !done && embedded && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCtaClick(); }}
+          className="absolute bottom-3 right-3 rounded-full bg-black/75 text-white text-[11px] px-3 py-1.5 inline-flex items-center gap-1 hover:bg-black/90 transition"
+          aria-label="Open advertiser destination"
+        >
+          <ExternalLink className="size-3" /> Open link
         </button>
       )}
 

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
+import { TierBadgeImg } from "@/components/site/TierBadgeImg";
 
 const workerNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -22,7 +23,7 @@ const hiringNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "My tasks", to: "/dashboard/hiring", icon: ListChecks },
   { label: "Create task", to: "/dashboard/hiring/new", icon: Plus },
-  { label: "Advertise", to: "/dashboard/advertise/campaigns", icon: Megaphone },
+  { label: "Advertise", to: "/dashboard/advertise", icon: Megaphone },
   { label: "Analytics", to: "/dashboard/hiring/analytics", icon: BarChart3 },
   { label: "Reviews", to: "/dashboard/hiring/reviews", icon: Star },
 ];
@@ -67,6 +68,7 @@ export function DashLayout() {
             <span className="hidden sm:inline rounded-full bg-muted px-2 py-0.5 text-xs uppercase tracking-wider text-muted-foreground">
               {profile.account_mode === "worker" ? "Worker" : "Client"}
             </span>
+            <TierBadgeImg tier={profile.active_tier} size={34} />
             {isAdmin && (
               <Link to="/admin" className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-secondary/15 text-secondary border border-secondary/20 hover:bg-secondary/25">
                 <ShieldCheck className="inline size-3.5 -mt-0.5 mr-1" /> Admin

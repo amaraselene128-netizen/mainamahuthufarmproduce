@@ -398,12 +398,12 @@ create policy "Plans public" on public.referral_plans for select to anon, authen
 drop policy if exists "Admins manage plans" on public.referral_plans;
 create policy "Admins manage plans" on public.referral_plans for all to authenticated using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
 insert into public.referral_plans (tier, price, commission_rate, features) values
-('bronze', 2,    0.10, '["10% commission","Unique referral link","Basic analytics"]'),
-('silver', 500,  0.10, '["10% commission","Advanced analytics","Priority support"]'),
+('bronze', 5,    0.10, '["10% commission","Unique referral link","Basic analytics"]'),
+('silver', 100,  0.10, '["10% commission","Advanced analytics","Priority support"]'),
 ('gold',   1000, 0.10, '["10% commission","Premium dashboard","Dedicated manager","Custom branding"]')
 on conflict (tier) do nothing;
-update public.referral_plans set price_cents = 200 where tier = 'bronze';
-update public.referral_plans set price_cents = 50000 where tier = 'silver';
+update public.referral_plans set price = 5, price_cents = 500 where tier = 'bronze';
+update public.referral_plans set price = 100, price_cents = 10000 where tier = 'silver';
 update public.referral_plans set price_cents = 100000 where tier = 'gold';
 
 create table if not exists public.referral_subscriptions (

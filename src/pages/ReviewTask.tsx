@@ -35,19 +35,23 @@ function ReviewTask() {
     let tierMap = new Map<string, TierName>();
     if (workerIds.length > 0) {
       const [{ data: profiles }, { data: subsRows }] = await Promise.all([
-        db.from("profiles").select("id,username,country_code,email").in("id", workerIds),
+        db.from("profiles").select("id,username,country_code,email,active_tier").in("id", workerIds),
         db
           .from("referral_subscriptions")
-          .select("user_id,status,current_period_end,plans:plans(tier)")
+          .select("user_id,active,expires_at,referral_plans(tier)")
           .in("user_id", workerIds)
-          .eq("status", "active"),
+          .eq("active", true),
       ]);
       profileMap = new Map(((profiles as any[]) ?? []).map((p) => [p.id, p]));
       const rank: Record<string, number> = { bronze: 1, silver: 2, gold: 3 };
+      for (const p of (profiles as any[]) ?? []) {
+        const tier = p.active_tier as TierName | null;
+        if (tier) tierMap.set(p.id, tier);
+      }
       for (const row of (subsRows as any[]) ?? []) {
-        const tier = (row.plans?.tier as TierName | undefined) ?? null;
+        const tier = (row.referral_plans?.tier as TierName | undefined) ?? null;
         if (!tier) continue;
-        if (row.current_period_end && new Date(row.current_period_end) < new Date()) continue;
+        if (row.expires_at && new Date(row.expires_at) < new Date()) continue;
         const prev = tierMap.get(row.user_id);
         if (!prev || (rank[tier] ?? 0) > (rank[prev] ?? 0)) tierMap.set(row.user_id, tier);
       }
