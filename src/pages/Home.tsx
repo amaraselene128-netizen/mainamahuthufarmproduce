@@ -330,7 +330,7 @@ function WhyChooseUs() {
     <section className="py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Why choose us" title="A marketplace built like a luxury product" sub="Every detail engineered for speed, trust and global scale." />
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6 lg:grid-cols-3">
           {items.map((it, i) => (
             <motion.div
               key={it.title}
@@ -455,7 +455,7 @@ function Testimonials() {
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Loved globally" title="Stories from our community" sub="Real workers, real clients, real outcomes." />
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
+        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6">
           {quotes.map((q, i) => (
             <motion.figure
               key={q.name}
