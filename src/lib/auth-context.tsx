@@ -16,7 +16,6 @@ export type Profile = {
   two_factor_enabled: boolean;
   suspended: boolean;
   banned: boolean;
-  active_tier: "bronze" | "silver" | "gold" | null;
 };
 
 type AuthState = {

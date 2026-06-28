@@ -2,7 +2,8 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
-import { ExternalLink, Check, X } from "lucide-react";
+import { ExternalLink, Check, X, Download } from "lucide-react";
+import { forceDownload } from "@/lib/download";
 import { TierBadgeImg, type TierName } from "@/components/site/TierBadgeImg";
 
 
@@ -35,23 +36,19 @@ function ReviewTask() {
     let tierMap = new Map<string, TierName>();
     if (workerIds.length > 0) {
       const [{ data: profiles }, { data: subsRows }] = await Promise.all([
-        db.from("profiles").select("id,username,country_code,email,active_tier").in("id", workerIds),
+        db.from("profiles").select("id,username,country_code,email").in("id", workerIds),
         db
           .from("referral_subscriptions")
-          .select("user_id,active,expires_at,referral_plans(tier)")
+          .select("user_id,status,current_period_end,plans:plans(tier)")
           .in("user_id", workerIds)
-          .eq("active", true),
+          .eq("status", "active"),
       ]);
       profileMap = new Map(((profiles as any[]) ?? []).map((p) => [p.id, p]));
       const rank: Record<string, number> = { bronze: 1, silver: 2, gold: 3 };
-      for (const p of (profiles as any[]) ?? []) {
-        const tier = p.active_tier as TierName | null;
-        if (tier) tierMap.set(p.id, tier);
-      }
       for (const row of (subsRows as any[]) ?? []) {
-        const tier = (row.referral_plans?.tier as TierName | undefined) ?? null;
+        const tier = (row.plans?.tier as TierName | undefined) ?? null;
         if (!tier) continue;
-        if (row.expires_at && new Date(row.expires_at) < new Date()) continue;
+        if (row.current_period_end && new Date(row.current_period_end) < new Date()) continue;
         const prev = tierMap.get(row.user_id);
         if (!prev || (rank[tier] ?? 0) > (rank[prev] ?? 0)) tierMap.set(row.user_id, tier);
       }
@@ -89,6 +86,28 @@ function ReviewTask() {
         <h1 className="font-display text-3xl font-semibold">{task.title}</h1>
         <p className="text-muted-foreground mt-1">{task.description}</p>
       </div>
+
+      {Array.isArray(task.attachments) && task.attachments.length > 0 && (
+        <div className="rounded-2xl border hairline bg-card p-5 shadow-card">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Task files
+          </div>
+          <ul className="space-y-2">
+            {(task.attachments as any[]).map((f, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => forceDownload(f.url, f.name)}
+                  className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
+                >
+                  <Download className="size-4 text-primary" />
+                  {f.name ?? `Attachment ${i + 1}`}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="rounded-2xl border hairline bg-card shadow-card overflow-hidden">
         <div className="px-5 py-4 border-b hairline flex items-center justify-between">

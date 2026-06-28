@@ -15,10 +15,10 @@ alter table public.market_campaigns
 notify pgrst, 'reload schema';
 
 -- 2) Re-price referral plans and set commission to 10% across the board.
-update public.referral_plans set price = 5,    commission_rate = 0.10,
+update public.referral_plans set price = 2,    commission_rate = 0.10,
   features = '["10% commission","Unique referral link","Basic analytics"]'::jsonb
   where tier = 'bronze';
-update public.referral_plans set price = 100,  commission_rate = 0.10,
+update public.referral_plans set price = 500,  commission_rate = 0.10,
   features = '["10% commission","Advanced analytics","Priority support"]'::jsonb
   where tier = 'silver';
 update public.referral_plans set price = 1000, commission_rate = 0.10,

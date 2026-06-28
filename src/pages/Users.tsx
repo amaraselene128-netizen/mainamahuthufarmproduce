@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
-import { TierBadgeImg } from "@/components/site/TierBadgeImg";
 
 const TIERS = ["bronze", "silver", "gold"] as const;
 
@@ -27,10 +26,8 @@ function Users() {
 
   async function grantTier(id: string, tier: string) {
     if (!tier) return;
-    const { data, error } = await db.functions.invoke("admin-users", {
-      body: { action: "grant_tier", user_id: id, tier },
-    });
-    if (error || (data as any)?.error) return toast.error(error?.message ?? (data as any).error);
+    const { error } = await db.rpc("admin_grant_tier" as any, { p_user: id, p_tier: tier });
+    if (error) return toast.error(error.message);
     toast.success(`Granted ${tier.toUpperCase()} tier`);
     load();
   }
@@ -43,14 +40,13 @@ function Users() {
       </div>
       <div className="rounded-2xl border hairline bg-card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr><th className="text-left p-3">User</th><th className="text-left">Country</th><th className="text-left">Mode</th><th className="text-left">Tier</th><th>Status</th><th></th></tr></thead>
+          <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr><th className="text-left p-3">User</th><th className="text-left">Country</th><th className="text-left">Mode</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-3"><div className="font-medium">{r.username}</div><div className="text-xs text-muted-foreground">{r.email}</div></td>
                 <td>{r.country_code ?? "—"}</td>
                 <td className="uppercase text-xs">{r.account_mode}</td>
-                <td><div className="inline-flex items-center gap-1.5"><TierBadgeImg tier={r.active_tier} size={30} /><span className="text-xs uppercase text-muted-foreground">{r.active_tier ?? "—"}</span></div></td>
                 <td className="text-center"><span className={`text-xs px-2 py-0.5 rounded-full ${r.banned ? "bg-destructive/15 text-destructive" : r.suspended ? "bg-primary/15 text-primary" : "bg-secondary/15 text-secondary"}`}>{r.banned ? "Banned" : r.suspended ? "Suspended" : "Active"}</span></td>
                 <td className="text-right p-3 space-x-1 whitespace-nowrap">
                   <select

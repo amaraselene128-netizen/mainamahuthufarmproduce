@@ -1,31 +1,49 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Crown, Coins, ArrowLeft, Lock } from "lucide-react";
+import { Crown, Coins, ArrowLeft } from "lucide-react";
 import { formatCents, TIER_PRICE_CENTS, type Tier } from "@/lib/ads";
-import { TierBadgeImg } from "@/components/site/TierBadgeImg";
 
 function TierUnlock() {
   const { user } = useAuth();
   const [balance, setBalance] = useState(0);
   const [activeTier, setActiveTier] = useState<Tier | null>(null);
   const [busy, setBusy] = useState<Tier | null>(null);
+  const [payBusy, setPayBusy] = useState<Tier | null>(null);
+  const [params, setParams] = useSearchParams();
 
   async function load() {
     if (!user) return;
     const [cRes, sRes] = await Promise.all([
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("referral_subscriptions").select("plan_id, active, expires_at, referral_plans(tier)").eq("user_id", user.id).eq("active", true).limit(1).maybeSingle(),
+      db.from("referral_subscriptions").select("plan_id, referral_plans(tier)").eq("user_id", user.id).maybeSingle(),
     ]);
     setBalance(Number((cRes.data as any)?.balance_cents ?? 0));
-    const sub = sRes.data as any;
-    const planTier = Array.isArray(sub?.referral_plans) ? sub.referral_plans[0]?.tier : sub?.referral_plans?.tier;
-    const live = Boolean(sub?.active) && (!sub?.expires_at || new Date(sub.expires_at) > new Date());
-    setActiveTier(live ? (planTier as Tier) ?? null : null);
+    setActiveTier(((sRes.data as any)?.referral_plans?.tier as Tier) ?? null);
   }
   useEffect(() => { load(); }, [user?.id]);
+
+  // Handle the PayPal redirect: capture order + activate tier.
+  useEffect(() => {
+    const orderId = params.get("paypal_order");
+    if (!orderId || !user) return;
+    (async () => {
+      const { data, error } = await db.functions.invoke("paypal-capture-order", {
+        body: { orderId },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error ?? error?.message ?? "Payment capture failed");
+      } else {
+        toast.success(`${String((data as any).tier).toUpperCase()} tier activated`);
+        load();
+      }
+      params.delete("paypal_order");
+      setParams(params, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   async function unlock(tier: Tier) {
     setBusy(tier);
@@ -35,6 +53,44 @@ function TierUnlock() {
     toast.success(`${tier.toUpperCase()} tier unlocked`);
     load();
   }
+
+  async function payWithPaypal(tier: Tier) {
+    if (!user) return;
+    setPayBusy(tier);
+    const ret = `${window.location.origin}${window.location.pathname}?paypal_order={ORDER_ID_PLACEHOLDER}`;
+    const { data, error } = await db.functions.invoke("paypal-create-order", {
+      body: {
+        tier,
+        returnUrl: `${window.location.origin}${window.location.pathname}?paypal_order=`,
+        cancelUrl: `${window.location.origin}${window.location.pathname}?paypal_cancel=1`,
+      },
+    });
+    setPayBusy(null);
+    const payload = data as any;
+    if (error || payload?.error || !payload?.approveUrl) {
+      return toast.error(payload?.error ?? error?.message ?? "Could not start PayPal checkout");
+    }
+    // PayPal will append &token=ORDER_ID; we use ?paypal_order=<id> by appending the id ourselves
+    // after redirect by replacing the return URL with the order id.
+    const url = new URL(payload.approveUrl);
+    // we stored the orderId so build a return with it baked in
+    sessionStorage.setItem("paypal_pending_order", payload.id);
+    void ret;
+    window.location.href = url.toString();
+  }
+
+  // PayPal returns with ?token=<orderId>; remap that to our paypal_order param.
+  useEffect(() => {
+    const token = params.get("token");
+    const pending = sessionStorage.getItem("paypal_pending_order");
+    if (token && pending && token === pending) {
+      sessionStorage.removeItem("paypal_pending_order");
+      params.delete("token"); params.delete("PayerID");
+      params.set("paypal_order", token);
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -47,15 +103,10 @@ function TierUnlock() {
         </Link>
       </div>
 
-      <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex flex-wrap items-center gap-3">
+      <div className="rounded-2xl border hairline bg-card p-6 shadow-card flex items-center gap-3">
         <Coins className="size-5 text-primary" />
         <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(balance)}</span>
         <span className="text-xs text-muted-foreground">tier credits available</span>
-        <div className="ml-auto flex -space-x-3">
-          <TierBadgeImg tier="bronze" size={42} />
-          <TierBadgeImg tier="silver" size={42} />
-          <TierBadgeImg tier="gold" size={42} />
-        </div>
       </div>
 
       {activeTier && (
@@ -70,11 +121,10 @@ function TierUnlock() {
           const price = TIER_PRICE_CENTS[t];
           const ok = balance >= price && !activeTier;
           return (
-            <div key={t} className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-3 overflow-hidden relative">
-              <TierBadgeImg tier={t} size={92} className="absolute -right-4 -top-3 opacity-20" />
+            <div key={t} className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-3">
               <div className="flex items-center justify-between">
                 <div className="font-display text-2xl font-semibold capitalize">{t}</div>
-                <TierBadgeImg tier={t} size={54} />
+                <Crown className={`size-5 ${t === "gold" ? "text-primary" : t === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
               </div>
               <div className="font-display text-4xl text-gradient-gold">{formatCents(price)}</div>
               <div className="space-y-2">
@@ -86,11 +136,11 @@ function TierUnlock() {
                   {busy === t ? "Unlocking…" : ok ? `Unlock with credits` : balance < price ? `Need ${formatCents(price - balance)} more` : "Already subscribed"}
                 </button>
                 <button
-                  disabled
-                  title="PayPal checkout coming soon"
-                  className="w-full rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                  disabled={!!activeTier || payBusy === t}
+                  onClick={() => payWithPaypal(t)}
+                  className="w-full rounded-xl bg-[#0070ba] px-4 py-2.5 text-sm font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <Lock className="size-4" /> Pay with PayPal · Coming soon
+                  {payBusy === t ? "Opening PayPal…" : `Pay ${formatCents(price)} with PayPal`}
                 </button>
               </div>
             </div>

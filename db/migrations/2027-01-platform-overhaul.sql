@@ -8,14 +8,14 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1. Tier pricing: Bronze $5, Silver $100, Gold $1000
+-- 1. Tier pricing: Bronze $2, Silver $500, Gold $1000
 -- ---------------------------------------------------------------------
 -- referral_plans uses `price` (dollars) in the existing schema; mirror with cents column.
 alter table public.referral_plans
   add column if not exists price_cents int;
 
-update public.referral_plans set price = 5,    price_cents = 500    where tier = 'bronze';
-update public.referral_plans set price = 100,  price_cents = 10000  where tier = 'silver';
+update public.referral_plans set price = 2,    price_cents = 200    where tier = 'bronze';
+update public.referral_plans set price = 500,  price_cents = 50000  where tier = 'silver';
 update public.referral_plans set price = 1000, price_cents = 100000 where tier = 'gold';
 
 -- ---------------------------------------------------------------------
