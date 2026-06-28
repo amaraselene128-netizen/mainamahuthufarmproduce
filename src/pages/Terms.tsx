@@ -14,6 +14,13 @@ function Terms() {
       <p>No spam, fake engagement, multi-accounting, fraudulent submissions, or illegal content. Violations trigger account suspension or ban.</p>
       <h2>5. Liability</h2>
       <p>The service is provided "as is". EGMTASKS is not liable for indirect damages.</p>
+      <h2>6. Membership packages</h2>
+      <ul>
+        <li>The principal amount paid for any purchased package is non-refundable.</li>
+        <li>A subscription may only be cancelled if the user deposits an amount equal to the original principal amount to cover operational and cancellation fees.</li>
+        <li>EGMTASKS reserves the right to modify package benefits, withdrawal requirements, and platform policies when necessary.</li>
+        <li>Any misuse of the platform, fraudulent activities, or violation of the platform's terms may result in account suspension or termination.</li>
+      </ul>
     </StaticShell>
   );
 }
