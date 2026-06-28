@@ -2,7 +2,8 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
-import { ExternalLink, Check, X } from "lucide-react";
+import { ExternalLink, Check, X, Download } from "lucide-react";
+import { forceDownload } from "@/lib/download";
 import { TierBadgeImg, type TierName } from "@/components/site/TierBadgeImg";
 
 
@@ -85,6 +86,28 @@ function ReviewTask() {
         <h1 className="font-display text-3xl font-semibold">{task.title}</h1>
         <p className="text-muted-foreground mt-1">{task.description}</p>
       </div>
+
+      {Array.isArray(task.attachments) && task.attachments.length > 0 && (
+        <div className="rounded-2xl border hairline bg-card p-5 shadow-card">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Task files
+          </div>
+          <ul className="space-y-2">
+            {(task.attachments as any[]).map((f, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={() => forceDownload(f.url, f.name)}
+                  className="inline-flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent"
+                >
+                  <Download className="size-4 text-primary" />
+                  {f.name ?? `Attachment ${i + 1}`}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="rounded-2xl border hairline bg-card shadow-card overflow-hidden">
         <div className="px-5 py-4 border-b hairline flex items-center justify-between">
