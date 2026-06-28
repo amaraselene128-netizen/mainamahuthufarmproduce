@@ -23,7 +23,7 @@ const hiringNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "My tasks", to: "/dashboard/hiring", icon: ListChecks },
   { label: "Create task", to: "/dashboard/hiring/new", icon: Plus },
-  { label: "Advertise", to: "/dashboard/advertise/campaigns", icon: Megaphone },
+  { label: "Advertise", to: "/dashboard/advertise", icon: Megaphone },
   { label: "Analytics", to: "/dashboard/hiring/analytics", icon: BarChart3 },
   { label: "Reviews", to: "/dashboard/hiring/reviews", icon: Star },
 ];

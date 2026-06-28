@@ -35,7 +35,7 @@ function ReviewTask() {
     let tierMap = new Map<string, TierName>();
     if (workerIds.length > 0) {
       const [{ data: profiles }, { data: subsRows }] = await Promise.all([
-        db.from("profiles").select("id,username,country_code,email").in("id", workerIds),
+        db.from("profiles").select("id,username,country_code,email,active_tier").in("id", workerIds),
         db
           .from("referral_subscriptions")
           .select("user_id,active,expires_at,referral_plans(tier)")
@@ -44,6 +44,10 @@ function ReviewTask() {
       ]);
       profileMap = new Map(((profiles as any[]) ?? []).map((p) => [p.id, p]));
       const rank: Record<string, number> = { bronze: 1, silver: 2, gold: 3 };
+      for (const p of (profiles as any[]) ?? []) {
+        const tier = p.active_tier as TierName | null;
+        if (tier) tierMap.set(p.id, tier);
+      }
       for (const row of (subsRows as any[]) ?? []) {
         const tier = (row.referral_plans?.tier as TierName | undefined) ?? null;
         if (!tier) continue;
