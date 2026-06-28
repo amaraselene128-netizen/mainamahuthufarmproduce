@@ -29,6 +29,7 @@ type AdJob = {
   budget_cents: number;
   country_targeting?: string[] | null;
   kind: "ad" | "campaign";
+  url?: string | null;
 };
 
 function AvailableTasks() {
@@ -50,7 +51,7 @@ function AvailableTasks() {
         .eq("status", "active")
         .order("created_at", { ascending: false }),
       db.from("market_campaigns")
-        .select("id,title,description,duration_seconds,target_countries,created_at,video_url,video_file_url")
+        .select("id,title,description,duration_seconds,target_countries,created_at,video_url,video_file_url,website_url,social_url")
         .eq("status", "approved")
         .order("created_at", { ascending: false }),
       user ? db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true) : Promise.resolve({ data: [] } as any),
@@ -59,6 +60,7 @@ function AvailableTasks() {
     setLoading(false);
     if (taskRes.error) toast.error(taskRes.error.message);
     if (adsRes.error) toast.error(adsRes.error.message);
+    if (campRes.error) toast.error(campRes.error.message);
 
     const completed = new Set<string>();
     ((viewsRes as any).data ?? []).forEach((v: any) => completed.add(v.ad_id));
@@ -70,7 +72,6 @@ function AvailableTasks() {
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.map((c: string) => c.toUpperCase()).includes(country)))
       .map((a) => ({ ...a, kind: "ad" as const }));
     const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
-      .filter((c) => !!(c.video_file_url || c.video_url))
       .filter((c) => !completed.has(c.id))
       .filter((c) => !c.target_countries?.length || (country && c.target_countries.map((x: string) => x.toUpperCase()).includes(country)))
       .map((c) => ({
@@ -81,6 +82,7 @@ function AvailableTasks() {
         spent_cents: 0,
         budget_cents: 1,
         kind: "campaign" as const,
+        url: c.video_file_url || c.video_url || c.social_url || c.website_url || null,
       }));
     setTasks((taskRes.data as any) ?? []);
     setAds([...availableAds, ...availableCampaigns]);
@@ -126,6 +128,7 @@ function AvailableTasks() {
                 <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1"><Clock className="size-3.5" /> {a.duration_seconds}s</span>
                   <span className="flex items-center gap-1"><Coins className="size-3.5" /> Earn {formatCents(REWARD_CENTS[a.duration_seconds])}</span>
+                  {a.kind === "campaign" && !a.url && <span>Evidence task</span>}
                 </div>
                 <div className="mt-auto pt-5 flex items-center justify-between">
                   <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(REWARD_CENTS[a.duration_seconds])}</span>
