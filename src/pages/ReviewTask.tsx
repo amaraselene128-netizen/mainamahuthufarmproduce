@@ -97,10 +97,19 @@ function ReviewTask() {
           <ul className="divide-y divide-border">
             {apps.map((a) => (
               <li key={a.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{a.profiles?.username ?? a.worker_id.slice(0, 8)}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(a.applied_at).toLocaleString()} · {a.profiles?.country_code ?? "—"}</div>
+                <div className="min-w-0 flex items-center gap-2.5">
+                  <TierBadgeImg tier={a.tier} size={32} />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                      {a.profiles?.username ?? a.worker_id.slice(0, 8)}
+                      {a.tier && (
+                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">{a.tier}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{new Date(a.applied_at).toLocaleString()} · {a.profiles?.country_code ?? "—"}</div>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full ${
                     a.status === "approved" ? "bg-secondary/15 text-secondary" :
@@ -141,10 +150,19 @@ function SubRow({ s, onReview }: { s: any; onReview: (id: string, st: string, c?
   return (
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="font-medium">{s.profiles?.username ?? s.worker_id.slice(0, 6)}</div>
-          <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()} · {s.profiles?.country_code ?? "—"}</div>
+        <div className="flex items-center gap-2.5">
+          <TierBadgeImg tier={s.tier} size={32} />
+          <div>
+            <div className="font-medium flex items-center gap-1.5">
+              {s.profiles?.username ?? s.worker_id.slice(0, 6)}
+              {s.tier && (
+                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-primary/15 text-primary">{s.tier}</span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()} · {s.profiles?.country_code ?? "—"}</div>
+          </div>
         </div>
+
         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
           s.status === "approved" ? "bg-secondary/15 text-secondary" :
           s.status === "rejected" ? "bg-destructive/15 text-destructive" :
