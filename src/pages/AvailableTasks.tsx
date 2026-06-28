@@ -68,9 +68,8 @@ function AvailableTasks() {
       .filter((a) => !completed.has(a.id))
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
     const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
-      .filter((c) => !!(c.video_file_url || c.video_url))
       .filter((c) => !completed.has(c.id))
-      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
+      .filter((c) => !country || !c.target_countries?.length || c.target_countries.includes(country))
       .map((c) => ({
         id: c.id,
         title: c.title,
@@ -89,7 +88,7 @@ function AvailableTasks() {
     const { error } = await db.rpc("apply_to_task", { _task_id: id });
     setApplying(null);
     if (error) return toast.error(error.message);
-    toast.success("You're in — submit your work in My applications.");
+    toast.success("Application submitted — waiting for admin approval.");
     load();
   }
 

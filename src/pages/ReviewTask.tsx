@@ -140,7 +140,7 @@ function ReviewTask() {
                     a.status === "submitted" ? "bg-accent text-accent-foreground" :
                     "bg-muted text-muted-foreground"
                   }`}>{a.status}</span>
-                  {a.status === "pending" && (
+                  {(a.status === "pending" || a.status === "joined") && (
                     <>
                       <button onClick={() => setAppStatus(a.id, "approved")} className="text-xs inline-flex items-center gap-1 rounded-lg bg-secondary text-secondary-foreground px-2.5 py-1">
                         <Check className="size-3" /> Approve

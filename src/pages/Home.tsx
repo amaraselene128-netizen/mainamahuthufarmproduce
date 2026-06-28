@@ -388,18 +388,18 @@ function MarketWithUs() {
             <MarketCta />
           </motion.div>
 
-          <motion.div {...fadeUp} className="grid grid-cols-3 gap-3">
+          <motion.div {...fadeUp} className="grid grid-cols-4 sm:grid-cols-7 gap-2">
             {types.map((t, i) => (
               <motion.div
                 key={t.label}
                 initial={{ opacity: 0, scale: 0.92 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.4 }}
-                className="aspect-square glass rounded-2xl flex flex-col items-center justify-center gap-2 shadow-card hover:shadow-glow hover:-translate-y-1 transition-all"
+                transition={{ delay: i * 0.04, duration: 0.35 }}
+                className="aspect-square glass rounded-xl flex flex-col items-center justify-center gap-1 p-2 shadow-card hover:shadow-glow hover:-translate-y-0.5 transition-all"
               >
-                <t.icon className="size-7 text-primary" />
-                <span className="text-sm font-medium">{t.label}</span>
+                <t.icon className="size-5 text-primary" />
+                <span className="text-[10px] font-medium text-center leading-tight">{t.label}</span>
               </motion.div>
             ))}
           </motion.div>
@@ -424,19 +424,19 @@ function Categories() {
     <section id="categories" className="py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Available categories" title="Work across every channel that matters." sub="A global catalogue of tasks spanning the world's biggest platforms." />
-        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6">
+        <div className="mt-10 grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
           {cats.map((c, i) => (
             <motion.div
               key={c.label}
               {...fadeUp}
-              transition={{ ...fadeUp.transition, delay: i * 0.05 }}
-              className="rounded-2xl bg-card p-7 border hairline shadow-card hover:shadow-luxe hover:-translate-y-1 transition-all"
+              transition={{ ...fadeUp.transition, delay: i * 0.04 }}
+              className="rounded-xl bg-card p-3 border hairline shadow-card hover:shadow-luxe hover:-translate-y-0.5 transition-all flex flex-col items-center text-center gap-1.5"
+              title={c.desc}
             >
-              <div className="size-12 rounded-xl bg-gradient-gold shadow-glow grid place-items-center">
-                <c.icon className="size-6 text-primary-foreground" />
+              <div className="size-9 rounded-lg bg-gradient-gold shadow-glow grid place-items-center">
+                <c.icon className="size-4 text-primary-foreground" />
               </div>
-              <h3 className="mt-5 font-display text-xl font-semibold">{c.label}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{c.desc}</p>
+              <h3 className="font-display text-xs font-semibold leading-tight">{c.label}</h3>
             </motion.div>
           ))}
         </div>

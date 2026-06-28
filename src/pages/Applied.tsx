@@ -53,7 +53,7 @@ function Applied() {
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${badge(r.status)}`}>{r.status.toUpperCase()}</span>
                   <span className="font-display text-lg text-gradient-gold">${Number(r.tasks.payment_amount).toFixed(2)}</span>
-                  {r.status === "pending" ? (
+                  {(r.status === "pending" || r.status === "joined") ? (
                     <span
                       title="Waiting for admin approval of your application"
                       className="inline-flex items-center gap-1 text-xs rounded-lg border border-input bg-muted px-3 py-1.5 text-muted-foreground cursor-not-allowed"
