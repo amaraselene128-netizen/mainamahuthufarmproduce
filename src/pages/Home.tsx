@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, ShieldCheck, Wallet, Globe2, Zap,
   Youtube, Music2, Instagram, Facebook, Globe, Smartphone, Briefcase,
-  CheckCircle2, Star, ChevronDown, LayoutDashboard, Award, Crown, Trophy,
+  CheckCircle2, Star, LayoutDashboard, Award, Crown, Trophy, HelpCircle,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useState } from "react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { Header } from "@/components/site/Header";
@@ -495,37 +496,44 @@ function FAQ() {
     { q: "What stops fake submissions?", a: "Our AI fraud engine combines duplicate-detection, screenshot similarity, device fingerprinting, and risk scoring (Low → Critical) with admin review." },
     { q: "Can I switch between Worker and Client?", a: "Yes — switch account modes anytime from your dashboard settings." },
   ];
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
   return (
     <section id="faq" className="py-24 bg-muted/30">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="FAQ" title="Questions, answered" sub="Everything you need to know before you join." />
-        <div className="mt-12 space-y-3">
+        <div className="mt-12 grid grid-cols-3 gap-3 sm:gap-6">
           {faqs.map((f, i) => (
-            <motion.div
+            <motion.button
               key={f.q}
               {...fadeUp}
               transition={{ ...fadeUp.transition, delay: i * 0.04 }}
-              className="rounded-2xl border hairline bg-card shadow-card overflow-hidden"
+              onClick={() => setOpen(i)}
+              className="text-left rounded-2xl border hairline bg-card shadow-card p-4 sm:p-6 hover:shadow-luxe hover:-translate-y-1 transition-all"
             >
-              <button
-                onClick={() => setOpen(open === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left"
-              >
-                <span className="font-medium">{f.q}</span>
-                <ChevronDown className={`size-4 transition-transform ${open === i ? "rotate-180" : ""}`} />
-              </button>
-              <motion.div
-                initial={false}
-                animate={{ height: open === i ? "auto" : 0, opacity: open === i ? 1 : 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden"
-              >
-                <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{f.a}</p>
-              </motion.div>
-            </motion.div>
+              <div className="size-10 rounded-xl bg-gradient-gold shadow-glow grid place-items-center">
+                <HelpCircle className="size-5 text-primary-foreground" />
+              </div>
+              <h3 className="mt-4 font-display text-sm sm:text-base font-semibold leading-snug">{f.q}</h3>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                Read answer <ArrowRight className="size-3" />
+              </span>
+            </motion.button>
           ))}
         </div>
+        <Dialog open={open !== null} onOpenChange={(v) => !v && setOpen(null)}>
+          <DialogContent>
+            {open !== null && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display text-xl">{faqs[open].q}</DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+                  {faqs[open].a}
+                </DialogDescription>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );
