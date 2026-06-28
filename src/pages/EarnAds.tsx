@@ -53,8 +53,10 @@ function EarnAds() {
       db.from("ad_views").select("ad_id").eq("user_id", user.id).eq("completed", true),
       db.from("campaign_views").select("campaign_id").eq("user_id", user.id).eq("completed", true),
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("referral_subscriptions").select("id,active,expires_at,referral_plans(tier)").eq("user_id", user.id).maybeSingle(),
+      db.from("referral_subscriptions").select("id,active,expires_at,referral_plans(tier)").eq("user_id", user.id).eq("active", true).limit(1).maybeSingle(),
     ]);
+    if (adsRes.error) toast.error(adsRes.error.message);
+    if (campRes.error) toast.error(campRes.error.message);
     const country = profile?.country_code?.toUpperCase() ?? null;
     const adList: Ad[] = ((adsRes.data as any[]) ?? [])
       .filter((a) => a.spent_cents < a.budget_cents)
@@ -87,7 +89,8 @@ function EarnAds() {
     setCompletedIds(done);
     setBalance(Number((creditRes.data as any)?.balance_cents ?? 0));
     const sub = subRes.data as any;
-    const tierName = (sub?.referral_plans?.tier ?? profile?.active_tier) as Tier | undefined;
+    const planTier = Array.isArray(sub?.referral_plans) ? sub.referral_plans[0]?.tier : sub?.referral_plans?.tier;
+    const tierName = (profile?.active_tier ?? planTier) as Tier | undefined;
     const tierLive = Boolean(profile?.active_tier) || (Boolean(sub?.id) && sub?.active !== false && (!sub?.expires_at || new Date(sub.expires_at) > new Date()));
     setHasTier(tierLive);
     setActiveTier(tierLive ? tierName ?? null : null);
