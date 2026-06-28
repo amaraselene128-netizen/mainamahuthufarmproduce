@@ -34,8 +34,9 @@ export function Footer() {
   return (
     <footer className="border-t hairline bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
-          {/* Brand Column */}
+        {/* Top row: Brand + 3 columns horizontal */}
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+          {/* Brand Column - left side */}
           <div className="space-y-4">
             <Brand />
             <p className="text-sm text-muted-foreground max-w-xs">
@@ -61,14 +62,12 @@ export function Footer() {
             )}
           </div>
 
-          {/* Platform Column */}
-          <FooterCol title="Platform" links={platformLinks} />
-
-          {/* Company Column */}
-          <FooterCol title="Company" links={companyLinks} />
-
-          {/* Legal Column */}
-          <FooterCol title="Legal" links={legalLinks} />
+          {/* Three columns horizontal - Platform, Company, Legal */}
+          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <FooterCol title="Platform" links={platformLinks} />
+            <FooterCol title="Company" links={companyLinks} />
+            <FooterCol title="Legal" links={legalLinks} />
+          </div>
         </div>
 
         <div className="mt-12 pt-8 border-t hairline flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between text-xs text-muted-foreground">
@@ -82,16 +81,16 @@ export function Footer() {
 
 function FooterCol({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
-    <div className="space-y-4">
-      <h4 className="font-display text-sm font-semibold tracking-wide uppercase text-foreground/80 border-b border-border/50 pb-2">
+    <div className="space-y-3">
+      <h4 className="font-display text-sm font-semibold tracking-wide uppercase text-foreground/80">
         {title}
       </h4>
-      <ul className="space-y-3">
+      <ul className="space-y-2">
         {links.map((l) => (
           <li key={l.href + l.label}>
             <Link 
               to={l.href} 
-              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 block"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
             >
               {l.label}
             </Link>
