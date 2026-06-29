@@ -19,6 +19,7 @@ export function Footer() {
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Careers", href: "/about#careers" },
+    { label: "Appeal a suspension", href: "/appeal" },
     user
       ? { label: "Help center", href: "/dashboard/support" }
       : { label: "FAQ", href: "/#faq" },
