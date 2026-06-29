@@ -153,6 +153,10 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
       {application.tasks.instructions && (
         <div className="text-xs text-muted-foreground"><strong>Instructions:</strong> {application.tasks.instructions}</div>
       )}
+      <div className="text-xs rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 flex items-start gap-2 text-amber-700 dark:text-amber-300">
+        <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+        <span>Only <b>one</b> submission per task is allowed. Attempting more than once will be blocked and may flag your account for review.</span>
+      </div>
       <label className="block text-sm font-medium">URLs (one per line)</label>
       <textarea value={urls} onChange={(e) => setUrls(e.target.value)} rows={3} className="w-full rounded-lg border border-input bg-card p-3 text-sm" placeholder="https://..." />
       <label className="block text-sm font-medium">Comments</label>
