@@ -127,6 +127,7 @@ export function DashLayout() {
           <Outlet />
         </main>
       </div>
+      <TierReminderPopup />
     </div>
   );
 }
