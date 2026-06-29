@@ -55,7 +55,10 @@ const AdminCountries = lazy(() => import("@/pages/Countries"));
 const AdminReferrals = lazy(() => import("@/pages/Refs"));
 const AdminFraud = lazy(() => import("@/pages/Fraud"));
 const AdminSupport = lazy(() => import("@/pages/AdminSupport"));
+const AdminAppeals = lazy(() => import("@/pages/AdminAppeals"));
+const AdminMessages = lazy(() => import("@/pages/AdminMessages"));
 const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
+const Appeal = lazy(() => import("@/pages/Appeal"));
 
 function PageFallback() {
   return (
