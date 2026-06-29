@@ -61,7 +61,7 @@ function EarnAds() {
     const campList: Ad[] = ((campRes.data as any[]) ?? [])
       .filter((c) => !country || !c.target_countries?.length || c.target_countries.includes(country))
       .map((c) => {
-        const video = c.video_file_url || c.video_url || "";
+        const video = c.video_file_url || c.video_url || c.social_url || c.website_url || "";
         const dest = c.website_url || c.social_url || c.video_url || "#";
         const dur = (c.duration_seconds ?? 30) as AdDuration;
         return {
