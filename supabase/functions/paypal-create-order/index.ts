@@ -40,10 +40,13 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supa.auth.getUser();
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
 
-    const { tier, returnUrl, cancelUrl } = await req.json();
+    const { tier, returnUrl, cancelUrl, renewal } = await req.json();
     const t = String(tier ?? "").toLowerCase();
-    const amount = PRICES[t];
-    if (!amount) return new Response(JSON.stringify({ error: "Invalid tier" }), { status: 400, headers: corsHeaders });
+    const base = PRICES[t];
+    if (!base) return new Response(JSON.stringify({ error: "Invalid tier" }), { status: 400, headers: corsHeaders });
+    const amount = renewal ? base * 0.5 : base;
+    const kind = renewal ? "renew" : "new";
+    const label = renewal ? "Monthly renewal" : "Subscription";
 
     const token = await paypalToken();
     const orderRes = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
@@ -53,8 +56,8 @@ Deno.serve(async (req) => {
         intent: "CAPTURE",
         purchase_units: [{
           amount: { currency_code: "USD", value: amount.toFixed(2) },
-          custom_id: `${user.id}:${t}`,
-          description: `EGMTASKS ${t.toUpperCase()} tier subscription`,
+          custom_id: `${user.id}:${t}:${kind}`,
+          description: `EGMTASKS ${t.toUpperCase()} tier ${label}`,
         }],
         application_context: {
           brand_name: "EGMTASKS",
