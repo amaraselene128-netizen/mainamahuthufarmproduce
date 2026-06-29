@@ -62,14 +62,14 @@ function AvailableTasks() {
     const completed = new Set<string>();
     ((viewsRes as any).data ?? []).forEach((v: any) => completed.add(v.ad_id));
     ((campViewsRes as any).data ?? []).forEach((v: any) => completed.add(v.campaign_id));
-    const country = profile?.country_code ?? null;
+
+    // Removed country filter - all approved campaigns and active ads are visible to everyone
     const availableAds = (((adsRes.data as any[]) ?? []) as AdJob[])
       .filter((a) => a.spent_cents < a.budget_cents)
-      .filter((a) => !completed.has(a.id))
-      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
+      .filter((a) => !completed.has(a.id));
+
     const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
       .filter((c) => !completed.has(c.id))
-      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
       .map((c) => ({
         id: c.id,
         title: c.title,
@@ -78,10 +78,14 @@ function AvailableTasks() {
         spent_cents: 0,
         budget_cents: 1,
       }));
+
     setTasks((taskRes.data as any) ?? []);
     setAds([...availableAds, ...availableCampaigns]);
   }
-  useEffect(() => { load(); }, [user?.id, profile?.country_code]);
+
+  useEffect(() => {
+    load();
+  }, [user?.id]);
 
   async function apply(id: string) {
     setApplying(id);
@@ -105,87 +109,87 @@ function AvailableTasks() {
         <p className="text-muted-foreground mt-1">Tasks and rewarded video ads in one list.</p>
       </div>
 
-      {loading ? <div className="text-muted-foreground">Loading…</div> :
-        tasks.length === 0 && ads.length === 0 ? (
-          <div className="rounded-2xl border hairline bg-card p-10 text-center text-muted-foreground">
-            No active jobs right now. Check back soon.
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {ads.map((a) => (
-              <div key={`ad-${a.id}`} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary">Video ad</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">WATCH</span>
-                </div>
-                <div className="mt-4 aspect-video rounded-xl bg-muted grid place-items-center">
-                  <PlayCircle className="size-10 text-primary" />
-                </div>
-                <Link to="/dashboard/earn" className="mt-3 font-medium leading-snug hover:text-primary">
-                  {a.title}
+      {loading ? (
+        <div className="text-muted-foreground">Loading…</div>
+      ) : tasks.length === 0 && ads.length === 0 ? (
+        <div className="rounded-2xl border hairline bg-card p-10 text-center text-muted-foreground">
+          No active jobs right now. Check back soon.
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {ads.map((a) => (
+            <div key={`ad-${a.id}`} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-secondary">Video ad</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">WATCH</span>
+              </div>
+              <div className="mt-4 aspect-video rounded-xl bg-muted grid place-items-center">
+                <PlayCircle className="size-10 text-primary" />
+              </div>
+              <Link to="/dashboard/earn" className="mt-3 font-medium leading-snug hover:text-primary">
+                {a.title}
+              </Link>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{a.description ?? "Watch the full video to earn tier-unlock credits."}</p>
+              <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                <span className="flex items-center gap-1"><Clock className="size-3.5" /> {a.duration_seconds}s</span>
+                <span className="flex items-center gap-1"><Coins className="size-3.5" /> {formatCents(REWARD_CENTS[a.duration_seconds])} tier credit</span>
+              </div>
+              <div className="mt-auto pt-5 flex items-center justify-between">
+                <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(REWARD_CENTS[a.duration_seconds])}</span>
+                <Link to="/dashboard/earn" className="rounded-xl bg-gradient-gold px-4 py-2 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow">
+                  Watch
                 </Link>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{a.description ?? "Watch the full video to earn tier-unlock credits."}</p>
+              </div>
+            </div>
+          ))}
+          {tasks.map((t) => {
+            const full = t.current_workers >= t.max_workers;
+            const atts = Array.isArray(t.attachments) ? t.attachments : [];
+            return (
+              <div key={t.id} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{t.category ?? "Task"}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    t.tier === "gold" ? "bg-primary/15 text-primary" :
+                    t.tier === "silver" ? "bg-muted text-foreground" : "bg-secondary/15 text-secondary"
+                  }`}>{t.tier.toUpperCase()}</span>
+                </div>
+                <Link to={`/dashboard/worker/${t.id}`} className="mt-3 font-medium leading-snug hover:text-primary">
+                  {t.title}
+                </Link>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
                 <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                  <span className="flex items-center gap-1"><Clock className="size-3.5" /> {a.duration_seconds}s</span>
-                  <span className="flex items-center gap-1"><Coins className="size-3.5" /> {formatCents(REWARD_CENTS[a.duration_seconds])} tier credit</span>
+                  {t.deadline && <span className="flex items-center gap-1"><Clock className="size-3.5" /> {new Date(t.deadline).toLocaleDateString()}</span>}
+                  <span className="flex items-center gap-1"><Users className="size-3.5" /> {t.current_workers}/{t.max_workers}</span>
+                  {atts.length > 0 && (
+                    <Link to={`/dashboard/worker/${t.id}`} className="flex items-center gap-1 text-primary hover:underline">
+                      <Download className="size-3.5" /> {atts.length} file{atts.length > 1 ? "s" : ""}
+                    </Link>
+                  )}
                 </div>
                 <div className="mt-auto pt-5 flex items-center justify-between">
-                  <span className="font-display text-2xl font-semibold text-gradient-gold">{formatCents(REWARD_CENTS[a.duration_seconds])}</span>
-                  <Link to="/dashboard/earn" className="rounded-xl bg-gradient-gold px-4 py-2 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow">
-                    Watch
-                  </Link>
+                  <span className="font-display text-2xl font-semibold text-gradient-gold">${Number(t.payment_amount).toFixed(2)}</span>
+                  <div className="flex gap-2">
+                    <Link to={`/dashboard/worker/${t.id}`} className="rounded-xl border border-input px-3 py-2 text-xs font-semibold hover:bg-accent">
+                      Details
+                    </Link>
+                    <button
+                      disabled={full || applying === t.id}
+                      onClick={() => apply(t.id)}
+                      className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                        full ? "bg-muted text-muted-foreground cursor-not-allowed" :
+                        "bg-gradient-gold text-primary-foreground shadow-card hover:shadow-glow"
+                      }`}
+                    >
+                      {full ? "TAKEN" : applying === t.id ? "Applying…" : "Apply"}
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-            {tasks.map((t) => {
-              const full = t.current_workers >= t.max_workers;
-              const atts = Array.isArray(t.attachments) ? t.attachments : [];
-              return (
-                <div key={t.id} className="rounded-2xl border hairline bg-card p-6 shadow-card hover:shadow-luxe transition-shadow flex flex-col">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-secondary">{t.category ?? "Task"}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      t.tier === "gold" ? "bg-primary/15 text-primary" :
-                      t.tier === "silver" ? "bg-muted text-foreground" : "bg-secondary/15 text-secondary"
-                    }`}>{t.tier.toUpperCase()}</span>
-                  </div>
-                  <Link to={`/dashboard/worker/${t.id}`} className="mt-3 font-medium leading-snug hover:text-primary">
-                    {t.title}
-                  </Link>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
-                  <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                    {t.deadline && <span className="flex items-center gap-1"><Clock className="size-3.5" /> {new Date(t.deadline).toLocaleDateString()}</span>}
-                    <span className="flex items-center gap-1"><Users className="size-3.5" /> {t.current_workers}/{t.max_workers}</span>
-                    {atts.length > 0 && (
-                      <Link to={`/dashboard/worker/${t.id}`} className="flex items-center gap-1 text-primary hover:underline">
-                        <Download className="size-3.5" /> {atts.length} file{atts.length > 1 ? "s" : ""}
-                      </Link>
-                    )}
-                  </div>
-                  <div className="mt-auto pt-5 flex items-center justify-between">
-                    <span className="font-display text-2xl font-semibold text-gradient-gold">${Number(t.payment_amount).toFixed(2)}</span>
-                    <div className="flex gap-2">
-                      <Link to={`/dashboard/worker/${t.id}`} className="rounded-xl border border-input px-3 py-2 text-xs font-semibold hover:bg-accent">
-                        Details
-                      </Link>
-                      <button
-                        disabled={full || applying === t.id}
-                        onClick={() => apply(t.id)}
-                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-                          full ? "bg-muted text-muted-foreground cursor-not-allowed" :
-                          "bg-gradient-gold text-primary-foreground shadow-card hover:shadow-glow"
-                        }`}
-                      >
-                        {full ? "TAKEN" : applying === t.id ? "Applying…" : "Apply"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )
-      }
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
