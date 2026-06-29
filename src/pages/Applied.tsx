@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { db, supabase } from "@/lib/db";
+import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Upload, Lock } from "lucide-react";
+import { Upload, Lock, AlertTriangle } from "lucide-react";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 type Row = {
   id: string;
@@ -53,7 +54,7 @@ function Applied() {
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-semibold px-2 py-1 rounded-full ${badge(r.status)}`}>{r.status.toUpperCase()}</span>
                   <span className="font-display text-lg text-gradient-gold">${Number(r.tasks.payment_amount).toFixed(2)}</span>
-                  {(r.status === "pending" || r.status === "joined") ? (
+                  {r.status === "pending" ? (
                     <span
                       title="Waiting for admin approval of your application"
                       className="inline-flex items-center gap-1 text-xs rounded-lg border border-input bg-muted px-3 py-1.5 text-muted-foreground cursor-not-allowed"
@@ -104,17 +105,23 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploading(true);
-    const path = `${user.id}/${application.id}/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("submissions").upload(path, file, { upsert: false });
-    if (error) { setUploading(false); return toast.error(error.message); }
-    const { data: signed } = await supabase.storage.from("submissions").createSignedUrl(path, 60 * 60 * 24 * 30);
-    setFiles((f) => [...f, { name: file.name, url: signed?.signedUrl ?? path }]);
-    setUploading(false);
-    if (inputRef.current) inputRef.current.value = "";
+    try {
+      const up = await uploadToCloudinary(file, { folder: `submissions/${user.id}/${application.id}` });
+      setFiles((f) => [...f, { name: file.name, url: up.secure_url }]);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   }
 
   async function submit() {
     if (!user) return;
+    if (files.length === 0 && !urls.trim() && !comments.trim()) {
+      return toast.error("Attach a file, paste a URL, or add a comment before submitting.");
+    }
+    if (!confirm("Submit work? You can only submit ONCE per task. A second attempt may flag your account.")) return;
     setSubmitting(true);
     const urlList = urls.split("\n").map((u) => u.trim()).filter(Boolean);
     const { error } = await db.from("task_submissions").insert({
@@ -129,7 +136,14 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
       await db.from("task_applications").update({ status: "submitted" }).eq("id", application.id);
     }
     setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if ((error as any).code === "23505" || /duplicate|unique/i.test(error.message)) {
+        toast.warning("You already submitted this task. Repeated submissions can flag your account.");
+        onDone();
+        return;
+      }
+      return toast.error(error.message);
+    }
     toast.success("Submission sent for review");
     onDone();
   }
@@ -139,6 +153,10 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
       {application.tasks.instructions && (
         <div className="text-xs text-muted-foreground"><strong>Instructions:</strong> {application.tasks.instructions}</div>
       )}
+      <div className="text-xs rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 flex items-start gap-2 text-amber-700 dark:text-amber-300">
+        <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+        <span>Only <b>one</b> submission per task is allowed. Attempting more than once will be blocked and may flag your account for review.</span>
+      </div>
       <label className="block text-sm font-medium">URLs (one per line)</label>
       <textarea value={urls} onChange={(e) => setUrls(e.target.value)} rows={3} className="w-full rounded-lg border border-input bg-card p-3 text-sm" placeholder="https://..." />
       <label className="block text-sm font-medium">Comments</label>

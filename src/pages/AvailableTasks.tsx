@@ -69,7 +69,7 @@ function AvailableTasks() {
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
     const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
       .filter((c) => !completed.has(c.id))
-      .filter((c) => !country || !c.target_countries?.length || c.target_countries.includes(country))
+      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
       .map((c) => ({
         id: c.id,
         title: c.title,
@@ -87,8 +87,14 @@ function AvailableTasks() {
     setApplying(id);
     const { error } = await db.rpc("apply_to_task", { _task_id: id });
     setApplying(null);
-    if (error) return toast.error(error.message);
-    toast.success("Application submitted — waiting for admin approval.");
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("already_applied") || (error as any).code === "23505") {
+        return toast.info("You have already applied to this task.");
+      }
+      return toast.error(msg);
+    }
+    toast.success("You're in — submit your work in My applications.");
     load();
   }
 

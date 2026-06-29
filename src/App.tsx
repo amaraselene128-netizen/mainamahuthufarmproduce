@@ -55,7 +55,10 @@ const AdminCountries = lazy(() => import("@/pages/Countries"));
 const AdminReferrals = lazy(() => import("@/pages/Refs"));
 const AdminFraud = lazy(() => import("@/pages/Fraud"));
 const AdminSupport = lazy(() => import("@/pages/AdminSupport"));
+const AdminAppeals = lazy(() => import("@/pages/AdminAppeals"));
+const AdminMessages = lazy(() => import("@/pages/AdminMessages"));
 const TaskDetail = lazy(() => import("@/pages/TaskDetail"));
+const Appeal = lazy(() => import("@/pages/Appeal"));
 
 function PageFallback() {
   return (
@@ -91,6 +94,7 @@ export default function App() {
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/market-with-us" element={<MarketWithUs />} />
         <Route path="/packages" element={<Packages />} />
+        <Route path="/appeal" element={<Appeal />} />
 
 
         <Route path="/auth/login" element={<Login />} />
@@ -136,6 +140,8 @@ export default function App() {
           <Route path="fraud" element={<AdminFraud />} />
           <Route path="support" element={<AdminSupport />} />
           <Route path="ads" element={<AdminAds />} />
+          <Route path="appeals" element={<AdminAppeals />} />
+          <Route path="messages" element={<AdminMessages />} />
         </Route>
 
         <Route path="/dashboard/overview" element={<Navigate to="/dashboard" replace />} />

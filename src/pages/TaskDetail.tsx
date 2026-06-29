@@ -33,8 +33,16 @@ function TaskDetail() {
     setApplying(true);
     const { error } = await db.rpc("apply_to_task", { _task_id: id });
     setApplying(false);
-    if (error) return toast.error(error.message);
-    toast.success("Application submitted — waiting for admin approval.");
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("already_applied") || (error as any).code === "23505") {
+        toast.info("You have already applied to this task.");
+        nav("/dashboard/worker/applied");
+        return;
+      }
+      return toast.error(msg);
+    }
+    toast.success("You're in — submit your work from My applications.");
     nav("/dashboard/worker/applied");
   }
 

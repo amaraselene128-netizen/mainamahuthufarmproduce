@@ -41,8 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       db.from("profiles").select("*").eq("id", uid).maybeSingle(),
       db.from("user_roles").select("role").eq("user_id", uid),
     ]);
-    setProfile((p as unknown as Profile) ?? null);
-    setIsAdmin(Boolean(roles?.some((r: { role: string }) => r.role === "admin")));
+    const prof = (p as unknown as Profile) ?? null;
+    const adminRole = Boolean(roles?.some((r: { role: string }) => r.role === "admin"));
+    // Hard block suspended/banned accounts. Admins are never auto-logged out.
+    if (prof && !adminRole && (prof.banned || prof.suspended)) {
+      await db.auth.signOut();
+      setProfile(null);
+      setIsAdmin(false);
+      if (!window.location.pathname.startsWith("/appeal")) {
+        window.location.href = `/appeal?reason=${prof.banned ? "banned" : "suspended"}`;
+      }
+      return;
+    }
+    setProfile(prof);
+    setIsAdmin(adminRole);
   };
 
   useEffect(() => {

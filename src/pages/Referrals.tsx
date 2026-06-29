@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
-import { Users2, Copy, Crown, ExternalLink, Play, Lock } from "lucide-react";
+import { Users2, Copy, Crown, ExternalLink, Play } from "lucide-react";
 import { toast } from "sonner";
 
 type Plan = { id: string; tier: string; price: number; commission_rate: number; features: string[] };
@@ -19,6 +19,8 @@ type ReferredRow = {
 
 function Referrals() {
   const { user, profile, refreshProfile } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const [payBusy, setPayBusy] = useState<string | null>(null);
   const [sub, setSub] = useState<Sub | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [stats, setStats] = useState({ clicks: 0, signups: 0, verified: 0, earnings: 0 });
@@ -98,6 +100,58 @@ function Referrals() {
 
   useEffect(() => { if (profile) load(); }, [profile?.id, (profile as any)?.referral_code]);
 
+  async function payWithPaypal(tier: string) {
+    if (!user) return;
+    setPayBusy(tier);
+    const { data, error } = await db.functions.invoke("paypal-create-order", {
+      body: {
+        tier,
+        returnUrl: `${window.location.origin}${window.location.pathname}?paypal_order=`,
+        cancelUrl: `${window.location.origin}${window.location.pathname}?paypal_cancel=1`,
+      },
+    });
+    setPayBusy(null);
+    const payload = data as any;
+    if (error || payload?.error || !payload?.approveUrl) {
+      return toast.error(payload?.error ?? error?.message ?? "Could not start PayPal checkout");
+    }
+    sessionStorage.setItem("paypal_pending_order", payload.id);
+    window.location.href = payload.approveUrl;
+  }
+
+  // PayPal redirect handlers — mirror /dashboard/earn/unlock
+  useEffect(() => {
+    const token = params.get("token");
+    const pending = sessionStorage.getItem("paypal_pending_order");
+    if (token && pending && token === pending) {
+      sessionStorage.removeItem("paypal_pending_order");
+      params.delete("token"); params.delete("PayerID");
+      params.set("paypal_order", token);
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const orderId = params.get("paypal_order");
+    if (!orderId || !user) return;
+    (async () => {
+      const { data, error } = await db.functions.invoke("paypal-capture-order", {
+        body: { orderId },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error ?? error?.message ?? "Payment capture failed");
+      } else {
+        toast.success(`${String((data as any).tier).toUpperCase()} tier activated`);
+        load();
+        refreshProfile();
+      }
+      params.delete("paypal_order");
+      setParams(params, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const code = (profile as any)?.referral_code as string | undefined;
   const link = code ? `${window.location.origin}/auth/register?ref=${code}` : "";
 
@@ -131,17 +185,17 @@ function Referrals() {
                 </div>
                 <div className="space-y-2 pt-1">
                   <button
-                    disabled
-                    title="PayPal checkout coming soon"
-                    className="w-full rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                    disabled={payBusy === p.tier}
+                    onClick={() => payWithPaypal(p.tier)}
+                    className="w-full rounded-xl bg-[#0070ba] px-4 py-2.5 text-sm font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    <Lock className="size-4" /> Pay with PayPal · Coming soon
+                    {payBusy === p.tier ? "Opening PayPal…" : `Pay $${Number(p.price).toFixed(2)} with PayPal`}
                   </button>
                   <Link
                     to="/dashboard/earn/unlock"
                     className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground inline-flex items-center justify-center gap-2"
                   >
-                    <Play className="size-4" /> Unlock by watching ads
+                    <Play className="size-4" /> Or unlock by watching ads
                   </Link>
                 </div>
               </div>

@@ -33,6 +33,7 @@ function Home() {
         <Categories />
         <Testimonials />
         <FAQ />
+        <AppealCallout />
         <CTA />
       </main>
       <Footer />
@@ -388,18 +389,18 @@ function MarketWithUs() {
             <MarketCta />
           </motion.div>
 
-          <motion.div {...fadeUp} className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+          <motion.div {...fadeUp} className="grid grid-cols-3 gap-3">
             {types.map((t, i) => (
               <motion.div
                 key={t.label}
                 initial={{ opacity: 0, scale: 0.92 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.04, duration: 0.35 }}
-                className="aspect-square glass rounded-xl flex flex-col items-center justify-center gap-1 p-2 shadow-card hover:shadow-glow hover:-translate-y-0.5 transition-all"
+                transition={{ delay: i * 0.05, duration: 0.4 }}
+                className="aspect-square glass rounded-2xl flex flex-col items-center justify-center gap-2 shadow-card hover:shadow-glow hover:-translate-y-1 transition-all"
               >
-                <t.icon className="size-5 text-primary" />
-                <span className="text-[10px] font-medium text-center leading-tight">{t.label}</span>
+                <t.icon className="size-7 text-primary" />
+                <span className="text-sm font-medium">{t.label}</span>
               </motion.div>
             ))}
           </motion.div>
@@ -424,19 +425,19 @@ function Categories() {
     <section id="categories" className="py-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader eyebrow="Available categories" title="Work across every channel that matters." sub="A global catalogue of tasks spanning the world's biggest platforms." />
-        <div className="mt-10 grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
+        <div className="mt-14 grid grid-cols-3 gap-3 sm:gap-6">
           {cats.map((c, i) => (
             <motion.div
               key={c.label}
               {...fadeUp}
-              transition={{ ...fadeUp.transition, delay: i * 0.04 }}
-              className="rounded-xl bg-card p-3 border hairline shadow-card hover:shadow-luxe hover:-translate-y-0.5 transition-all flex flex-col items-center text-center gap-1.5"
-              title={c.desc}
+              transition={{ ...fadeUp.transition, delay: i * 0.05 }}
+              className="rounded-2xl bg-card p-7 border hairline shadow-card hover:shadow-luxe hover:-translate-y-1 transition-all"
             >
-              <div className="size-9 rounded-lg bg-gradient-gold shadow-glow grid place-items-center">
-                <c.icon className="size-4 text-primary-foreground" />
+              <div className="size-12 rounded-xl bg-gradient-gold shadow-glow grid place-items-center">
+                <c.icon className="size-6 text-primary-foreground" />
               </div>
-              <h3 className="font-display text-xs font-semibold leading-tight">{c.label}</h3>
+              <h3 className="mt-5 font-display text-xl font-semibold">{c.label}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{c.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -534,6 +535,37 @@ function FAQ() {
             )}
           </DialogContent>
         </Dialog>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- Appeal Callout ---------------- */
+function AppealCallout() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div className="rounded-3xl border hairline bg-card p-8 sm:p-10 shadow-card">
+        <div className="grid gap-6 md:grid-cols-[1.4fr_1fr] md:items-center">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Account restricted?</div>
+            <h2 className="font-display text-2xl sm:text-3xl mt-2">Appeal a suspension or ban</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              If your account has been suspended or banned, you can submit an appeal without logging in.
+              Our compliance team reviews every appeal. Steps:
+            </p>
+            <ol className="mt-3 list-decimal pl-5 text-sm text-muted-foreground space-y-1">
+              <li>Open the appeal form.</li>
+              <li>Enter the email address used on the restricted account.</li>
+              <li>Describe what happened and attach any context.</li>
+              <li>Submit — we respond by email after review.</li>
+            </ol>
+          </div>
+          <div className="flex md:justify-end">
+            <a href="/appeal" className="inline-flex items-center justify-center rounded-xl bg-gradient-gold px-5 py-3 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow">
+              Start an appeal
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );

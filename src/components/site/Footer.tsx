@@ -19,6 +19,7 @@ export function Footer() {
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Careers", href: "/about#careers" },
+    { label: "Appeal a suspension", href: "/appeal" },
     user
       ? { label: "Help center", href: "/dashboard/support" }
       : { label: "FAQ", href: "/#faq" },
@@ -28,59 +29,89 @@ export function Footer() {
     { label: "Terms & Conditions", href: "/legal/terms" },
     { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Cookies", href: "/legal/privacy#cookies" },
-    { label: "Acceptable use", href: "/legal/terms#use" },
+    { label: "Acceptable Use", href: "/legal/terms#use" },
   ];
 
   return (
     <footer className="border-t hairline bg-muted/30">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        {/* Brand strip */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-8 border-b hairline">
-          <div className="flex items-center gap-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
+          {/* Left Side */}
+          <div className="space-y-5">
             <Brand />
-            <p className="text-xs text-muted-foreground hidden md:block max-w-sm">
-              The premium global marketplace for freelancers and micro-task workers.
+
+            <p className="max-w-sm text-sm text-muted-foreground">
+              The premium global marketplace for freelancers and micro-task
+              workers.
             </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-primary" /> Nairobi, Kenya</span>
-            <span className="inline-flex items-center gap-1.5"><Mail className="size-3.5 text-primary" /> support@egmtasks.com</span>
+
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <MapPin className="size-4 text-primary" />
+                Nairobi, Kenya — HQ
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Mail className="size-4 text-primary" />
+                support@egmtasks.com
+              </div>
+            </div>
+
             {user && (
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-gold px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-card hover:shadow-glow"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-4 py-2 text-xs font-semibold text-primary-foreground shadow-card hover:shadow-glow transition-all"
               >
-                Dashboard
+                Go to Dashboard
               </Link>
             )}
           </div>
+
+          {/* Right Side */}
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3">
+            <FooterCol title="Platform" links={platformLinks} />
+            <FooterCol title="Company" links={companyLinks} />
+            <FooterCol title="Legal" links={legalLinks} />
+          </div>
         </div>
 
-        {/* 3 horizontal columns with titles */}
-        <div className="mt-8 grid grid-cols-3 gap-6">
-          <FooterCol title="Platform" links={platformLinks} />
-          <FooterCol title="Company" links={companyLinks} />
-          <FooterCol title="Legal" links={legalLinks} />
-        </div>
+        {/* Bottom */}
+        <div className="mt-12 border-t hairline pt-8 flex flex-col gap-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {new Date().getFullYear()} EGMTASKS Headquarters · Nairobi,
+            Kenya · All rights reserved.
+          </p>
 
-        <div className="mt-10 pt-6 border-t hairline flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between text-[11px] text-muted-foreground">
-          <p>© {new Date().getFullYear()} EGMTASKS Headquarters · Nairobi, Kenya.</p>
-          <p>Built for a million+ workers across 100+ countries.</p>
+          <p>
+            Built for a million+ workers across 100+ countries.
+          </p>
         </div>
       </div>
     </footer>
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
     <div>
-      <h4 className="font-display text-xs font-semibold tracking-wide uppercase text-foreground/80">{title}</h4>
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-        {links.map((l) => (
-          <li key={l.href + l.label}>
-            <Link to={l.href} className="text-xs text-muted-foreground hover:text-primary transition-colors">
-              {l.label}
+      <h4 className="font-display text-sm font-semibold uppercase tracking-wide text-foreground/80">
+        {title}
+      </h4>
+
+      <ul className="mt-4 space-y-3">
+        {links.map((link) => (
+          <li key={`${link.href}-${link.label}`}>
+            <Link
+              to={link.href}
+              className="text-sm text-muted-foreground transition-colors hover:text-primary"
+            >
+              {link.label}
             </Link>
           </li>
         ))}

@@ -10,6 +10,8 @@ function WalletPage() {
   const [w, setW] = useState<any>(null);
   const [tx, setTx] = useState<any[]>([]);
   const [reqs, setReqs] = useState<any[]>([]);
+  const [refEarnings, setRefEarnings] = useState<any[]>([]);
+  const [refTotal, setRefTotal] = useState(0);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("mpesa");
   const [details, setDetails] = useState("");
@@ -25,12 +27,16 @@ function WalletPage() {
 
   async function load() {
     if (!user) return;
-    const [wRes, tRes, rRes] = await Promise.all([
+    const [wRes, tRes, rRes, reRes] = await Promise.all([
       db.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
       db.from("transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
       db.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+      db.from("referral_earnings").select("amount,amount_cents,status,source_user_id,created_at").eq("referrer_id", user.id).order("created_at", { ascending: false }).limit(50),
     ]);
     setW(wRes.data); setTx(tRes.data ?? []); setReqs(rRes.data ?? []);
+    const re = (reRes.data as any[]) ?? [];
+    setRefEarnings(re);
+    setRefTotal(re.reduce((s, e) => s + (e.amount_cents != null ? Number(e.amount_cents) / 100 : Number(e.amount ?? 0)), 0));
   }
   useEffect(() => { load(); }, [user]);
 
@@ -66,10 +72,11 @@ function WalletPage() {
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card label="Available" value={`$${Number(w?.available ?? 0).toFixed(2)}`} />
         <Card label="Pending" value={`$${Number(w?.pending ?? 0).toFixed(2)}`} />
         <Card label="Total earned" value={`$${Number(w?.total_earned ?? 0).toFixed(2)}`} />
+        <Card label="Referral earnings" value={`$${refTotal.toFixed(2)}`} />
         <Card label="Total withdrawn" value={`$${Number(w?.total_withdrawn ?? 0).toFixed(2)}`} />
       </div>
 
@@ -174,6 +181,25 @@ function WalletPage() {
                 "bg-muted text-foreground"}`}>{r.status}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border hairline bg-card p-6 shadow-card">
+        <h2 className="font-display text-xl mb-3">Referral earnings</h2>
+        <div className="divide-y divide-border text-sm">
+          {refEarnings.length === 0 && <p className="text-muted-foreground py-4">No referral earnings yet. Share your link from the Referrals page.</p>}
+          {refEarnings.map((r, i) => {
+            const amt = r.amount_cents != null ? Number(r.amount_cents) / 100 : Number(r.amount ?? 0);
+            return (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div>
+                  <div className="font-medium">Commission from referred user</div>
+                  <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()} · {r.status ?? "credited"}</div>
+                </div>
+                <span className="text-secondary font-semibold">+${amt.toFixed(2)}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -3,38 +3,29 @@ import { Link, useSearchParams } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Crown, Coins, ArrowLeft, RefreshCw, Clock } from "lucide-react";
+import { Crown, Coins, ArrowLeft } from "lucide-react";
 import { formatCents, TIER_PRICE_CENTS, type Tier } from "@/lib/ads";
 
 function TierUnlock() {
   const { user } = useAuth();
   const [balance, setBalance] = useState(0);
   const [activeTier, setActiveTier] = useState<Tier | null>(null);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [busy, setBusy] = useState<Tier | null>(null);
-  const [payBusy, setPayBusy] = useState<string | null>(null);
-  const [renewBusy, setRenewBusy] = useState(false);
+  const [payBusy, setPayBusy] = useState<Tier | null>(null);
   const [params, setParams] = useSearchParams();
 
   async function load() {
     if (!user) return;
-    // Drop expired subscription rows server-side so the UI matches reality.
-    try { await db.rpc("purge_expired_subscriptions" as any); } catch { /* ignore */ }
     const [cRes, sRes] = await Promise.all([
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
-      db.from("referral_subscriptions")
-        .select("plan_id, expires_at, referral_plans(tier)")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+      db.from("referral_subscriptions").select("plan_id, referral_plans(tier)").eq("user_id", user.id).maybeSingle(),
     ]);
     setBalance(Number((cRes.data as any)?.balance_cents ?? 0));
-    const sub = sRes.data as any;
-    setActiveTier((sub?.referral_plans?.tier as Tier) ?? null);
-    setExpiresAt(sub?.expires_at ?? null);
+    setActiveTier(((sRes.data as any)?.referral_plans?.tier as Tier) ?? null);
   }
   useEffect(() => { load(); }, [user?.id]);
 
-  // Handle the PayPal redirect: capture order + activate / renew tier.
+  // Handle the PayPal redirect: capture order + activate tier.
   useEffect(() => {
     const orderId = params.get("paypal_order");
     if (!orderId || !user) return;
@@ -45,9 +36,7 @@ function TierUnlock() {
       if (error || (data as any)?.error) {
         toast.error((data as any)?.error ?? error?.message ?? "Payment capture failed");
       } else {
-        const tier = String((data as any).tier).toUpperCase();
-        const kind = (data as any).kind ?? "new";
-        toast.success(kind === "renew" ? `${tier} tier renewed for 30 more days` : `${tier} tier activated`);
+        toast.success(`${String((data as any).tier).toUpperCase()} tier activated`);
         load();
       }
       params.delete("paypal_order");
@@ -65,25 +54,29 @@ function TierUnlock() {
     load();
   }
 
-  async function payWithPaypal(tier: Tier, renewal = false) {
+  async function payWithPaypal(tier: Tier) {
     if (!user) return;
-    const key = `${tier}:${renewal ? "renew" : "new"}`;
-    if (renewal) setRenewBusy(true); else setPayBusy(key);
+    setPayBusy(tier);
+    const ret = `${window.location.origin}${window.location.pathname}?paypal_order={ORDER_ID_PLACEHOLDER}`;
     const { data, error } = await db.functions.invoke("paypal-create-order", {
       body: {
         tier,
-        renewal,
         returnUrl: `${window.location.origin}${window.location.pathname}?paypal_order=`,
         cancelUrl: `${window.location.origin}${window.location.pathname}?paypal_cancel=1`,
       },
     });
-    if (renewal) setRenewBusy(false); else setPayBusy(null);
+    setPayBusy(null);
     const payload = data as any;
     if (error || payload?.error || !payload?.approveUrl) {
       return toast.error(payload?.error ?? error?.message ?? "Could not start PayPal checkout");
     }
+    // PayPal will append &token=ORDER_ID; we use ?paypal_order=<id> by appending the id ourselves
+    // after redirect by replacing the return URL with the order id.
+    const url = new URL(payload.approveUrl);
+    // we stored the orderId so build a return with it baked in
     sessionStorage.setItem("paypal_pending_order", payload.id);
-    window.location.href = payload.approveUrl;
+    void ret;
+    window.location.href = url.toString();
   }
 
   // PayPal returns with ?token=<orderId>; remap that to our paypal_order param.
@@ -98,10 +91,6 @@ function TierUnlock() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const daysLeft = expiresAt
-    ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000))
-    : null;
 
   return (
     <div className="space-y-6">
@@ -121,32 +110,9 @@ function TierUnlock() {
       </div>
 
       {activeTier && (
-        <div className="rounded-2xl border hairline bg-secondary/10 text-secondary px-4 py-4 text-sm space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <span>
-              Active <b className="uppercase">{activeTier}</b> subscription.
-            </span>
-            {daysLeft !== null && (
-              <span className="inline-flex items-center gap-1 text-xs">
-                <Clock className="size-3.5" />
-                {daysLeft > 0 ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : "expires today"}
-              </span>
-            )}
-            <Link to="/dashboard/referrals" className="underline ml-auto">Open referrals</Link>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs text-muted-foreground">
-              Monthly renewal is 50% of the tier price ({formatCents(TIER_PRICE_CENTS[activeTier] / 2)}). Unrenewed tiers expire and lose access.
-            </span>
-            <button
-              disabled={renewBusy}
-              onClick={() => payWithPaypal(activeTier, true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0070ba] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            >
-              <RefreshCw className="size-3.5" />
-              {renewBusy ? "Opening PayPal…" : `Renew for ${formatCents(TIER_PRICE_CENTS[activeTier] / 2)}`}
-            </button>
-          </div>
+        <div className="rounded-2xl border hairline bg-secondary/10 text-secondary px-4 py-3 text-sm">
+          You already have an active <b className="uppercase">{activeTier}</b> subscription.
+          Go to <Link to="/dashboard/referrals" className="underline">Referrals</Link> for your link.
         </div>
       )}
 
@@ -154,7 +120,6 @@ function TierUnlock() {
         {(Object.keys(TIER_PRICE_CENTS) as Tier[]).map((t) => {
           const price = TIER_PRICE_CENTS[t];
           const ok = balance >= price && !activeTier;
-          const key = `${t}:new`;
           return (
             <div key={t} className="rounded-2xl border hairline bg-card p-6 shadow-card space-y-3">
               <div className="flex items-center justify-between">
@@ -162,9 +127,6 @@ function TierUnlock() {
                 <Crown className={`size-5 ${t === "gold" ? "text-primary" : t === "silver" ? "text-muted-foreground" : "text-secondary"}`} />
               </div>
               <div className="font-display text-4xl text-gradient-gold">{formatCents(price)}</div>
-              <div className="text-xs text-muted-foreground">
-                30 days access · renews monthly at {formatCents(price / 2)}
-              </div>
               <div className="space-y-2">
                 <button
                   disabled={!!activeTier || busy === t || balance < price}
@@ -174,11 +136,11 @@ function TierUnlock() {
                   {busy === t ? "Unlocking…" : ok ? `Unlock with credits` : balance < price ? `Need ${formatCents(price - balance)} more` : "Already subscribed"}
                 </button>
                 <button
-                  disabled={!!activeTier || payBusy === key}
+                  disabled={!!activeTier || payBusy === t}
                   onClick={() => payWithPaypal(t)}
                   className="w-full rounded-xl bg-[#0070ba] px-4 py-2.5 text-sm font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  {payBusy === key ? "Opening PayPal…" : `Pay ${formatCents(price)} with PayPal`}
+                  {payBusy === t ? "Opening PayPal…" : `Pay ${formatCents(price)} with PayPal`}
                 </button>
               </div>
             </div>

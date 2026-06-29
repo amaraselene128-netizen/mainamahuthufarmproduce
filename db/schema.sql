@@ -8,7 +8,7 @@ do $$ begin create type public.app_role as enum ('admin','moderator','user'); ex
 do $$ begin create type public.account_mode as enum ('worker','hiring'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.task_tier as enum ('bronze','silver','gold'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.task_status as enum ('active','taken','closed','paused'); exception when duplicate_object then null; end $$;
-do $$ begin create type public.application_status as enum ('pending','joined','submitted','approved','rejected','revision'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.application_status as enum ('joined','submitted','approved','rejected','revision'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.submission_status as enum ('pending','approved','rejected','revision'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.withdrawal_status as enum ('pending','approved','paid','rejected'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.fraud_level as enum ('low','medium','high','critical'); exception when duplicate_object then null; end $$;
@@ -191,7 +191,7 @@ create table if not exists public.task_applications (
   id uuid primary key default gen_random_uuid(),
   task_id uuid not null references public.tasks(id) on delete cascade,
   worker_id uuid not null references auth.users(id) on delete cascade,
-  status public.application_status not null default 'pending',
+  status public.application_status not null default 'joined',
   applied_at timestamptz not null default now(),
   unique (task_id, worker_id)
 );
@@ -220,36 +220,13 @@ begin
     update public.tasks set status='taken' where id=_task_id;
     raise exception 'Task is full';
   end if;
-  -- Pending application — admin/client must approve before the worker counts.
-  insert into public.task_applications (task_id, worker_id, status)
-    values (_task_id, auth.uid(), 'pending') returning * into app;
+  insert into public.task_applications (task_id, worker_id) values (_task_id, auth.uid()) returning * into app;
+  update public.tasks set current_workers = current_workers + 1,
+    status = case when current_workers + 1 >= max_workers then 'taken'::public.task_status else status end
+    where id = _task_id;
   return app;
 end; $$;
 grant execute on function public.apply_to_task(uuid) to authenticated;
-
-create or replace function public.task_application_slot_sync()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare t public.tasks%rowtype;
-begin
-  if (new.status in ('approved','submitted')) and (old.status not in ('approved','submitted')) then
-    select * into t from public.tasks where id = new.task_id for update;
-    if t.current_workers >= t.max_workers then
-      raise exception 'Task is full — cannot approve more workers';
-    end if;
-    update public.tasks set current_workers = current_workers + 1,
-      status = case when current_workers + 1 >= max_workers then 'taken'::public.task_status else status end
-      where id = new.task_id;
-  end if;
-  if (old.status in ('approved','submitted')) and (new.status not in ('approved','submitted')) then
-    update public.tasks set current_workers = greatest(current_workers - 1, 0),
-      status = case when status = 'taken' and current_workers - 1 < max_workers then 'active'::public.task_status else status end
-      where id = new.task_id;
-  end if;
-  return new;
-end; $$;
-drop trigger if exists task_application_slot_sync on public.task_applications;
-create trigger task_application_slot_sync after update on public.task_applications
-  for each row execute function public.task_application_slot_sync();
 
 create table if not exists public.task_submissions (
   id uuid primary key default gen_random_uuid(),
