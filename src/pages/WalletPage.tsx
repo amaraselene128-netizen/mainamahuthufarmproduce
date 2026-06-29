@@ -10,6 +10,8 @@ function WalletPage() {
   const [w, setW] = useState<any>(null);
   const [tx, setTx] = useState<any[]>([]);
   const [reqs, setReqs] = useState<any[]>([]);
+  const [refEarnings, setRefEarnings] = useState<any[]>([]);
+  const [refTotal, setRefTotal] = useState(0);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("mpesa");
   const [details, setDetails] = useState("");
@@ -25,12 +27,16 @@ function WalletPage() {
 
   async function load() {
     if (!user) return;
-    const [wRes, tRes, rRes] = await Promise.all([
+    const [wRes, tRes, rRes, reRes] = await Promise.all([
       db.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
       db.from("transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
       db.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10),
+      db.from("referral_earnings").select("amount,amount_cents,status,source_user_id,created_at").eq("referrer_id", user.id).order("created_at", { ascending: false }).limit(50),
     ]);
     setW(wRes.data); setTx(tRes.data ?? []); setReqs(rRes.data ?? []);
+    const re = (reRes.data as any[]) ?? [];
+    setRefEarnings(re);
+    setRefTotal(re.reduce((s, e) => s + (e.amount_cents != null ? Number(e.amount_cents) / 100 : Number(e.amount ?? 0)), 0));
   }
   useEffect(() => { load(); }, [user]);
 
