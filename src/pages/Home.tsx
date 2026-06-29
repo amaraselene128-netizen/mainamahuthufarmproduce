@@ -540,6 +540,37 @@ function FAQ() {
   );
 }
 
+/* ---------------- Appeal Callout ---------------- */
+function AppealCallout() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div className="rounded-3xl border hairline bg-card p-8 sm:p-10 shadow-card">
+        <div className="grid gap-6 md:grid-cols-[1.4fr_1fr] md:items-center">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Account restricted?</div>
+            <h2 className="font-display text-2xl sm:text-3xl mt-2">Appeal a suspension or ban</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              If your account has been suspended or banned, you can submit an appeal without logging in.
+              Our compliance team reviews every appeal. Steps:
+            </p>
+            <ol className="mt-3 list-decimal pl-5 text-sm text-muted-foreground space-y-1">
+              <li>Open the appeal form.</li>
+              <li>Enter the email address used on the restricted account.</li>
+              <li>Describe what happened and attach any context.</li>
+              <li>Submit — we respond by email after review.</li>
+            </ol>
+          </div>
+          <div className="flex md:justify-end">
+            <a href="/appeal" className="inline-flex items-center justify-center rounded-xl bg-gradient-gold px-5 py-3 text-sm font-semibold text-primary-foreground shadow-card hover:shadow-glow">
+              Start an appeal
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------- CTA ---------------- */
 function CTA() {
   const { user, profile } = useAuth();
