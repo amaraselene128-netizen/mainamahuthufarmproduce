@@ -53,13 +53,13 @@ function EarnAds() {
       db.from("tier_credits").select("balance_cents").eq("user_id", user.id).maybeSingle(),
       db.from("referral_subscriptions").select("id").eq("user_id", user.id).maybeSingle(),
     ]);
-    const country = profile?.country_code ?? null;
+    
+    // Removed country filter - all approved campaigns and active ads are visible to everyone
     const adList: Ad[] = ((adsRes.data as any[]) ?? [])
       .filter((a) => a.spent_cents < a.budget_cents)
-      .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)))
       .map((a) => ({ ...a, kind: "ad" as const }));
+    
     const campList: Ad[] = ((campRes.data as any[]) ?? [])
-      .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
       .map((c) => {
         const video = c.video_file_url || c.video_url || c.social_url || "";
         const dest = c.website_url || c.social_url || c.video_url || "#";
@@ -78,6 +78,7 @@ function EarnAds() {
         };
       })
       .filter((c) => !!c.video_url);
+    
     setAds([...adList, ...campList]);
     const done = new Set<string>();
     ((viewsRes.data as any[]) ?? []).forEach((v) => done.add(v.ad_id));
@@ -87,6 +88,7 @@ function EarnAds() {
     setHasTier(!!(subRes.data as any)?.id);
     setLoading(false);
   }
+  
   useEffect(() => { load(); }, [user?.id]);
 
   const available = useMemo(() => ads.filter((a) => !completedIds.has(a.id)), [ads, completedIds]);
@@ -172,7 +174,6 @@ function EarnAds() {
           </div>
         </div>
       )}
-
 
       {active ? (
         <div className="space-y-3">
