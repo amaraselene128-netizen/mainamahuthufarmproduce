@@ -94,6 +94,7 @@ export default function App() {
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/market-with-us" element={<MarketWithUs />} />
         <Route path="/packages" element={<Packages />} />
+        <Route path="/appeal" element={<Appeal />} />
 
 
         <Route path="/auth/login" element={<Login />} />
