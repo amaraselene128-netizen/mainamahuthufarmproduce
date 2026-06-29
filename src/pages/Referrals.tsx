@@ -133,17 +133,17 @@ function Referrals() {
                 </div>
                 <div className="space-y-2 pt-1">
                   <button
-                    disabled
-                    title="PayPal checkout coming soon"
-                    className="w-full rounded-xl bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                    disabled={payBusy === p.tier}
+                    onClick={() => payWithPaypal(p.tier)}
+                    className="w-full rounded-xl bg-[#0070ba] px-4 py-2.5 text-sm font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    <Lock className="size-4" /> Pay with PayPal · Coming soon
+                    {payBusy === p.tier ? "Opening PayPal…" : `Pay $${Number(p.price).toFixed(2)} with PayPal`}
                   </button>
                   <Link
                     to="/dashboard/earn/unlock"
                     className="w-full rounded-xl bg-gradient-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground inline-flex items-center justify-center gap-2"
                   >
-                    <Play className="size-4" /> Unlock by watching ads
+                    <Play className="size-4" /> Or unlock by watching ads
                   </Link>
                 </div>
               </div>
