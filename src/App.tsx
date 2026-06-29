@@ -140,6 +140,8 @@ export default function App() {
           <Route path="fraud" element={<AdminFraud />} />
           <Route path="support" element={<AdminSupport />} />
           <Route path="ads" element={<AdminAds />} />
+          <Route path="appeals" element={<AdminAppeals />} />
+          <Route path="messages" element={<AdminMessages />} />
         </Route>
 
         <Route path="/dashboard/overview" element={<Navigate to="/dashboard" replace />} />
