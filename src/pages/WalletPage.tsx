@@ -183,6 +183,25 @@ function WalletPage() {
           ))}
         </div>
       </div>
+
+      <div className="rounded-2xl border hairline bg-card p-6 shadow-card">
+        <h2 className="font-display text-xl mb-3">Referral earnings</h2>
+        <div className="divide-y divide-border text-sm">
+          {refEarnings.length === 0 && <p className="text-muted-foreground py-4">No referral earnings yet. Share your link from the Referrals page.</p>}
+          {refEarnings.map((r, i) => {
+            const amt = r.amount_cents != null ? Number(r.amount_cents) / 100 : Number(r.amount ?? 0);
+            return (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div>
+                  <div className="font-medium">Commission from referred user</div>
+                  <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()} · {r.status ?? "credited"}</div>
+                </div>
+                <span className="text-secondary font-semibold">+${amt.toFixed(2)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
