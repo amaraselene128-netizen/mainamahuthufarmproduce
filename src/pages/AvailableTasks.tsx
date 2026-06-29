@@ -68,7 +68,6 @@ function AvailableTasks() {
       .filter((a) => !completed.has(a.id))
       .filter((a) => !a.country_targeting?.length || (country && a.country_targeting.includes(country)));
     const availableCampaigns: AdJob[] = (((campRes.data as any[]) ?? []))
-      .filter((c) => !!(c.video_file_url || c.video_url))
       .filter((c) => !completed.has(c.id))
       .filter((c) => !c.target_countries?.length || (country && c.target_countries.includes(country)))
       .map((c) => ({
