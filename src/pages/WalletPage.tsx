@@ -72,10 +72,11 @@ function WalletPage() {
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card label="Available" value={`$${Number(w?.available ?? 0).toFixed(2)}`} />
         <Card label="Pending" value={`$${Number(w?.pending ?? 0).toFixed(2)}`} />
         <Card label="Total earned" value={`$${Number(w?.total_earned ?? 0).toFixed(2)}`} />
+        <Card label="Referral earnings" value={`$${refTotal.toFixed(2)}`} />
         <Card label="Total withdrawn" value={`$${Number(w?.total_withdrawn ?? 0).toFixed(2)}`} />
       </div>
 
