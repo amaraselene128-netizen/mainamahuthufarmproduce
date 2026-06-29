@@ -33,6 +33,7 @@ function Home() {
         <Categories />
         <Testimonials />
         <FAQ />
+        <AppealCallout />
         <CTA />
       </main>
       <Footer />
