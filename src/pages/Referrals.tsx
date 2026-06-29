@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
-import { Users2, Copy, Crown, ExternalLink, Play, Lock } from "lucide-react";
+import { Users2, Copy, Crown, ExternalLink, Play } from "lucide-react";
 import { toast } from "sonner";
 
 type Plan = { id: string; tier: string; price: number; commission_rate: number; features: string[] };
