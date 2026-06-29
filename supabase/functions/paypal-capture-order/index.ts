@@ -49,18 +49,19 @@ Deno.serve(async (req) => {
     }
     const custom = cap.purchase_units?.[0]?.payments?.captures?.[0]?.custom_id
       ?? cap.purchase_units?.[0]?.custom_id ?? "";
-    const [uid, tier] = String(custom).split(":");
+    const [uid, tier, kind] = String(custom).split(":");
     if (!uid || !tier || uid !== user.id) {
       return new Response(JSON.stringify({ error: "Order does not match user" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data, error } = await supa.rpc("activate_tier_after_payment", {
+    const rpcName = kind === "renew" ? "renew_tier_after_payment" : "activate_tier_after_payment";
+    const { data, error } = await supa.rpc(rpcName, {
       p_user: user.id, p_tier: tier, p_paypal_order: orderId,
     });
     if (error) throw error;
-    return new Response(JSON.stringify({ ok: true, tier, data }), {
+    return new Response(JSON.stringify({ ok: true, tier, kind: kind ?? "new", data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
