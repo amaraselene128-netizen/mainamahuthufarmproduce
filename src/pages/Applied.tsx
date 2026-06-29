@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { db, supabase } from "@/lib/db";
+import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Upload, Lock } from "lucide-react";
+import { Upload, Lock, AlertTriangle } from "lucide-react";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 type Row = {
   id: string;
