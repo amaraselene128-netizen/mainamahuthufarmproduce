@@ -100,6 +100,58 @@ function Referrals() {
 
   useEffect(() => { if (profile) load(); }, [profile?.id, (profile as any)?.referral_code]);
 
+  async function payWithPaypal(tier: string) {
+    if (!user) return;
+    setPayBusy(tier);
+    const { data, error } = await db.functions.invoke("paypal-create-order", {
+      body: {
+        tier,
+        returnUrl: `${window.location.origin}${window.location.pathname}?paypal_order=`,
+        cancelUrl: `${window.location.origin}${window.location.pathname}?paypal_cancel=1`,
+      },
+    });
+    setPayBusy(null);
+    const payload = data as any;
+    if (error || payload?.error || !payload?.approveUrl) {
+      return toast.error(payload?.error ?? error?.message ?? "Could not start PayPal checkout");
+    }
+    sessionStorage.setItem("paypal_pending_order", payload.id);
+    window.location.href = payload.approveUrl;
+  }
+
+  // PayPal redirect handlers — mirror /dashboard/earn/unlock
+  useEffect(() => {
+    const token = params.get("token");
+    const pending = sessionStorage.getItem("paypal_pending_order");
+    if (token && pending && token === pending) {
+      sessionStorage.removeItem("paypal_pending_order");
+      params.delete("token"); params.delete("PayerID");
+      params.set("paypal_order", token);
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const orderId = params.get("paypal_order");
+    if (!orderId || !user) return;
+    (async () => {
+      const { data, error } = await db.functions.invoke("paypal-capture-order", {
+        body: { orderId },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error ?? error?.message ?? "Payment capture failed");
+      } else {
+        toast.success(`${String((data as any).tier).toUpperCase()} tier activated`);
+        load();
+        refreshProfile();
+      }
+      params.delete("paypal_order");
+      setParams(params, { replace: true });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const code = (profile as any)?.referral_code as string | undefined;
   const link = code ? `${window.location.origin}/auth/register?ref=${code}` : "";
 
