@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/site/Brand";
 import { useAuth } from "@/lib/auth-context";
+import { TierReminderPopup } from "@/components/dashboard/TierReminderPopup";
 
 const workerNav = [
   { label: "Overview", to: "/dashboard", icon: LayoutDashboard, exact: true },
