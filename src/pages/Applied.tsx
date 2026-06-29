@@ -105,17 +105,23 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploading(true);
-    const path = `${user.id}/${application.id}/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("submissions").upload(path, file, { upsert: false });
-    if (error) { setUploading(false); return toast.error(error.message); }
-    const { data: signed } = await supabase.storage.from("submissions").createSignedUrl(path, 60 * 60 * 24 * 30);
-    setFiles((f) => [...f, { name: file.name, url: signed?.signedUrl ?? path }]);
-    setUploading(false);
-    if (inputRef.current) inputRef.current.value = "";
+    try {
+      const up = await uploadToCloudinary(file, { folder: `submissions/${user.id}/${application.id}` });
+      setFiles((f) => [...f, { name: file.name, url: up.secure_url }]);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   }
 
   async function submit() {
     if (!user) return;
+    if (files.length === 0 && !urls.trim() && !comments.trim()) {
+      return toast.error("Attach a file, paste a URL, or add a comment before submitting.");
+    }
+    if (!confirm("Submit work? You can only submit ONCE per task. A second attempt may flag your account.")) return;
     setSubmitting(true);
     const urlList = urls.split("\n").map((u) => u.trim()).filter(Boolean);
     const { error } = await db.from("task_submissions").insert({
@@ -130,7 +136,14 @@ function SubmissionPanel({ application, onDone }: { application: Row; onDone: ()
       await db.from("task_applications").update({ status: "submitted" }).eq("id", application.id);
     }
     setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if ((error as any).code === "23505" || /duplicate|unique/i.test(error.message)) {
+        toast.warning("You already submitted this task. Repeated submissions can flag your account.");
+        onDone();
+        return;
+      }
+      return toast.error(error.message);
+    }
     toast.success("Submission sent for review");
     onDone();
   }
