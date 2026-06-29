@@ -199,8 +199,18 @@ function SubRow({ s, onReview }: { s: any; onReview: (id: string, st: string, c?
         </ul>
       )}
       {s.files?.length > 0 && (
-        <ul className="text-xs text-muted-foreground">
-          {s.files.map((f: any, i: number) => <li key={i}>• <a href={f.url} target="_blank" rel="noopener" className="text-primary hover:underline">{f.name}</a></li>)}
+        <ul className="text-xs text-muted-foreground space-y-1">
+          {s.files.map((f: any, i: number) => (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => forceDownload(f.url, f.name ?? `submission-${i + 1}`)}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                ↓ {f.name ?? `Attachment ${i + 1}`}
+              </button>
+            </li>
+          ))}
         </ul>
       )}
       <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Reviewer comment…" rows={2} className="w-full rounded-lg border border-input bg-background p-2 text-sm" />
