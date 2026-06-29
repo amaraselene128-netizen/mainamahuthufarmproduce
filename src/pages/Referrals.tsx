@@ -19,6 +19,8 @@ type ReferredRow = {
 
 function Referrals() {
   const { user, profile, refreshProfile } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const [payBusy, setPayBusy] = useState<string | null>(null);
   const [sub, setSub] = useState<Sub | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [stats, setStats] = useState({ clicks: 0, signups: 0, verified: 0, earnings: 0 });
