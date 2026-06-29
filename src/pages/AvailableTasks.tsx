@@ -87,7 +87,13 @@ function AvailableTasks() {
     setApplying(id);
     const { error } = await db.rpc("apply_to_task", { _task_id: id });
     setApplying(null);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("already_applied") || (error as any).code === "23505") {
+        return toast.info("You have already applied to this task.");
+      }
+      return toast.error(msg);
+    }
     toast.success("You're in — submit your work in My applications.");
     load();
   }
