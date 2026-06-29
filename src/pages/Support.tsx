@@ -2,10 +2,38 @@ import { useEffect, useRef, useState } from "react";
 import { db } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { Headphones, Plus, Send, Paperclip, ExternalLink } from "lucide-react";
+import { Headphones, Plus, Send, Paperclip, Download } from "lucide-react";
 import { uploadManyToCloudinary } from "@/lib/cloudinary";
 
 type Att = { url: string; name: string };
+
+// Helper function to download files instantly
+const downloadFile = async (url: string, fileName: string) => {
+  try {
+    // If it's a Cloudinary URL, add the attachment flag for instant download
+    if (url.includes('cloudinary.com')) {
+      const downloadUrl = `${url}?fl_attachment=true&filename=${encodeURIComponent(fileName)}`;
+      // Open in new tab to trigger download
+      window.open(downloadUrl, '_blank');
+    } else {
+      // For other URLs, fetch and download
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch file');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch (error) {
+    console.error('Download failed:', error);
+    toast.error('Failed to download file');
+  }
+};
 
 function Support() {
   const { user } = useAuth();
@@ -83,6 +111,29 @@ function Support() {
     }
   }
 
+  // Helper to render attachments with download functionality
+  const renderAttachments = (attachments: Att[]) => {
+    if (!Array.isArray(attachments) || attachments.length === 0) return null;
+    
+    return (
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {attachments.map((a: Att, i: number) => {
+          const fileName = a.name || `file-${i + 1}`;
+          return (
+            <button
+              key={i}
+              onClick={() => downloadFile(a.url, fileName)}
+              className="inline-flex items-center gap-1 text-[11px] rounded bg-background border border-input px-2 py-0.5 hover:bg-accent transition-colors"
+              title={`Download ${fileName}`}
+            >
+              <Download className="size-3" /> {fileName}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -96,30 +147,60 @@ function Support() {
 
       {showNew && (
         <form onSubmit={createTicket} className="rounded-2xl border hairline bg-card p-6 space-y-3">
-          <input required value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" />
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm">
+          <input 
+            required 
+            value={subject} 
+            onChange={(e) => setSubject(e.target.value)} 
+            placeholder="Subject" 
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" 
+          />
+          <select 
+            value={category} 
+            onChange={(e) => setCategory(e.target.value)} 
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+          >
             <option value="general">General</option>
             <option value="payments">Payments</option>
             <option value="tasks">Tasks</option>
             <option value="account">Account</option>
           </select>
-          <textarea required value={body} onChange={(e) => setBody(e.target.value)} rows={4} placeholder="Describe the issue…" className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" />
-          <label className="inline-flex items-center gap-2 text-sm cursor-pointer rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent">
-            <Paperclip className="size-4" /> Attach screenshots / files
-            <input
-              type="file" multiple className="hidden"
-              accept="image/*,application/pdf"
-              onChange={(e) => setNewFiles(Array.from(e.target.files ?? []))}
-            />
-          </label>
-          {newFiles.length > 0 && (
-            <div className="text-xs text-muted-foreground">{newFiles.length} file(s) selected</div>
-          )}
+          <textarea 
+            required 
+            value={body} 
+            onChange={(e) => setBody(e.target.value)} 
+            rows={4} 
+            placeholder="Describe the issue…" 
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm" 
+          />
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm cursor-pointer rounded-lg border border-input bg-background px-3 py-2 hover:bg-accent transition-colors">
+              <Paperclip className="size-4" /> Attach screenshots / files
+              <input
+                type="file" 
+                multiple 
+                className="hidden"
+                accept="image/*,application/pdf"
+                onChange={(e) => setNewFiles(Array.from(e.target.files ?? []))}
+              />
+            </label>
+            {newFiles.length > 0 && (
+              <span className="text-xs text-muted-foreground">{newFiles.length} file(s) selected</span>
+            )}
+          </div>
           <div className="flex gap-2">
-            <button disabled={busy} className="rounded-xl bg-gradient-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+            <button 
+              disabled={busy} 
+              className="rounded-xl bg-gradient-gold px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
               {busy ? "Submitting…" : "Submit"}
             </button>
-            <button type="button" onClick={() => setShowNew(false)} className="rounded-xl border border-input px-4 py-2 text-sm">Cancel</button>
+            <button 
+              type="button" 
+              onClick={() => setShowNew(false)} 
+              className="rounded-xl border border-input px-4 py-2 text-sm"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
@@ -128,47 +209,74 @@ function Support() {
         <div className="rounded-2xl border hairline bg-card divide-y divide-border">
           {tickets.length === 0 && <div className="p-8 text-center text-muted-foreground">No tickets yet.</div>}
           {tickets.map((t) => (
-            <button key={t.id} onClick={() => openTicket(t.id)} className={`w-full text-left p-4 hover:bg-accent ${activeId === t.id ? "bg-accent" : ""}`}>
+            <button 
+              key={t.id} 
+              onClick={() => openTicket(t.id)} 
+              className={`w-full text-left p-4 hover:bg-accent transition-colors ${activeId === t.id ? "bg-accent" : ""}`}
+            >
               <div className="flex items-center justify-between">
                 <div className="font-medium truncate">{t.subject}</div>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${t.status === "open" ? "bg-primary/15 text-primary" : "bg-muted text-foreground"}`}>{t.status}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${t.status === "open" ? "bg-primary/15 text-primary" : "bg-muted text-foreground"}`}>
+                  {t.status}
+                </span>
               </div>
               <div className="text-xs text-muted-foreground mt-1">{new Date(t.created_at).toLocaleString()}</div>
             </button>
           ))}
         </div>
+        
         <div className="rounded-2xl border hairline bg-card p-6 min-h-[300px]">
-          {!activeId ? <div className="text-muted-foreground text-center py-10">Select a ticket to view conversation</div> :
+          {!activeId ? (
+            <div className="text-muted-foreground text-center py-10">Select a ticket to view conversation</div>
+          ) : (
             <div className="space-y-3">
               {messages.map((m) => (
                 <div key={m.id} className={`rounded-xl p-3 max-w-md text-sm ${m.is_admin ? "bg-secondary/10 border border-secondary/20" : "bg-muted ml-auto"}`}>
-                  <div className="text-[10px] uppercase tracking-wider mb-1 text-muted-foreground">{m.is_admin ? "Admin" : "You"} · {new Date(m.created_at).toLocaleString()}</div>
+                  <div className="text-[10px] uppercase tracking-wider mb-1 text-muted-foreground">
+                    {m.is_admin ? "Admin" : "You"} · {new Date(m.created_at).toLocaleString()}
+                  </div>
                   {m.body}
-                  {Array.isArray(m.attachments) && m.attachments.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {m.attachments.map((a: Att, i: number) => (
-                        <a key={i} href={a.url} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-[11px] rounded bg-background border border-input px-2 py-0.5 hover:bg-accent">
-                          <ExternalLink className="size-3" /> {a.name ?? `file ${i + 1}`}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  {renderAttachments(m.attachments)}
                 </div>
               ))}
+              
               <div className="flex gap-2 pt-3 border-t border-border">
-                <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Reply…" className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-                <label className="inline-flex items-center cursor-pointer rounded-lg border border-input bg-background px-2 hover:bg-accent">
+                <input 
+                  value={reply} 
+                  onChange={(e) => setReply(e.target.value)} 
+                  placeholder="Reply…" 
+                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm" 
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                />
+                <label className="inline-flex items-center cursor-pointer rounded-lg border border-input bg-background px-2 hover:bg-accent transition-colors">
                   <Paperclip className="size-4" />
-                  <input ref={replyInput} type="file" multiple className="hidden" accept="image/*,application/pdf"
-                    onChange={(e) => setReplyFiles(Array.from(e.target.files ?? []))} />
+                  <input 
+                    ref={replyInput} 
+                    type="file" 
+                    multiple 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => setReplyFiles(Array.from(e.target.files ?? []))} 
+                  />
                 </label>
-                <button onClick={send} disabled={busy} className="rounded-lg bg-gradient-gold px-3 py-2 text-sm text-primary-foreground disabled:opacity-60">
+                <button 
+                  onClick={send} 
+                  disabled={busy} 
+                  className="rounded-lg bg-gradient-gold px-3 py-2 text-sm text-primary-foreground disabled:opacity-60"
+                >
                   <Send className="size-4" />
                 </button>
               </div>
-              {replyFiles.length > 0 && <div className="text-xs text-muted-foreground">{replyFiles.length} file(s) attached</div>}
+              {replyFiles.length > 0 && (
+                <div className="text-xs text-muted-foreground">{replyFiles.length} file(s) attached</div>
+              )}
             </div>
-          }
+          )}
         </div>
       </div>
     </div>
